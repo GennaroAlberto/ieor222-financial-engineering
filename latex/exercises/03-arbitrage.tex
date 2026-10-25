@@ -1,0 +1,185 @@
+% Exercises for Chapter 3 (Arbitrage and static replication). Statements only: solutions
+% are kept privately. Notation as in the notes: B is the price of the zero-coupon bond
+% paying 1 at T, S_0 the stock price, C(K) and P(K) call and put prices with maturity T.
+
+Unless an exercise says otherwise, the market is frictionless, the stock pays no dividend,
+and the market is free of arbitrage in the sense of \noteref{def:arb-arbitrage}. Strikes,
+prices and payoffs are in dollars.
+
+\begin{exercise}[Building payoffs from calls]\label{ex:arb-payoffs}
+\easy Use \noteref{lem:arb-piecewise}.
+\begin{enumerate}[label=(\alph*)]
+  \item Replicate the \emph{straddle}, which pays $|S_T-K|$ ($K>0$), with bonds, shares and
+    calls.
+    Replicate it again with one call and one put, and check with put--call parity that the
+    two replications cost the same.
+  \item A \emph{collar} pays $\min\big(\max(S_T,90),120\big)$. Replicate it with bonds and
+    calls, and again with one share, one put and one call. Compare the costs.
+  \item A payoff equals $10$ for $S_T\le80$, decreases linearly to $0$ at $S_T=90$, increases
+    linearly to $5$ at $S_T=100$, and equals $5$ for $S_T\ge100$. Replicate it and write its
+    price in terms of $B$ and call prices. Without computing anything, why is this price
+    nonnegative?
+  \item A \emph{lookback call} with strike $K$ pays $(M_T-K)^+$, where $M_T$ is the highest
+    price of the stock between $0$ and $T$. Assuming it is traded and the market remains free
+    of arbitrage, compare its price with $C(K)$.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[A known dividend]\label{ex:arb-dividend}
+\easy The stock now pays a known cash dividend $\delta>0$ at a date $t_1\in(0,T)$: whoever
+holds the share at $t_1$ receives $\delta$, and a short seller must pay $\delta$ to the
+lender of the share. Besides the bond maturing at $T$ (price $B$), a zero-coupon bond paying
+$1$ at $t_1$ is traded, at price $B_1$. Portfolios are still static, but their payoffs now
+consist of a cash flow at $t_1$ and one at $T$. You may use \noteref{prop:arb-dominance} for
+such portfolios, with ``$V\ge\tilde V$'' meaning that the inequality holds at both dates.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that the forward price for delivery at $T$ is $F=(S_0-\delta B_1)/B$.
+  \item Show that $C(K)-P(K)=S_0-\delta B_1-BK$.
+  \item Show that $(S_0-\delta B_1-BK)^+\le C(K)\le S_0-\delta B_1$.
+  \item In \noteref{rem:arb-strict}, the lower bound for a call without dividends is at least
+    the exercise value $S_0-K$ when $B\le1$. Show that this fails here: find conditions under
+    which $S_0-\delta B_1-BK<S_0-K$ although $B_1\le1$ and $B\le1$.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[A trainee's quote sheet]\label{ex:arb-quotes}
+\medium The stock trades at $S_0=50$, the bond paying $1$ at $T=1$ at $B=0.96$, and a
+trainee's program produces the following option prices for maturity $T$.
+\begin{center}
+\begin{tabular}{lccc}
+  \toprule
+  strike $K$ & $45$ & $50$ & $55$\\
+  \midrule
+  call & $7.90$ & $5.30$ & $2.40$\\
+  put & $2.90$ & $4.60$ & $7.40$\\
+  \bottomrule
+\end{tabular}
+\end{center}
+For each arbitrage below, give the portfolio, the cash collected at time $0$, and the payoff
+at time $T$ in every state.
+\begin{enumerate}[label=(\alph*)]
+  \item Check the calls alone against \noteref{prop:arb-bounds} and \noteref{prop:arb-strike},
+    and exploit every violation you find.
+  \item Check the puts alone in the same way.
+  \item Check put--call parity at each strike and exploit every violation.
+  \item A \emph{box spread} is long the $45/55$ call spread and short the $45/55$ put spread:
+    long a call at $45$, short a call at $55$, short a put at $45$, long a put at $55$. Show
+    that it pays $10$ in every state. What should it cost? What does it cost at the quoted
+    prices, and which discount factor does that imply?
+  \item The trainee made two mistakes: one call price is a typo, and the puts were computed
+    from parity with a wrong discount factor. Using (a)--(d), identify both, and correct the
+    call price.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[What no-arbitrage leaves open]\label{ex:arb-range}
+\easy Fix a strike $K>0$, and suppose that the market made of the bond, the stock and the
+call with strike $K$ is free of arbitrage.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $\Prob(S_T>0)>0$, and deduce that $C(K)<S_0$. Show that $C(K)>0$ if
+    $\Prob(S_T>K)>0$, and that $C(K)>S_0-BK$ if $\Prob(S_T<K)>0$.
+  \item Suppose $S_0>BK$. Show that $C(K)=S_0-BK$ is possible only if $S_T\ge K$ almost
+    surely, and that in that case the law of one price forces $C(K)=S_0-BK$.
+  \item Let $c$ be a number with $(S_0-BK)^+<c<S_0$. Find $x>K$, a probability $\Prob$ under
+    which $S_T$ takes the two values $0$ and $x$, each with positive probability, and a pricing
+    measure (\noteref{def:arb-pricing-measure}) under which the call costs $c$. What does this say
+    about the bounds of \noteref{prop:arb-bounds}?
+  \item In your model of (c), what happens to $x$ and to $\Q(S_T=x)$ as $c$ increases to
+    $S_0$? Interpret.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Digital options]\label{ex:arb-digital}
+\medium A \emph{digital call} with strike $K>0$ pays $1$ if $S_T>K$ and $0$ otherwise; a
+\emph{digital put} pays $1$ if $S_T\le K$. Their prices are $D_c(K)$ and $D_p(K)$. Digitals
+and calls of every strike are traded, together with the bond and the stock.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $D_c(K)+D_p(K)=B$ and $0\le D_c(K)\le B$. With $B=0.98$, a dealer quotes a
+    digital call at $1.01$: build an arbitrage.
+  \item For $0<h<K$, show that
+    \[
+      \frac{C(K)-C(K+h)}{h}\le D_c(K)\le\frac{C(K-h)-C(K)}{h}.
+    \]
+  \item Deduce that $-\partial^+C(K)\le D_c(K)\le-\partial^-C(K)$. You may use that a convex
+    function on an open interval has one-sided derivatives at every point, and that its
+    difference quotients $\big(C(K+h)-C(K)\big)/h$ decrease to $\partial^+C(K)$ as
+    $h\downarrow0$, and $\big(C(K)-C(K-h)\big)/h$ increase to $\partial^-C(K)$.
+  \item Deduce that $D_c(K)=-C'(K)$ when $C$ is differentiable at $K$. If there is a pricing
+    measure $\Q$, express $D_c(K)$ in terms of $\Q$ and compare with
+    \noteref{prop:arb-breeden-litzenberger}.
+  \item A trader has sold a digital call and wants to hold calls so that she never loses at
+    $T$, whatever happens. Which portfolio of calls does (b) suggest, what does it cost, and
+    what happens to this cost as $h\downarrow0$?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[The log contract and the variance]\label{ex:arb-log}
+\medium Let $\Q$ be a pricing measure for a market in which calls and puts of every strike
+$K>0$ are traded, with $\Q(S_T>0)=1$, and let $F=S_0/B$. Assume that all the integrals of
+option prices that appear below are finite, so that \noteref{cor:arb-strip} applies.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that the claim paying $-\log(S_T/F)$ (the \emph{log contract}) has price
+    \[
+      L=\int_0^F\frac{P(K)}{K^2}\,\dd K+\int_F^\infty\frac{C(K)}{K^2}\,\dd K .
+    \]
+  \item Let $f:(0,\infty)\to\R$ be convex and twice continuously differentiable. Show, using
+    \noteref{cor:arb-strip} and the sign of option prices only, that the claim paying
+    $f(S_T)$ costs at least $Bf(F)$. Which classical inequality have you proved, and under
+    which measure?
+  \item Show that the claim paying $S_T^2$ costs
+    $BF^2+2\int_0^FP(K)\,\dd K+2\int_F^\infty C(K)\,\dd K$, and deduce a formula for the
+    variance of $S_T$ under $\Q$ in terms of option prices.
+  \item Suppose that under $\Q$, $\log S_T$ is normal with variance $v^2$. Show that its mean
+    must be $\log F-v^2/2$, and that $L=Bv^2/2$. (This is why the log contract is the
+    building block of variance swaps, in \cref{ch:15-volatility}.)
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Reading a density off rounded quotes]\label{ex:arb-density}
+\medium This is a computational exercise. Take $S_0=100$, $B=0.97$, $F=S_0/B$, and suppose
+that the market's call prices are
+\[
+  C(K)=S_0\,N(d_+)-BK\,N(d_-),\qquad d_\pm=\frac{\log(F/K)\pm v^2/2}{v},\qquad v=0.25,
+\]
+where $N$ is the standard normal distribution function. (This is the Black--Scholes formula of
+\cref{ch:06-black-scholes-formula}; you may take it as given.) These prices come from a
+pricing measure under which $S_T$ has the density
+\[
+  q_T(K)=\frac{1}{Kv\sqrt{2\pi}}\exp\Big(-\frac{\big(\log(K/F)+v^2/2\big)^2}{2v^2}\Big),
+  \qquad K>0 .
+\]
+\begin{enumerate}[label=(\alph*)]
+  \item At $K=100$ and $K=130$, compute the butterfly estimate
+    \[
+      \hat q_h(K)=\frac{C(K-h)-2C(K)+C(K+h)}{Bh^2}
+    \]
+    for $h\in\{20,10,5,2,1,0.5\}$ and compare it with $q_T(K)$. How does the error behave as
+    $h\to0$? Explain the rate.
+  \item Real quotes are rounded to the cent. Repeat (a) with the prices rounded to two
+    decimals. What happens for small $h$, and why? Give a rough bound for the error caused by
+    rounding, and choose a sensible $h$.
+  \item Take $h=0.1$ at $K=130$: the rounded quotes give $\hat q_h(K)<0$. Which relation of
+    the notes do they violate? Is there an arbitrage at the rounded prices, and would you
+    expect to be able to trade it?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[An arbitrage that depends on the model]\label{ex:arb-weak}
+\hard Let $S_0=100$ and $B=1$, and suppose that calls with strikes $100$ and $110$ are both
+quoted at $5$. In this exercise a \emph{model} is any probability $\Prob$ for $S_T\ge0$;
+the prices are fixed.
+\begin{enumerate}[label=(\alph*)]
+  \item Check that the quotes satisfy every inequality of \noteref{prop:arb-bounds} and
+    \noteref{prop:arb-strike}.
+  \item Show that, whatever the model, the market made of the bond, the stock and the two
+    calls has an arbitrage. (Distinguish the models with $\Prob(S_T>100)>0$ from the others.)
+  \item Show that each of the two portfolios you used in (b) fails to be an arbitrage in some
+    model.
+  \item Show that no portfolio of the bond, the stock and the two calls is an arbitrage in
+    every model. \emph{Hint:} if $\theta$ were one, first use models in which $S_T$ is
+    constant to show that its payoff $V(x)$ is nonnegative for every $x\ge0$. Then, for
+    $x>110$, use the model in which $S_T\in\{0,100,x\}$ with probabilities chosen so that
+    the expected payoffs of the bond, the stock and the call with strike $100$ equal their
+    prices, and let $x\to\infty$.
+\end{enumerate}
+\end{exercise}

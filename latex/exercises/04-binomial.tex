@@ -1,0 +1,143 @@
+% Exercises for Chapter 4 (the binomial model). Statements only: solutions are kept privately.
+% Throughout, "the N-period model" is the binomial model of the notes, with risk-neutral
+% measure Q and q_u = (1 + r - d) / (u - d), q_d = 1 - q_u.
+
+\begin{exercise}[One period, with numbers]\label{ex:bin-one-period}
+\easy A stock costs $S_0=50$ today and will be worth $75$ or $45$ after one period. The
+interest rate is $r=2\%$ per period.
+\begin{enumerate}[label=(\alph*)]
+  \item Check that there is no arbitrage and compute the risk-neutral probability $q_u$.
+  \item Price and hedge a call and a put, both with strike $K=55$. Describe each
+    replicating portfolio (shares and cash), and check put--call parity.
+  \item The call is quoted at $4.50$. Construct an arbitrage and give its value at time
+    $1$ in both states.
+  \item Suppose that the real-world probability of a rise is $p=0.6$. Compute the expected
+    rate of return $\E[V_1]/V_0-1$ under $\Prob$ of the stock, the call and the put, and
+    compare them with $r$. Do the same under $\Q$. Explain the signs.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[A path-dependent claim]\label{ex:bin-lookback}
+\medium In a two-period binomial model, $S_0=8$, $u=\frac32$, $d=\frac12$ and
+$r=\frac14$. A \emph{floating-strike lookback put} pays $V_2=\max(S_0,S_1,S_2)-S_2$ at
+time $2$.
+\begin{enumerate}[label=(\alph*)]
+  \item List the four paths with $S_1$, $S_2$ and $V_2$. Why is $V_2$ not a function of
+    $S_2$?
+  \item Compute $V_1$ and $\Delta_1$ at both nodes at time $1$, then $V_0$ and $\Delta_0$.
+  \item Start from $X_0=V_0$, follow the self-financing equation
+    \noteref{eq:bin-wealth} along each path, and check that $X_2=V_2$.
+  \item Check that $V_0=\EQ\big[(1+r)^{-2}V_2\big]$.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[State prices]\label{ex:bin-state-prices}
+\easy Consider the $N$-period model with $d<1+r<u$, and let $H_n$ be the number of heads
+among the first $n$ tosses.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that the price at time $0$ of the claim $\1_{\{\varpi\}}$, which pays one
+    dollar in the state $\varpi$ and nothing otherwise, is
+    $\pi(\varpi)=(1+r)^{-N}\Q(\varpi)$, and that every claim has price
+    $V_0=\sum_{\omega\in\Omega}\pi(\omega)V_N(\omega)$.
+  \item By \noteref{eq:pr-coin-density} with $\tilde p=q_u$, the Radon--Nikodym derivative
+    of $\Q$ with respect to $\Prob$ is $Z=(q_u/p)^{H_N}\big(q_d/(1-p)\big)^{N-H_N}$. Show
+    that $Z$ is a function of $S_N$, and write $V_0$ as an expectation under $\Prob$.
+  \item Let $Z_n=\E[Z\mid\F_n]$, computed in \exref{ex:pr-coin-measures}(a). Show that
+    $(1+r)^{-n}Z_nX_n$ is a $\Prob$-martingale for every portfolio $X$. \emph{Hint:}
+    Bayes' formula, \noteref{prop:pr-bayes}.
+  \item For which $p$ is $Z\equiv1$? Interpret this value of $p$ in terms of the expected
+    return of the stock under $\Prob$.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[American puts]\label{ex:bin-put}
+\medium Consider the $N$-period model with $d<1+r<u$ and a strike $K>0$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that if $r=0$, the American put has the same price as the European put at
+    every node. \emph{Hint:} adapt the proof of \noteref{thm:bin-american}(iv).
+  \item Take $N=2$, $S_0=8$, $u=\frac32$, $d=\frac12$, $r=\frac14$ and $K=8$. Compute the
+    prices of the European and the American put at every node, find the optimal exercise
+    time $\tau^*$, and check that
+    $U_0=\EQ\big[(1+r)^{-\tau^*}(K-S_{\tau^*})^+\big]$.
+  \item Let $r\ge0$, and let $C^A_0$ and $P^A_0$ be the prices of the American call and
+    put. Show that
+    \[
+      S_0-K\le C^A_0-P^A_0\le S_0-(1+r)^{-N}K .
+    \]
+    \emph{Hint:} for the left inequality, write $(K-S_\tau)^+=(S_\tau-K)^++K-S_\tau$ for a
+    stopping time $\tau$, and apply \noteref{lem:bin-optional-stopping} to the discounted
+    stock price.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[A dice game]\label{ex:bin-dice}
+\easy You may roll a fair die up to $n$ times. After each roll except the last you may
+stop and receive, in dollars, the number shown, or roll again; after the $n$-th roll you
+receive what it shows. Let $X_k$ be the result of the $k$-th roll and
+$\F_k=\sigma(X_1,\dots,X_k)$.
+\begin{enumerate}[label=(\alph*)]
+  \item For $n=3$, find the fair value of the game (the expected gain under the best
+    rule) and the best rule, by backward induction.
+  \item Write the rule of (a) as a random time $\tau$ with values in $\{1,2,3\}$ and show
+    that it is a stopping time. Check that the proof of \noteref{thm:bin-american}(ii)
+    goes through for this game, with $\Prob$ in place of $\Q$, $r=0$, $G_k=X_k$ and time
+    starting at $1$, and deduce that the value of (a) is the largest $\E[X_\tau]$ over
+    all stopping times $\tau$ with values in $\{1,2,3\}$.
+  \item Let $v_n$ be the value of the game with $n$ rolls. Show that $v_1=\frac72$ and
+    $v_{n+1}=\E\big[\max(X_1,v_n)\big]$, that $v_n$ increases to $6$, and find the
+    smallest $n$ with $v_n>5$.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[The Snell envelope]\label{ex:bin-snell}
+\hard In the setting of \noteref{thm:bin-american}, write $Y_n=(1+r)^{-n}U_n$ and
+$\hat G_n=(1+r)^{-n}G_n$. Call $\tau\in\mathcal T_0$ \emph{optimal} if
+$\EQ[\hat G_\tau]=U_0$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $Y$ is the smallest $\Q$-supermartingale that dominates $\hat G$: every
+    $\Q$-supermartingale $Z$ with $Z_n\ge\hat G_n$ for all $n$ satisfies $Z_n\ge Y_n$ for
+    all $n$.
+  \item Show that $\tau$ is optimal if and only if $U_\tau=G_\tau$ and the stopped
+    process $(Y_{n\wedge\tau})_{0\le n\le N}$ is a $\Q$-martingale.
+  \item Deduce that $\tau^*\le\tau$ for every optimal $\tau$.
+  \item Let $\sigma^*$ be the first $n<N$ with $U_n>\EQ[U_{n+1}\mid\F_n]/(1+r)$, and
+    $\sigma^*=N$ if there is none. Show that $\sigma^*$ is an optimal stopping time and
+    that $\tau\le\sigma^*$ for every optimal $\tau$.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[A trinomial market]\label{ex:bin-trinomial}
+\medium In a one-period trinomial model, $S_0=100$, the factors are $u=1.3$, $m=1.1$ and
+$d=0.9$, and $r=2\%$.
+\begin{enumerate}[label=(\alph*)]
+  \item Describe all risk-neutral measures.
+  \item Find the interval of arbitrage-free prices of a call with strike $100$.
+  \item The call is quoted at $9.50$. Construct an arbitrage. Do the same if it is quoted
+    at $5$.
+  \item In a general one-period trinomial model with $d<1+r<u$, show that a claim
+    $h(S_1)$ can be replicated by the stock and the money market if and only if
+    $\EQ[h(S_1)]$ is the same for every risk-neutral $\Q$. Back to the numbers: which of
+    the following can be replicated: a call with strike $90$; a digital option paying $1$
+    if $S_1=110$; a put with strike $100$?
+  \item The call with strike $100$ is now traded at $7$. A risk-neutral measure for the market with the
+    money market, the stock and the call must also make the discounted call price a
+    martingale. Show that there is exactly one, and that every claim can be replicated
+    with the three assets. Find the price of the digital option of (d).
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Stopping times by brute force]\label{ex:bin-stopping-count}
+\medium This is a computational exercise.
+\begin{enumerate}[label=(\alph*)]
+  \item Let $f(N)$ be the number of stopping times with values in $\{0,\dots,N\}$ in the
+    $N$-period model. Show that $f(0)=1$ and $f(N)=1+f(N-1)^2$, and compute $f(N)$ for
+    $N\le6$. \emph{Hint:} either $\tau=0$ on all of $\Omega$, or $\tau\ge1$; in the second
+    case, look at $\tau-1$ separately on $\{\omega_1=H\}$ and on $\{\omega_1=T\}$.
+  \item Take $N=4$, $S_0=100$, $u=1.1$, $d=0.9$, $r=2\%$ and the American put with
+    $K=100$. Compute $U_0$ by backward induction. Then enumerate all stopping times,
+    compute $\EQ\big[(1+r)^{-\tau}(K-S_\tau)^+\big]$ for each, and check that the largest
+    value is $U_0$. How many stopping times attain it? Compare them with $\tau^*$ and with
+    the time $\sigma^*$ of \exref{ex:bin-snell}.
+  \item How does the cost of each method grow with $N$?
+\end{enumerate}
+\end{exercise}

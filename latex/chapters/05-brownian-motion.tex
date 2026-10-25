@@ -47,7 +47,7 @@ and variance $k_{i+1}-k_i$.
 (ii) $M_k$ is a function of $X_1,\dots,X_k$, so it is $\F_k$-measurable, and $|M_k|\le k$
 is integrable. For $\ell\ge k$, the increment $M_\ell-M_k$ depends only on
 $X_{k+1},\dots,X_\ell$, which are independent of $\F_k$. Taking out what is known and
-using independence,
+using independence (\cref{prop:pr-condexp-properties}),
 \[
   \E[M_\ell\mid\F_k]=M_k+\E[M_\ell-M_k\mid\F_k]=M_k+\E[M_\ell-M_k]=M_k .
 \]
@@ -282,7 +282,8 @@ is Gaussian: $\E[W_t^2]=t$, and the Gaussian moment generating function gives
 $\E[e^{\sigma W_t}]=e^{\sigma^2t/2}$. Fix $s<t$ and write $W_t=W_s+D$ with
 $D=W_t-W_s\sim\mathcal N(0,t-s)$. Here $W_s$ is $\F_s$-measurable and $D$ is independent
 of $\F_s$, so for any functions $f$ and $g$ with the needed integrability,
-$\E[f(W_s)g(D)\mid\F_s]=f(W_s)\,\E[g(D)]$.
+$\E[f(W_s)g(D)\mid\F_s]=f(W_s)\,\E[g(D)]$ by \cref{prop:pr-condexp-properties} (or, more
+generally, the independence lemma, \cref{lem:pr-independence}).
 
 (i) $\E[W_t\mid\F_s]=W_s+\E[D]=W_s$.
 

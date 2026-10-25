@@ -17,10 +17,10 @@ Generated from [`latex/toc.tex`](latex/toc.tex). Chapters marked *in preparation
 
 | | Chapter | Notes | Exercises | Demos |
 |---|---|---|---|---|
-| 1 | Probability as information | in preparation | – | – |
-| 2 | Martingales and random walks | in preparation | – | – |
-| 3 | Arbitrage and static replication | in preparation | – | – |
-| 4 | The binomial model | in preparation | – | – |
+| 1 | Probability as information | ✓ | ✓ | [01-probability.ipynb](code/notebooks/01-probability.ipynb) |
+| 2 | Martingales and random walks | ✓ | ✓ | [02-martingales.ipynb](code/notebooks/02-martingales.ipynb) |
+| 3 | Arbitrage and static replication | ✓ | ✓ | [03-arbitrage.ipynb](code/notebooks/03-arbitrage.ipynb) |
+| 4 | The binomial model | ✓ | ✓ | [04-binomial.ipynb](code/notebooks/04-binomial.ipynb) |
 
 **Brownian motion and the Black–Scholes formula**
 
@@ -48,6 +48,15 @@ Generated from [`latex/toc.tex`](latex/toc.tex). Chapters marked *in preparation
 | 14 | Short-rate models | in preparation | – | – |
 | 15 | Implied volatility and the smile | in preparation | – | – |
 | 16 | Numerical methods | in preparation | – | – |
+
+**Extras**
+
+| | Chapter | Notes | Exercises | Demos |
+|---|---|---|---|---|
+| 17 | Arbitrage-free option surfaces | in preparation | – | – |
+| 18 | Hawkes processes and limit order books | in preparation | – | – |
+| 19 | Rough volatility | in preparation | – | – |
+| 20 | Signatures and signature-based models | in preparation | – | – |
 
 ## Layout
 

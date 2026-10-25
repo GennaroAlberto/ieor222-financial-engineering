@@ -1,6 +1,598 @@
-\begin{planned}
-  \item discrete-time martingales: sums, products and exponential martingales
-  \item stopping times and the optional stopping theorem
-  \item gambler's ruin: exit probabilities and expected duration; Wald's identities
-  \item demos: biased random walks, and martingales whose typical paths go to zero
-\end{planned}
+% Chapter 2: Martingales and random walks.
+
+A martingale is the mathematical form of a fair game: given everything known today, the
+expected value of tomorrow's position is today's position. Two facts make martingales the
+central objects of this course. In a market without arbitrage, discounted prices are
+martingales under a risk-neutral probability (\cref{ch:04-binomial}), so that pricing a
+derivative comes down to computing a conditional expectation. And the gains of a trading
+strategy in a martingale are again a martingale: in a fair game no strategy, however
+clever, has a positive expected gain, as long as it uses only past information and does not
+take unbounded risks. The second fact is the discrete-time ancestor of the It\^o integral
+(\cref{ch:07-ito-integral}).
+
+This chapter develops both ideas in discrete time, together with stopping times, the
+optional stopping theorem, and the gambler's ruin problem: how likely a random walk is to
+reach a target before a ruin level, and how long that takes. The same computations evaluate
+stop-loss and take-profit rules, and they return in continuous time for barrier options.
+
+Throughout, $(\Omega,\F,\Prob)$ is a probability space and $(\F_n)_{n\in\N}$ a filtration
+(\cref{def:pr-filtration}). We use the properties of conditional expectation collected in
+\cref{prop:pr-condexp-properties} (linearity, positivity, taking out what is known, the tower
+property, independence) and the independence lemma, \cref{lem:pr-independence}. Identities
+between conditional expectations hold almost surely; we do not repeat it each time.
+
+\section{Martingales}\label{sec:mg-martingales}
+
+\begin{definition}[Martingale]\label{def:mg-martingale}
+A process $M=(M_n)_{n\in\N}$ is a \emph{martingale} with respect to $(\F_n)$ and $\Prob$ if
+\begin{enumerate}[label=(\roman*)]
+  \item $M$ is adapted (\cref{def:pr-adapted}): $M_n$ is $\F_n$-measurable for every $n$;
+  \item $M$ is integrable: $\E|M_n|<\infty$ for every $n$;
+  \item $\E[M_{n+1}\mid\F_n]=M_n$ for every $n\in\N$.
+\end{enumerate}
+It is a \emph{submartingale} if (iii) is replaced by $\E[M_{n+1}\mid\F_n]\ge M_n$, and a
+\emph{supermartingale} if it is replaced by $\E[M_{n+1}\mid\F_n]\le M_n$.
+\end{definition}
+
+Read $M_n$ as the fortune of a player after $n$ rounds of a game. Condition (iii) says that,
+whatever has happened so far, the expected fortune after the next round is the current one:
+the game is fair. A supermartingale is an unfavourable game (it is \emph{super} for the
+casino), a submartingale a favourable one. A process with a finite horizon,
+$(M_n)_{0\le n\le N}$, is a martingale if (i)--(ii) hold for $n\le N$ and (iii) for $n<N$;
+everything below applies to it unchanged.
+
+\begin{remark}[First consequences]\label{rem:mg-consequences}
+\leavevmode
+\begin{enumerate}[label=(\alph*)]
+  \item \emph{Several steps at once.} If $M$ is a martingale, then $\E[M_m\mid\F_n]=M_n$ for
+    all $m\ge n$. By induction on $m$, the tower property gives
+    $\E[M_{m+1}\mid\F_n]=\E\big[\E[M_{m+1}\mid\F_m]\,\big|\,\F_n\big]=\E[M_m\mid\F_n]=M_n$.
+    The same computation, with positivity, gives $\E[M_m\mid\F_n]\ge M_n$ for a submartingale
+    and $\le$ for a supermartingale.
+  \item \emph{Means.} Taking expectations, $\E[M_n]=\E[M_0]$ for all $n$ if $M$ is a
+    martingale; the mean is nondecreasing for a submartingale and nonincreasing for a
+    supermartingale.
+  \item \emph{The filtration matters.} If $M$ is a martingale with respect to $(\F_n)$ and is
+    adapted to a smaller filtration $(\mathcal G_n)$, with $\mathcal G_n\subseteq\F_n$, then it
+    is a martingale with respect to $(\mathcal G_n)$:
+    $\E[M_{n+1}\mid\mathcal G_n]=\E\big[\E[M_{n+1}\mid\F_n]\,\big|\,\mathcal G_n\big]=\E[M_n\mid\mathcal G_n]=M_n$.
+    In particular it is a martingale for its own history $\sigma(M_0,\dots,M_n)$. A larger
+    filtration can destroy the property: a price that is a martingale for the public is
+    not one for an insider who knows the next move.
+  \item \emph{The probability matters.} Changing $\Prob$ changes conditional expectations.
+    Discounted stock prices are martingales under a risk-neutral probability $\Q$, and in
+    general not under the real-world probability $\Prob$
+    (\cref{prop:bin-discounted-martingale}); under $\Q$, so is the
+    discounted price of any derivative, a conditional expectation of its discounted payoff
+    (\exref{ex:mg-doob}).
+\end{enumerate}
+\end{remark}
+
+\subsection*{Sums, products and exponentials}
+
+Let $\xi_1,\xi_2,\dots$ be random variables and $(\F_n)$ a filtration such that
+\begin{equation}\label{eq:mg-indep}
+  \text{for every } n\ge1,\quad \xi_n \text{ is } \F_n\text{-measurable and independent of } \F_{n-1}.
+\end{equation}
+The $\xi_n$ are then independent. Conversely, if $\xi_1,\xi_2,\dots$ are independent,
+\eqref{eq:mg-indep} holds for their natural filtration $\F_0=\{\emptyset,\Omega\}$,
+$\F_n=\sigma(\xi_1,\dots,\xi_n)$, since $\xi_n$ is independent of the vector
+$(\xi_1,\dots,\xi_{n-1})$, hence of the $\sigma$-algebra it generates, by Dynkin's
+$\pi$--$\lambda$ theorem (\textcite{durrett}, Section~2.1). Larger filtrations are allowed as long as they do not reveal
+future $\xi$'s. Fix $x\in\R$ and let
+\[
+  S_0=x,\qquad S_n=x+\xi_1+\dots+\xi_n,\quad n\ge1 .
+\]
+
+\begin{proposition}[Sums, products, exponentials]\label{prop:mg-examples}
+Assume \eqref{eq:mg-indep}.
+\begin{enumerate}[label=(\roman*)]
+  \item If every $\xi_k$ is integrable with mean $\mu_k$, then $\big(S_n-\sum_{k=1}^n\mu_k\big)_n$
+    is a martingale. In particular $S$ is a martingale if the $\xi_k$ have mean $0$.
+  \item If every $\xi_k$ has mean $0$ and finite variance $\sigma_k^2$, then
+    $\big(S_n^2-\sum_{k=1}^n\sigma_k^2\big)_n$ is a martingale.
+  \item If every $\xi_k$ is integrable with mean $1$, then $M_0=1$, $M_n=\xi_1\xi_2\cdots\xi_n$
+    defines a martingale.
+  \item If $\theta\in\R$ is such that $\varphi_k(\theta)=\E[e^{\theta\xi_k}]<\infty$ for every
+    $k$, then $Z_n=e^{\theta S_n}/\big(\varphi_1(\theta)\cdots\varphi_n(\theta)\big)$ defines a
+    martingale. For $\xi_k\sim\mathcal N(0,\sigma^2)$ this is
+    $Z_n=\exp\big(\theta S_n-\tfrac12\theta^2\sigma^2n\big)$, for every $\theta\in\R$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+Each process is a function of $(\xi_1,\dots,\xi_n)$, hence adapted. In each case we write the
+value at time $n+1$ as $f(Y_n,\xi_{n+1})$, with $Y_n$ an $\F_n$-measurable variable and
+$\xi_{n+1}$ independent of $\F_n$, and apply the independence lemma:
+$\E[f(Y_n,\xi_{n+1})\mid\F_n]=g(Y_n)$ with $g(y)=\E[f(y,\xi_{n+1})]$.
+
+(i) $S_n$ is integrable as a sum of integrable variables. With $f(s,y)=s+y$,
+$\E[S_{n+1}\mid\F_n]=S_n+\mu_{n+1}$; subtract $\sum_{k\le n+1}\mu_k$ from both sides.
+
+(ii) $S_n$ is square integrable as a sum of square-integrable variables. With
+$f(s,y)=(s+y)^2$, $g(s)=s^2+2s\,\E[\xi_{n+1}]+\E[\xi_{n+1}^2]=s^2+\sigma_{n+1}^2$, so
+$\E[S_{n+1}^2\mid\F_n]=S_n^2+\sigma_{n+1}^2$.
+
+(iii) Since $|\xi_1|,\dots,|\xi_n|$ are independent, $\E|M_n|=\prod_{k\le n}\E|\xi_k|<\infty$.
+With $f(m,y)=my$, $g(m)=m\,\E[\xi_{n+1}]=m$, so $\E[M_{n+1}\mid\F_n]=M_n$.
+
+(iv) $Z_n=e^{\theta x}\prod_{k\le n}\big(e^{\theta\xi_k}/\varphi_k(\theta)\big)$ is a constant
+times a product of independent mean-one factors, so (iii) applies. For
+$\xi\sim\mathcal N(0,\sigma^2)$, $\E[e^{\theta\xi}]=e^{\theta^2\sigma^2/2}$.
+\end{proof}
+
+\subsection*{The random walk}
+
+Let $X_1,X_2,\dots$ be independent with $\Prob(X_k=1)=p$ and $\Prob(X_k=-1)=q:=1-p$, where
+$p\in(0,1)$. Fix $x\in\Z$, let $S_0=x$, $S_n=x+X_1+\dots+X_n$, and let $(\F_n)$ be the natural
+filtration of the $X_k$. This is the \emph{random walk} started at $x$, \emph{symmetric} if
+$p=\frac12$ and \emph{biased} otherwise: the fortune of a gambler who bets one dollar per
+round on a coin that lands heads with probability $p$, or a price that moves one tick up or
+down per period. Each step has mean $p-q$ and variance $1-(p-q)^2=4pq$.
+
+\begin{corollary}[Martingales of the random walk]\label{cor:mg-walk}
+\leavevmode
+\begin{enumerate}[label=(\alph*)]
+  \item $S_n-n(p-q)$ is a martingale. The walk itself is a martingale if and only if
+    $p=\frac12$, a submartingale if and only if $p\ge\frac12$, and a supermartingale if and
+    only if $p\le\frac12$.
+  \item $(q/p)^{S_n}$ is a martingale.
+  \item $\big(S_n-n(p-q)\big)^2-4pq\,n$ is a martingale; for $p=\frac12$, so is $S_n^2-n$.
+  \item For every $\theta\in\R$, $e^{\theta S_n}/\big(pe^{\theta}+qe^{-\theta}\big)^n$ is a
+    martingale.
+\end{enumerate}
+\end{corollary}
+
+\begin{proof}
+(a) By \cref{prop:mg-examples}(i), $\E[S_{n+1}\mid\F_n]=S_n+(p-q)$, which is equal to,
+at least, or at most $S_n$ according to the sign of $p-q$.
+(b) $(q/p)^{S_n}=(q/p)^x\prod_{k\le n}(q/p)^{X_k}$, and
+$\E\big[(q/p)^{X_k}\big]=p\cdot\frac qp+q\cdot\frac pq=1$: apply \cref{prop:mg-examples}(iii).
+(c) Let $Y_n=S_n-x-n(p-q)$, the sum of the centred steps $X_k-(p-q)$, which have variance
+$4pq$. By \cref{prop:mg-examples}(i) and (ii), $Y$ and $Y_n^2-4pqn$ are martingales, hence
+so is $(x+Y_n)^2-4pqn=Y_n^2-4pqn+2xY_n+x^2$.
+(d) \Cref{prop:mg-examples}(iv) with $\varphi(\theta)=pe^\theta+qe^{-\theta}$.
+\end{proof}
+
+A biased walk is not a martingale: it drifts. Subtracting the drift $n(p-q)$ is one way to
+obtain a martingale; the exponential transformation in (b) is another, and it is the one that
+solves the gambler's ruin problem in \cref{sec:mg-ruin}.
+
+\begin{remark}[The martingale (b) as a density]\label{rem:mg-density}
+Fix $n$. The variable $Z_n=(q/p)^{S_n-x}$ is positive with $\E[Z_n]=1$ by (b), so
+$\Prob'(A)=\E[Z_n\1_A]$, $A\in\F_n$, defines a probability on $\F_n$ equivalent to $\Prob$
+(\cref{prop:pr-change-of-measure}). A path of $n$ steps with $u$ up-steps and $d$ down-steps
+has probability $p^uq^d$ under $\Prob$, hence $(q/p)^{u-d}p^uq^d=q^up^d$ under $\Prob'$: under
+$\Prob'$ the steps are still independent, but go up with probability $q$ and down with
+probability $p$. Because $Z$ is a martingale, these definitions agree as $n$ varies: $Z$ is the
+density process of the change of measure that flips the bias of the coin
+(\cref{rem:pr-density-process}). Density processes are the basis of the change of measure in
+\cref{ch:11-risk-neutral}.
+\end{remark}
+
+\begin{remark}[A martingale whose paths die]\label{rem:mg-dies}
+Fix $0<a<1$, and let the $\xi_k$ be independent and equal to $1+a$ or $1-a$ with probability
+$\frac12$ each. An investor who, each period, puts all her wealth in a fair bet that returns
+$+a$ or $-a$ has wealth $M_n=\xi_1\cdots\xi_n$ (starting from $1$). By
+\cref{prop:mg-examples}(iii), $M$ is a martingale and $\E[M_n]=1$ for all $n$. Yet
+$\log M_n=\sum_{k\le n}\log\xi_k$ is a sum of independent, identically distributed, bounded
+variables with mean $\frac12\log(1-a^2)<0$, so by the strong law of large numbers
+(\textcite{durrett}, Theorem~2.4.1) $\frac1n\log M_n\to\frac12\log(1-a^2)$ almost surely:
+$M_n\to0$ almost surely, at the exponential rate $(1-a^2)^{n/2}$
+(\cref{fig:mg-products}). The mean is carried by rarer and rarer paths with many more
+gains than losses. For $a=1$ the picture is extreme: $M_n=2^n$ with probability $2^{-n}$ and
+$M_n=0$ otherwise. The gap between the expected return $0$ and the typical growth rate
+$\frac12\log(1-a^2)\approx-\frac{a^2}{2}$ is the \emph{volatility drag} of a risky
+investment; \cref{rem:bm-dies} is its continuous-time version.
+\end{remark}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.82\textwidth]{ch02-products}
+  \caption{The martingale $M_n=\xi_1\cdots\xi_n$ with $\xi_k=1\pm\frac12$
+    (\cref{rem:mg-dies}). Grey: 25 paths. Almost every path decays like the median
+    $(1-a^2)^{n/2}$, although $\E[M_n]=1$. Even an average of $10^5$ paths eventually falls
+    below $1$: the paths that carry the mean are too rare to be sampled.}
+  \label{fig:mg-products}
+\end{figure}
+
+\demo{02-martingales.ipynb}{sample means of $S_n$, $S_n-n(p-q)$ and $(q/p)^{S_n}$ for a walk
+with the bias $p$ of your choice; and products of mean-one factors whose mean stays at one
+while their paths go to zero.}
+
+\section{Trading strategies and martingale transforms}\label{sec:mg-transforms}
+
+Consider a market with a riskless asset paying zero interest and a risky asset whose price at
+time $n$ is $X_n$ (\cref{ch:04-binomial} removes the zero-interest assumption by working with
+discounted prices). A trader decides at time $k-1$ how many units $H_k$ of the risky asset to
+hold over the period from $k-1$ to $k$. She may use everything she knows at time $k-1$, and
+nothing more.
+
+\begin{definition}[Predictable strategy, martingale transform]\label{def:mg-transform}
+A process $H=(H_n)_{n\ge1}$ is \emph{predictable} if $H_n$ is $\F_{n-1}$-measurable for every
+$n\ge1$. For an adapted process $X$ and a predictable process $H$, the \emph{martingale
+transform} of $X$ by $H$ is
+\[
+  (H\cdot X)_0=0,\qquad (H\cdot X)_n=\sum_{k=1}^{n}H_k\,(X_k-X_{k-1}),\quad n\ge1 .
+\]
+\end{definition}
+
+$H_k(X_k-X_{k-1})$ is the profit or loss on the position held during the $k$-th period, so
+$(H\cdot X)_n$ is the trader's cumulative gain. If she starts with wealth $V_0$ and finances
+her purchases by borrowing and lending at zero interest, adding and withdrawing no money
+afterwards, her wealth at time $n$ is $V_n=V_0+(H\cdot X)_n$: the strategy is
+\emph{self-financing}. For a gambler, $X_k-X_{k-1}$ is the result of round $k$ per dollar
+staked and $H_k$ is the stake.
+
+\begin{theorem}[You cannot beat a fair game]\label{thm:mg-transform}
+Let $H$ be predictable and bounded: $|H_n|\le C_n$ for some constants $C_n$, $n\ge1$.
+\begin{enumerate}[label=(\roman*)]
+  \item If $M$ is a martingale, then $H\cdot M$ is a martingale with $(H\cdot M)_0=0$. In
+    particular $\E[(H\cdot M)_n]=0$ for every $n$.
+  \item If $M$ is a supermartingale (respectively a submartingale) and $H_n\ge0$ for every
+    $n$, then $H\cdot M$ is a supermartingale (respectively a submartingale), and
+    $\E[(H\cdot M)_n]\le0$ (respectively $\ge0$).
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+$(H\cdot M)_n$ is built from $H_1,\dots,H_n$ and $M_0,\dots,M_n$, all $\F_n$-measurable, and
+$|(H\cdot M)_n|\le\sum_{k\le n}C_k\big(|M_k|+|M_{k-1}|\big)$ is integrable. Since $H_{n+1}$ is
+bounded and $\F_n$-measurable, taking out what is known gives
+\[
+  \E\big[(H\cdot M)_{n+1}-(H\cdot M)_n\,\big|\,\F_n\big]
+  =\E\big[H_{n+1}(M_{n+1}-M_n)\,\big|\,\F_n\big]
+  =H_{n+1}\big(\E[M_{n+1}\mid\F_n]-M_n\big).
+\]
+For a martingale the bracket vanishes. For a supermartingale it is $\le0$, and so is its
+product with $H_{n+1}\ge0$; for a submartingale both inequalities reverse.
+\end{proof}
+
+The theorem speaks about all strategies at once. Doubling the stake after a loss, betting more
+during a winning streak, following a technical indicator: no rule that chooses the stakes
+from the past changes the zero expected gain of a fair game, or makes an unfavourable game
+favourable. Predictability carries the weight. If $H_k$ could depend on $X_k$, the trader
+could hold one unit exactly in the periods in which the price goes up, and collect
+$\sum_k(X_k-X_{k-1})^+$; for a martingale, this has positive mean unless the price never
+moves. The bound $C_n$ may
+grow with $n$, so it costs nothing at a fixed horizon; \cref{sec:mg-stopping} shows what goes
+wrong when the horizon itself is unbounded.
+
+\begin{remark}[A converse]\label{rem:mg-converse}
+Let $X$ be adapted and integrable, and suppose that $\E[(H\cdot X)_n]=0$ for every bounded
+predictable $H$ and every $n$. Then $X$ is a martingale. Indeed, fix $m\ge1$ and
+$A\in\F_{m-1}$, and let $H_m=\1_A$ and $H_k=0$ for $k\ne m$. Then
+$0=\E[(H\cdot X)_m]=\E\big[\1_A(X_m-X_{m-1})\big]$, so $\E[\1_AX_m]=\E[\1_AX_{m-1}]$ for every
+$A\in\F_{m-1}$. As $X_{m-1}$ is $\F_{m-1}$-measurable, this is the partial-averaging property
+that characterizes $\E[X_m\mid\F_{m-1}]=X_{m-1}$ (\cref{def:pr-condexp}). A price process is
+thus a martingale exactly when no trading strategy has a nonzero expected gain. This
+equivalence is the core of the fundamental theorem of asset pricing (\cref{thm:bin-ftap}).
+\end{remark}
+
+\begin{remark}[The discrete ancestor of the It\^o integral]\label{rem:mg-ito}
+When $X$ is a symmetric random walk, or a Brownian motion observed at times
+$t_0<t_1<\cdots$, the transform $\sum_kH_k(X_{t_k}-X_{t_{k-1}})$ is a Riemann--Stieltjes sum
+whose integrand is evaluated at the left end of each interval, as predictability requires.
+The It\^o integral $\int_0^t\Delta_u\,\dd W_u$ of \cref{ch:07-ito-integral} is the limit of
+such sums as the grid is refined, and \cref{thm:mg-transform} survives the limit: It\^o
+integrals of suitable integrands are martingales. The left end is not a matter of
+convention. For the symmetric walk started at $0$,
+$\sum_{k\le n}S_{k-1}(S_k-S_{k-1})=\frac12(S_n^2-n)$, the discrete form of
+$\int_0^tW\,\dd W=\frac12(W_t^2-t)$ (\exref{ex:mg-isometry}); evaluating at the right end gives
+$\frac12(S_n^2+n)$ instead. The two differ by $[S,S]_n=n$, the quadratic variation of the
+walk (\cref{prop:bm-rw}).
+\end{remark}
+
+\section{Stopping times and optional stopping}\label{sec:mg-stopping}
+
+A gambler leaving the table, a trader closing a position at a stop-loss, the holder of an
+American option exercising it: each chooses a random time. The time is random, but the
+decision to stop at time $n$ may only use the information available at time $n$.
+
+\begin{definition}[Stopping time]\label{def:mg-stopping-time}
+A random variable $\tau$ with values in $\N\cup\{\infty\}$ is a \emph{stopping time} if
+$\{\tau\le n\}\in\F_n$ for every $n\in\N$. Equivalently, $\{\tau=n\}\in\F_n$ for every $n$,
+since $\{\tau=n\}=\{\tau\le n\}\setminus\{\tau\le n-1\}$ and
+$\{\tau\le n\}=\bigcup_{k\le n}\{\tau=k\}$.
+\end{definition}
+
+Constant times are stopping times. So are \emph{first entrance times}
+$\tau_A=\inf\{n\ge0:X_n\in A\}$ of an adapted process $X$ into a Borel set $A$, with
+$\inf\emptyset=\infty$, because $\{\tau_A\le n\}=\bigcup_{k=0}^{n}\{X_k\in A\}\in\F_n$. The
+exit time of a walk from an interval is of this type. By contrast, the last visit of the walk
+to $0$ before time $N$, or the time at which it reaches its maximum over $\{0,\dots,N\}$, are
+not stopping times: deciding requires seeing the future (\exref{ex:mg-stopping}).
+
+For a process $X$ and a stopping time $\tau$, the \emph{stopped process} $X^\tau$ is
+$X^\tau_n=X_{n\wedge\tau}$: it follows $X$ up to time $\tau$ and stays frozen at $X_\tau$
+afterwards. On $\{\tau<\infty\}$ we write $X_\tau(\omega)=X_{\tau(\omega)}(\omega)$.
+
+\begin{proposition}[Stopped martingales]\label{prop:mg-stopped}
+If $M$ is a martingale (respectively a super- or submartingale) and $\tau$ is a stopping time,
+then $M^\tau$ is a martingale (respectively a super- or submartingale). In particular
+$\E[M_{n\wedge\tau}]=\E[M_0]$ for every $n$ (respectively $\le$, $\ge$).
+\end{proposition}
+
+\begin{proof}
+Stopping is a trading strategy: hold one unit until $\tau$ and nothing afterwards. With
+$H_k=\1_{\{\tau\ge k\}}$, the sum telescopes:
+\[
+  M_{n\wedge\tau}=M_0+\sum_{k=1}^{n\wedge\tau}(M_k-M_{k-1})=M_0+\sum_{k=1}^{n}\1_{\{\tau\ge k\}}(M_k-M_{k-1})=M_0+(H\cdot M)_n .
+\]
+$H$ is predictable, because $\{\tau\ge k\}=\{\tau\le k-1\}^c\in\F_{k-1}$, and it takes values
+in $\{0,1\}$. By \cref{thm:mg-transform}, $H\cdot M$ is a martingale (respectively a super-
+or submartingale) started at $0$, and adding the integrable $\F_0$-measurable variable $M_0$
+preserves the property.
+\end{proof}
+
+So $\E[M_{n\wedge\tau}]=\E[M_0]$ at every fixed $n$. If $\tau<\infty$, then
+$M_{n\wedge\tau}\to M_\tau$ as $n\to\infty$, and it is tempting to conclude that
+$\E[M_\tau]=\E[M_0]$. That can fail.
+
+\begin{example}[The doubling strategy]\label{exa:mg-doubling}
+A gambler plays a fair game ($p=\frac12$). She stakes $1$ in the first round, doubles her
+stake after every loss, and stops after her first win. Formally, let $S$ be the symmetric walk
+started at $0$, $T=\inf\{n\ge1:X_n=1\}$ the round of the first win, and
+$H_k=2^{k-1}\1_{\{T\ge k\}}$, which is predictable since
+$\{T\ge k\}=\{X_1=\dots=X_{k-1}=-1\}\in\F_{k-1}$. Her gains $G=H\cdot S$ satisfy
+$G_n=-(1+2+\dots+2^{n-1})=-(2^n-1)$ for $n<T$, and $G_n=-(2^{T-1}-1)+2^{T-1}=1$ for
+$n\ge T$. Since $\Prob(T>n)=2^{-n}$, $T$ is finite almost surely (indeed $\E[T]=2$), so
+$G_T=1$ almost surely and $\E[G_T]=1\ne0=\E[G_0]$. At every fixed $n$, however,
+\[
+  \E[G_n]=\big(1-2^{-n}\big)\cdot1+2^{-n}\cdot\big(1-2^n\big)=0,
+\]
+as \cref{thm:mg-transform} demands: the rare run of $n$ losses costs exactly what the
+frequent small wins earn. What fails is the passage $n\to\infty$. The losses $G_{n\wedge T}$
+are unbounded below, and so are the stakes needed to carry the strategy through.
+With a finite bankroll $2^m-1$, the gambler can survive only $m$ losses in a row and must stop
+at $T\wedge m$, a bounded stopping time. She then wins $1$ with probability $1-2^{-m}$ and
+loses $2^m-1$ with probability $2^{-m}$: the expected gain is $0$. At a casino, where the game
+is unfavourable, the same strategy has a negative expected gain that grows with the bankroll
+(\exref{ex:mg-roulette}).
+\end{example}
+
+The next theorem gives conditions under which the passage to the limit is legitimate.
+
+\begin{theorem}[Optional stopping]\label{thm:mg-optional-stopping}
+Let $M$ be a martingale and $\tau$ a stopping time. In each of the following cases, $M_\tau$ is
+integrable and $\E[M_\tau]=\E[M_0]$:
+\begin{enumerate}[label=(\alph*)]
+  \item $\tau$ is bounded: $\tau\le N$ for a constant $N$;
+  \item $\tau<\infty$ almost surely, and the stopped process is bounded: $|M_{n\wedge\tau}|\le K$
+    for all $n$, for a constant $K$;
+  \item $\E[\tau]<\infty$, and the increments are bounded in conditional mean: there is a
+    constant $K$ with $\E\big[|M_k-M_{k-1}|\,\big|\,\F_{k-1}\big]\le K$ for every $k\ge1$ (for
+    instance, $|M_k-M_{k-1}|\le K$).
+\end{enumerate}
+If $M$ is a supermartingale (respectively a submartingale), the same holds with
+$\E[M_\tau]\le\E[M_0]$ (respectively $\ge$).
+\end{theorem}
+
+\begin{proof}
+In each case we let $n\to\infty$ in $\E[M_{n\wedge\tau}]=\E[M_0]$ (\cref{prop:mg-stopped}),
+or in the corresponding inequality.
+
+(a) For $n\ge N$, $M_{n\wedge\tau}=M_\tau$, so there is nothing to prove.
+
+(b) Since $\tau<\infty$ almost surely, $M_{n\wedge\tau}=M_\tau$ for all $n\ge\tau$, so
+$M_{n\wedge\tau}\to M_\tau$ almost surely, and $|M_\tau|\le K$. Dominated convergence gives
+$\E[M_{n\wedge\tau}]\to\E[M_\tau]$.
+
+(c) Let $Y=\sum_{k\ge1}\1_{\{\tau\ge k\}}|M_k-M_{k-1}|$. By monotone convergence, then the
+tower property and taking out the bounded $\F_{k-1}$-measurable factor
+$\1_{\{\tau\ge k\}}$, then positivity,
+\[
+  \E[Y]=\sum_{k\ge1}\E\Big[\1_{\{\tau\ge k\}}\,\E\big[|M_k-M_{k-1}|\,\big|\,\F_{k-1}\big]\Big]
+  \le K\sum_{k\ge1}\Prob(\tau\ge k)=K\,\E[\tau]<\infty ,
+\]
+where the last equality is monotone convergence applied to $\tau=\sum_{k\ge1}\1_{\{\tau\ge k\}}$.
+Writing $M_{n\wedge\tau}=M_0+\sum_{k=1}^{n}\1_{\{\tau\ge k\}}(M_k-M_{k-1})$ as in the proof of
+\cref{prop:mg-stopped}, we get $|M_{n\wedge\tau}|\le|M_0|+Y$ for every $n$, and also
+$|M_\tau|\le|M_0|+Y$. As $\E[\tau]<\infty$, $\tau$ is finite almost surely, so
+$M_{n\wedge\tau}\to M_\tau$ almost surely, and dominated convergence concludes.
+\end{proof}
+
+The three conditions bound the stopped process by an integrable variable, in time (a), in
+size (b), or through finite expected duration and moderate stakes (c); each of the three
+suffices on its own. Read as a statement about games, the theorem says that a fair game
+remains fair under any stopping rule that has bounded time, or bounded credit, or finite
+expected duration with bounded stakes, and that under such a rule an unfavourable game
+offers no way to quit ahead on average. The doubling strategy has
+$\E[T]<\infty$, but its increments $2^{k-1}$ are unbounded and (c) fails; so does (b). In
+continuous time, strategies of this kind can be run within a finite time interval, which is
+why continuous-time models restrict the admissible strategies, for instance to those whose
+wealth is bounded below (\textcite{harrison-pliska}; \cref{ch:11-risk-neutral}).
+
+The optional stopping theorem turns martingales into identities for random sums.
+
+\begin{proposition}[Wald's identities]\label{prop:mg-wald}
+Assume \eqref{eq:mg-indep} with $\xi_1,\xi_2,\dots$ identically distributed and
+integrable, let $\mu=\E[\xi_1]$, $S_n=\xi_1+\dots+\xi_n$, and let $\tau$ be a stopping time
+with $\E[\tau]<\infty$. Then
+\begin{enumerate}[label=(\roman*)]
+  \item $S_\tau$ is integrable and $\E[S_\tau]=\mu\,\E[\tau]$;
+  \item if moreover $\sigma^2=\Var(\xi_1)<\infty$, then $\E\big[(S_\tau-\mu\tau)^2\big]=\sigma^2\,\E[\tau]$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+Let $\eta_k=\xi_k-\mu$ and $M_n=S_n-n\mu=\eta_1+\dots+\eta_n$, a martingale by
+\cref{prop:mg-examples}(i).
+
+(i) Since $\eta_k$ is independent of $\F_{k-1}$,
+$\E\big[|M_k-M_{k-1}|\,\big|\,\F_{k-1}\big]=\E|\eta_k|\le2\E|\xi_1|$. By
+\cref{thm:mg-optional-stopping}(c), $\E[M_\tau]=\E[M_0]=0$, that is,
+$\E[S_\tau-\mu\tau]=0$. As $\mu\tau$ is integrable, so is $S_\tau$, and
+$\E[S_\tau]=\mu\E[\tau]$.
+
+(ii) For $m<n$, $M_{n\wedge\tau}-M_{m\wedge\tau}=\sum_{k=m+1}^{n}\1_{\{\tau\ge k\}}\eta_k$.
+Expand the square. For $j<k$, the variable $U=\1_{\{\tau\ge k\}}\eta_j$ is
+$\F_{k-1}$-measurable and integrable, and $\eta_k$ is independent of $\F_{k-1}$, so
+$\E\big[\1_{\{\tau\ge j\}}\eta_j\1_{\{\tau\ge k\}}\eta_k\big]=\E[U\eta_k]=\E[U]\,\E[\eta_k]=0$. On
+the diagonal, $\{\tau\ge k\}\in\F_{k-1}$ is independent of $\eta_k$, so
+$\E\big[\1_{\{\tau\ge k\}}\eta_k^2\big]=\sigma^2\Prob(\tau\ge k)$. Hence
+\begin{equation}\label{eq:mg-wald-cauchy}
+  \E\big[(M_{n\wedge\tau}-M_{m\wedge\tau})^2\big]=\sigma^2\sum_{k=m+1}^{n}\Prob(\tau\ge k)=\sigma^2\,\E[n\wedge\tau-m\wedge\tau].
+\end{equation}
+Let $n\to\infty$: $M_{n\wedge\tau}\to M_\tau$ almost surely, and Fatou's lemma (a consequence
+of monotone convergence) gives $\E\big[(M_\tau-M_{m\wedge\tau})^2\big]\le\sigma^2\E[\tau-m\wedge\tau]$.
+The right side tends to $0$ as $m\to\infty$ by dominated convergence ($0\le\tau-m\wedge\tau\le\tau$).
+So $M_{m\wedge\tau}\to M_\tau$ in $L^2$, and therefore $\E[M_{m\wedge\tau}^2]\to\E[M_\tau^2]$. By
+\eqref{eq:mg-wald-cauchy} with the pair $(0,m)$ in place of $(m,n)$,
+$\E[M_{m\wedge\tau}^2]=\sigma^2\E[m\wedge\tau]$, which tends to $\sigma^2\E[\tau]$ by monotone
+convergence. Hence $\E[(S_\tau-\mu\tau)^2]=\E[M_\tau^2]=\sigma^2\E[\tau]$.
+\end{proof}
+
+\section{Gambler's ruin}\label{sec:mg-ruin}
+
+Let $S$ be the random walk of \cref{cor:mg-walk}, with up-probability $p\in(0,1)$ and
+$q=1-p$, started at $x$. Fix integers $a<b$ with $a\le x\le b$, and let
+\[
+  \tau=\inf\{n\ge0:S_n\notin(a,b)\}=\inf\{n\ge0:S_n\in\{a,b\}\},
+\]
+the exit time from $(a,b)$; the two infima agree because a walk with steps $\pm1$ cannot jump
+over $a$ or $b$. A gambler with capital $x-a$ who plays until she is ruined or her fortune
+reaches $b$, and a trader with a stop-loss at $a$ and a take-profit at $b$, both face the
+questions: how likely is the exit at $b$, and how long does it take?
+
+\begin{lemma}[The walk leaves every interval]\label{lem:mg-exit}
+There are constants $C$ and $\varrho<1$, depending on $p$, $a$ and $b$, such that
+$\Prob(\tau>n)\le C\varrho^n$ for every $n$. In particular $\tau<\infty$ almost surely, and
+$\E[\tau^j]<\infty$ for every $j\ge1$.
+\end{lemma}
+
+\begin{proof}
+If $x\in\{a,b\}$, then $\tau=0$. Otherwise $b-a\ge2$; let $L=b-a-1\ge1$ and let $A_i$ be the
+event that the $L$ steps $X_{(i-1)L+1},\dots,X_{iL}$ all equal $+1$. If $\tau>(i-1)L$, the walk
+is at a level at least $a+1$ at time $(i-1)L$, and on $A_i$ it climbs, one step at a time, to
+a level at least $a+1+L=b$ by time $iL$; then $\tau\le iL$. Hence
+$\{\tau>mL\}\subseteq A_1^c\cap\dots\cap A_m^c$, and since these events involve disjoint
+blocks of independent steps, $\Prob(\tau>mL)\le(1-p^L)^m$. For any $n$, with
+$m=\lfloor n/L\rfloor\ge n/L-1$, we get $\Prob(\tau>n)\le(1-p^L)^{n/L-1}$: take
+$\varrho=(1-p^L)^{1/L}$ and $C=(1-p^L)^{-1}$. Then
+$\Prob(\tau=\infty)\le\Prob(\tau>n)\to0$, and, by monotone convergence,
+$\E[\tau^j]=\sum_{n\ge0}\big((n+1)^j-n^j\big)\Prob(\tau>n)\le C\sum_{n\ge0}(n+1)^j\varrho^n<\infty$.
+\end{proof}
+
+\begin{theorem}[Gambler's ruin]\label{thm:mg-gamblers-ruin}
+Let $a<b$ and $a\le x\le b$ be integers. The walk started at $x$ leaves $(a,b)$ almost surely,
+and
+\begin{enumerate}[label=(\roman*)]
+  \item if $p=\frac12$, then $\displaystyle\Prob(S_\tau=b)=\frac{x-a}{b-a}$;
+  \item if $p\ne\frac12$, then, with $r=q/p$, $\displaystyle\Prob(S_\tau=b)=\frac{r^x-r^a}{r^b-r^a}$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+By \cref{lem:mg-exit}, $\tau<\infty$ almost surely and $S_\tau\in\{a,b\}$; write
+$\pi=\Prob(S_\tau=b)$. Up to time $\tau$ the walk stays in $[a,b]$, so the stopped processes
+below are bounded and \cref{thm:mg-optional-stopping}(b) applies.
+
+(i) $S$ is a martingale (\cref{cor:mg-walk}(a)) and $|S_{n\wedge\tau}|\le\max(|a|,|b|)$. So
+$x=\E[S_\tau]=b\pi+a(1-\pi)$, and $\pi=(x-a)/(b-a)$.
+
+(ii) $r^{S_n}$ is a martingale (\cref{cor:mg-walk}(b)), and $0<r^{S_{n\wedge\tau}}\le\max(r^a,r^b)$.
+So $r^x=\E[r^{S_\tau}]=r^b\pi+r^a(1-\pi)$. Since $r\ne1$ and $a\ne b$, $r^b\ne r^a$, and solving
+for $\pi$ gives (ii).
+\end{proof}
+
+As $p\to\frac12$, $r\to1$ and the formula in (ii) tends to the one in (i) (l'H\^opital's rule
+in $r$). The difference between the two is dramatic far from $p=\frac12$, and already
+noticeable near it. At roulette, a bet on red wins with probability $p=\frac{18}{37}$, so
+$r=\frac{19}{18}$. A player who starts with $x=100$ dollars, with $a=0$, and bets one dollar per
+spin until she is ruined or has doubled her money ($b=200$) succeeds with probability
+$(r^{100}-1)/(r^{200}-1)\approx0.0045$, against $\frac12$ in a fair game. Betting the $100$
+dollars on a single spin succeeds with probability $\frac{18}{37}\approx0.486$. In an
+unfavourable game, timid play is far worse than bold play, which is optimal in subfair
+red-and-black \citep{dubins-savage}.
+
+\begin{proposition}[Expected duration]\label{prop:mg-duration}
+In the setting of \cref{thm:mg-gamblers-ruin},
+\begin{enumerate}[label=(\roman*)]
+  \item if $p=\frac12$, then $\E[\tau]=(x-a)(b-x)$;
+  \item if $p\ne\frac12$, then $\displaystyle\E[\tau]=\frac{(b-a)\,\Prob(S_\tau=b)-(x-a)}{p-q}$,
+    with $\Prob(S_\tau=b)$ given by \cref{thm:mg-gamblers-ruin}(ii).
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+$\E[\tau]<\infty$ by \cref{lem:mg-exit}, so Wald's identities (\cref{prop:mg-wald}) apply to
+$S_n-x=X_1+\dots+X_n$, with $\mu=p-q$ and $\sigma^2=4pq$. Write $\pi=\Prob(S_\tau=b)$.
+
+(ii) By \cref{prop:mg-wald}(i),
+$(p-q)\E[\tau]=\E[S_\tau-x]=(b-x)\pi+(a-x)(1-\pi)=(b-a)\pi-(x-a)$. Divide by $p-q\ne0$.
+
+(i) Here $\mu=0$ and $\sigma^2=1$, and \cref{prop:mg-wald}(ii) gives, with $\pi=(x-a)/(b-a)$,
+\begin{align*}
+  \E[\tau]=\E[(S_\tau-x)^2]&=(b-x)^2\pi+(x-a)^2(1-\pi)\\
+  &=\frac{(b-x)(x-a)\big((b-x)+(x-a)\big)}{b-a}=(x-a)(b-x).\qedhere
+\end{align*}
+\end{proof}
+
+From the midpoint of an interval of length $d=b-a$, the symmetric walk needs on average
+$d^2/4$ steps to leave it: distance grows like the square root of time, the diffusive scaling
+behind the step size $1/\sqrt n$ of \cref{def:bm-scaled}. For Brownian motion, the exit time
+from $(a,b)$ started at $0$ has mean $-ab$ (\exref{ex:bm-exit}), the continuous counterpart of
+(i). Other martingales of the walk give the variance of $\tau$ and its whole law
+(\exref{ex:mg-variance}, \exref{ex:mg-laplace}); \exref{ex:mg-ruin-sim} checks the formulas by
+simulation.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch02-ruin}
+  \caption{Gambler's ruin on $(a,b)=(0,20)$. Left: the probability of exiting at $b$
+    (\cref{thm:mg-gamblers-ruin}). Right: the expected duration (\cref{prop:mg-duration}).
+    Lines: the formulas; circles: Monte Carlo estimates from $4000$ walks per point. A bias of
+    five percentage points either way moves the exit probability from the centre by about
+    $0.4$.}
+  \label{fig:mg-ruin}
+\end{figure}
+
+\demo{02-martingales.ipynb}{gambler's ruin with sliders for $p$, the starting point and the
+target: simulated exit probabilities and durations against the formulas.}
+
+Letting the target recede to infinity tells us whether the walk ever reaches a given level.
+
+\begin{corollary}[Hitting a level]\label{cor:mg-hitting}
+Let $a<x$ be integers and $\sigma_a=\inf\{n\ge0:S_n=a\}$. Then
+\[
+  \Prob(\sigma_a<\infty)=1\ \text{ if } p\le\tfrac12,\qquad
+  \Prob(\sigma_a<\infty)=(q/p)^{x-a}\ \text{ if } p>\tfrac12 .
+\]
+In particular, the symmetric walk reaches every level almost surely (by symmetry, levels above
+$x$ as well), but the expected time to reach a level other than $x$ is infinite.
+\end{corollary}
+
+\begin{proof}
+For $b>x$, let $E_b$ be the event that the walk hits $a$ before $b$. To reach $b+1$ the walk
+must first pass through $b$, so $E_b\subseteq E_{b+1}$. Each $E_b$ is contained in
+$\{\sigma_a<\infty\}$; conversely, if $\sigma_a<\infty$, the walk stays below some level up to
+time $\sigma_a$, and $E_b$ occurs for every $b$ above that level. So
+$\{\sigma_a<\infty\}=\bigcup_bE_b$, and by continuity of probability along increasing events,
+$\Prob(\sigma_a<\infty)=\lim_{b\to\infty}\big(1-\Prob(S_\tau=b)\big)$ with $\tau$ the exit time
+from $(a,b)$. By \cref{thm:mg-gamblers-ruin} this limit is $\lim_b\frac{b-x}{b-a}=1$ if $p=\frac12$,
+and $\lim_b\frac{r^b-r^x}{r^b-r^a}$ if $p\ne\frac12$, which equals $1$ if $r>1$ ($p<\frac12$)
+and $r^x/r^a=(q/p)^{x-a}$ if $r<1$ ($p>\frac12$).
+
+For $p=\frac12$, suppose that a level $c\ne x$ had $\E[\sigma_c]<\infty$. The walk is a martingale
+with increments bounded by $1$, so \cref{thm:mg-optional-stopping}(c) would give
+$\E[S_{\sigma_c}]=x$, while $S_{\sigma_c}=c$.
+\end{proof}
+
+The last statement is the doubling paradox in another guise. For the symmetric walk started at
+$0$, the rule ``bet one dollar per round until you are one dollar ahead'' succeeds almost
+surely, with bounded stakes, yet $\E[S_{n\wedge\sigma_1}]=0$ for every $n$. The price is time
+and credit: $\E[\sigma_1]=\infty$, and the stopped walk is unbounded below. A gambler whose
+credit stops at $a<0$ succeeds with probability $\frac{-a}{1-a}$ and otherwise loses $-a$,
+for an expected gain of exactly zero. In a favourable game, by contrast, every level above the
+start is reached in finite expected time (\exref{ex:mg-target}).
+
+\furtherreading
+\textcite{williams}, Chapters~10--12, is the classic short introduction to discrete-time
+martingales; optional stopping and the hitting times of the simple random walk are in
+Sections~10.9--10.12. \textcite{durrett}, Chapter~4, covers the same ground in more depth, with
+random-walk applications in Section~4.8. \textcite{shreve1}, Chapters~2 and~5, treats
+martingales and the first-passage times of the random walk with the coin-toss notation used
+in finance. \textcite{grimmett-stirzaker}, Chapter~12, has many more examples, and
+\textcite{follmer-schied}, Chapter~5, builds discrete-time arbitrage theory on martingale
+transforms.

@@ -1,0 +1,169 @@
+% Exercises for Chapter 1 (Probability as information). Statements only: solutions are kept privately.
+% Throughout, the coin-toss model is the one of the notes: Omega_n = {H,T}^n with the p-coin,
+% the filtration (F_k), and the stock S_k = S_0 u^{H_k} d^{k - H_k}.
+
+\begin{exercise}[Algebras and $\sigma$-algebras]\label{ex:pr-algebras}
+\easy An \emph{algebra} on a set $\Omega$ is a collection of subsets that contains $\Omega$
+and is closed under complements and \emph{finite} unions.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that on a finite set $\Omega$ every algebra is a $\sigma$-algebra.
+  \item Let $\Omega=\N$ and let $\mathcal A$ be the collection of sets $A\subseteq\N$ such that
+    $A$ is finite or $\N\setminus A$ is finite. Show that $\mathcal A$ is an algebra but not a
+    $\sigma$-algebra.
+  \item Let $\Omega=\R$ and let $\mathcal C$ be the collection of sets $A\subseteq\R$ such that
+    $A$ is countable or $\R\setminus A$ is countable. Show that $\mathcal C$ is a
+    $\sigma$-algebra, that $\mathcal C\subseteq\mathcal B(\R)$, and that the identity map
+    $X(\omega)=\omega$ is not $\mathcal C$-measurable.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Information in two tosses]\label{ex:pr-two-tosses}
+\easy Take $n=2$, $S_0=4$, $u=\frac32$ and $d=\frac12$, as in \noteref{exa:pr-two-tosses}, and
+let $D=\1_{\{S_2=3\}}$ be the indicator that the two tosses differ.
+\begin{enumerate}[label=(\alph*)]
+  \item List the atoms of $\sigma(D)$ and of $\sigma(S_1,S_2)$, and all the events in
+    $\sigma(D)$.
+  \item For each of $S_2/S_1$, $|S_2-S_1|$ and $\1_{\{S_2\ge S_0\}}$, decide whether it is
+    $\F_1$-measurable and whether it is $\sigma(S_2)$-measurable.
+  \item For which $p\in(0,1)$ are $D$ and $S_1$ independent under the $p$-coin? For the other
+    values of $p$, compute $\Prob(S_1=6\mid D=1)$ and explain in words why learning that the
+    tosses differ changes the odds of a first head.
+  \item Under the $\frac12$-coin, let $A=\{\omega_1=H\}$, $B=\{\omega_2=H\}$ and
+    $C=\{\omega_1=\omega_2\}$. Show that any two of these events are independent, but the
+    three are not.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Conditioning on four points]\label{ex:pr-four-points}
+\easy Let $\Omega=\{a,b,c,d\}$ with $\F=2^\Omega$ and
+$\Prob(a)=\frac18$, $\Prob(b)=\frac38$, $\Prob(c)=\frac13$, $\Prob(d)=\frac16$. Define
+\[
+  X=(1,1,-1,-1),\qquad Y=(3,-1,2,-1),
+\]
+listing the values at $a,b,c,d$ in this order.
+\begin{enumerate}[label=(\alph*)]
+  \item Give the atoms of $\sigma(X)$ and of $\sigma(Y)$.
+  \item Compute $\E[Y\mid X]$, write it as a function of $X$, and check the partial-averaging
+    property on every event of $\sigma(X)$.
+  \item Compute $\E[X\mid Y]$ and write it as $\varphi(Y)$.
+  \item Check the variance decomposition $\Var(Y)=\E\big[(Y-\E[Y\mid X])^2\big]+\Var(\E[Y\mid X])$.
+  \item Compute $\E\big[\E[Y\mid X]\,\big|\,Y\big]$ and $\E\big[\E[Y\mid Y]\,\big|\,X\big]$. Are
+    they equal? Why does the tower property not apply?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[The Doob--Dynkin lemma]\label{ex:pr-doob-dynkin}
+\medium Let $Y$ be a random variable and $X$ a $\sigma(Y)$-measurable random variable. We show
+that $X=f(Y)$ for some Borel function $f:\R\to\R$. You may use that the pointwise
+$\limsup$ of a sequence of Borel functions is Borel (as a function with values in
+$[-\infty,\infty]$).
+\begin{enumerate}[label=(\alph*)]
+  \item Prove the claim when $X$ takes finitely many values $x_1,\dots,x_m$. \emph{Hint:} each
+    $\{X=x_i\}$ equals $\{Y\in B_i\}$ for some Borel $B_i$; make the $B_i$ disjoint.
+  \item Prove it in general, by approximating $X$ with
+    $X_j=\max\big(-j,\min(j,2^{-j}\lfloor2^jX\rfloor)\big)$.
+  \item Deduce that for every integrable $Z$ there is a Borel function $\varphi$ with
+    $\E[Z\mid Y]=\varphi(Y)$, and that $\varphi$ is unique up to a Borel set $B$ with
+    $\Prob(Y\in B)=0$. (This is how $\E[Z\mid Y=y]:=\varphi(y)$ is defined when every event
+    $\{Y=y\}$ has probability zero.)
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Conditioning with a density]\label{ex:pr-density}
+\medium Let $(X,Y)$ have a joint density $f(x,y)$ on $\R^2$, with $\E|X|<\infty$, and let
+$f_Y(y)=\int_\R f(x,y)\,\dd x$ be the density of $Y$. Define
+\[
+  \varphi(y)=\frac{\int_\R x\,f(x,y)\,\dd x}{f_Y(y)}\ \text{ if }0<f_Y(y)<\infty,\qquad
+  \varphi(y)=0\ \text{ otherwise}.
+\]
+You may use Fubini's theorem (e.g.\ Durrett, \emph{Probability: Theory and Examples},
+Section~1.7) and that $\varphi$ is Borel.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $\varphi(Y)=\E[X\mid Y]$.
+  \item Compute $\E[X\mid Y]$ when $f(x,y)=x+y$ on $[0,1]^2$ and $f=0$ elsewhere. Check that
+    $\E\big[\E[X\mid Y]\big]=\E[X]$.
+  \item Let $(X,Y)$ be a centered Gaussian vector with $\Var(X)=\Var(Y)=1$ and correlation
+    $\rho\in(-1,1)$. Show that the conditional law of $X$ given $Y=y$ (the density
+    $x\mapsto f(x,y)/f_Y(y)$) is $\mathcal N(\rho y,1-\rho^2)$, and deduce $\E[X\mid Y]$. Why
+    does linear regression of $X$ on $Y$ lose nothing here
+    (\noteref{prop:pr-projection})?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Conditional variance and random sums]\label{ex:pr-conditional-variance}
+\medium For $X\in L^2$ and a $\sigma$-algebra $\mathcal G$, define the conditional variance
+$\Var(X\mid\mathcal G)=\E\big[(X-\E[X\mid\mathcal G])^2\,\big|\,\mathcal G\big]$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $\Var(X\mid\mathcal G)=\E[X^2\mid\mathcal G]-\E[X\mid\mathcal G]^2$ and that
+    $\Var(X)=\E[\Var(X\mid\mathcal G)]+\Var(\E[X\mid\mathcal G])$.
+  \item Let $A_1,A_2,\dots$ be a \emph{countable} partition of $\Omega$ into events. Show that
+    $\sigma(A_1,A_2,\dots)$ consists of the unions of atoms, and that for integrable $X$,
+    \[
+      \E[X\mid\sigma(A_1,A_2,\dots)]=\sum_{i:\,\Prob(A_i)>0}\frac{\E[X\1_{A_i}]}{\Prob(A_i)}\1_{A_i}.
+    \]
+  \item An insurer receives $N$ claims in a year, of sizes $\xi_1,\xi_2,\dots$, and pays
+    $S=\sum_{i=1}^N\xi_i$ (with $S=0$ if $N=0$). The $\xi_i$ are \iid with mean $\mu$ and variance
+    $s^2$, and $N$, with values in $\N$ and $\E[N^2]<\infty$, is independent of
+    $(\xi_1,\xi_2,\dots)$, meaning that $N$ is independent of $(\xi_1,\dots,\xi_m)$ for every
+    $m$. Show that $\E[S\mid N]=\mu N$ and $\Var(S\mid N)=s^2N$, and deduce $\E[S]$ and
+    $\Var(S)$. Evaluate them when $N$ is Poisson with mean $\lambda$.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Changing the coin]\label{ex:pr-coin-measures}
+\medium On $\Omega_n$, let $\Prob$ be the $p$-coin and $\Q$ the $\tilde p$-coin, with
+$p,\tilde p\in(0,1)$, $q=1-p$, $\tilde q=1-\tilde p$, so that $Z=\dd\Q/\dd\Prob$ is given by
+\noteref{eq:pr-coin-density}.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that the density process is
+    $Z_k=\E[Z\mid\F_k]=(\tilde p/p)^{H_k}(\tilde q/q)^{k-H_k}$, and check directly that
+    $\Q(A)=\E[Z_k\1_A]$ for every atom $A$ of $\F_k$.
+  \item Using only $Z$ and Bayes' formula (\noteref{prop:pr-bayes}), show that
+    $\Q(\omega_{k+1}=H\mid\F_k)=\tilde p$. Explain why this proves, once more, that under $\Q$
+    the tosses are independent with probability $\tilde p$ of heads.
+  \item Compute $\EQ[S_n\mid\F_k]$ in two ways: by the independence lemma under $\Q$, and by
+    Bayes' formula with $\E[Z S_n\mid\F_k]$ computed under $\Prob$.
+  \item Let $r>-1$ with $d<1+r<u$. Find the unique $\tilde p\in(0,1)$ such that
+    $\EQ[S_{k+1}\mid\F_k]=(1+r)S_k$ for every $k$. (This is the risk-neutral probability of
+    \cref{ch:04-binomial}.)
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Bayes' formula on a general space]\label{ex:pr-bayes-general}
+\hard Let $Z\ge0$ with $\E[Z]=1$, $\Q(A)=\E[Z\1_A]$, $\mathcal G\subseteq\F$ a
+$\sigma$-algebra, and $X$ a random variable with $\EQ|X|=\E[Z|X|]<\infty$. Fix versions of
+$\E[Z\mid\mathcal G]$ and $\E[ZX\mid\mathcal G]$, and let $D=\{\E[Z\mid\mathcal G]>0\}$. You
+may use the properties in \noteref{prop:pr-condexp-properties} and the identity in
+\noteref{eq:pr-takeout-positive}, with $A=\Omega$: $\E[WV]=\E\big[W\,\E[V\mid\mathcal G]\big]$ in $[0,\infty]$
+for every $\mathcal G$-measurable $W\ge0$ and every integrable $V\ge0$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $\Q(D^c)=0$ and that $Z=0$ almost surely on $D^c$.
+  \item Show that $Y=\1_D\,\E[ZX\mid\mathcal G]/\E[Z\mid\mathcal G]$ is $\Q$-integrable and is a
+    version of $\EQ[X\mid\mathcal G]$, the conditional expectation computed in
+    $(\Omega,\F,\Q)$.
+  \item Show that if $Z>0$ almost surely, then $\Prob(D^c)=0$, so that Bayes' formula holds
+    $\Prob$-almost surely. Give an example on a two-point space where $\Prob(D^c)>0$ and the
+    ratio in \noteref{eq:pr-bayes} is $0/0$ on $D^c$.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Importance sampling a rare event]\label{ex:pr-importance}
+\medium This is a computational exercise. Let $X\sim\mathcal N(0,1)$ under $\Prob$, and
+$\pi=\Prob(X>4)$, a probability of the order of $3\times10^{-5}$.
+\begin{enumerate}[label=(\alph*)]
+  \item The plain Monte Carlo estimator averages $\1_{\{X_i>4\}}$ over $M$ independent samples.
+    Give its relative standard error, its standard deviation divided by $\pi$, for
+    $M=10^5$, and the probability that it returns $0$.
+  \item Let $\Q$ be the measure of \noteref{prop:pr-gaussian-shift} with parameter $\theta$, so
+    that $X\sim\mathcal N(\theta,1)$ under $\Q$. Show that
+    $\pi=\EQ\big[\1_{\{X>4\}}e^{-\theta X+\theta^2/2}\big]$, and that the second moment of the
+    variable inside is $e^{\theta^2}\big(1-N(4+\theta)\big)$, where $N$ is the standard normal
+    distribution function.
+  \item Implement the estimator that averages $\1_{\{Y_i>4\}}e^{-\theta Y_i+\theta^2/2}$ over
+    $M=10^5$ independent samples $Y_i\sim\mathcal N(\theta,1)$, for $\theta=0,1,\dots,6$.
+    Report the estimates with $95\%$ confidence intervals, and compare the empirical relative
+    errors with those predicted by (b).
+  \item Find numerically the $\theta$ that minimizes the variance in (b), and explain why both
+    $\theta$ too small and $\theta$ too large are bad.
+\end{enumerate}
+\end{exercise}

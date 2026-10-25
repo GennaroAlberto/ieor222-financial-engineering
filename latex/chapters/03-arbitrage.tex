@@ -1,6 +1,603 @@
-\begin{planned}
-  \item bonds, stocks, forwards and options; arbitrage and the no-dominance principle
-  \item put--call parity; bounds on option prices; monotonicity and convexity in the strike; butterfly arbitrage
-  \item the Carr--Madan formula: static replication of a smooth payoff with calls and puts
-  \item demo: an arbitrage checker for a quoted call-price curve
-\end{planned}
+% Chapter 3: Arbitrage and static replication.
+
+How much can be said about the price of an option without any model for the price of
+the underlying asset? More than one might expect. If no portfolio can produce something
+out of nothing, the prices of related contracts must satisfy a whole network of
+relations: the forward price is fixed, calls and puts are tied by parity, and the price
+of a call, as a function of the strike, is nonincreasing, convex, and squeezed between
+two lines. Every relation is proved in the same way: compare two payoffs state by state, then
+compare their prices. And every relation comes with a trade that makes money when the
+relation fails.
+
+The chapter ends with static replication. A smooth payoff $f(S_T)$ is a combination of a
+bond, a forward and a continuum of puts and calls (the Carr--Madan formula), so its price
+is determined by option prices across strikes. Read the other way, these prices determine
+the distribution that the market implicitly assigns to $S_T$. What no-arbitrage arguments
+cannot do is single out one price for a call: that takes a model, and
+\cref{ch:04-binomial} builds the first one.
+
+\section{Assets, positions and payoffs}\label{sec:arb-market}
+
+There are two dates: today, $0$, and a fixed horizon $T>0$. What happens at $T$ is
+uncertain, and the uncertainty is described by a probability space $(\Omega,\F,\Prob)$,
+where $\Prob$ is the real-world measure. In this chapter the probabilities themselves play
+almost no role: only which events have probability zero will matter. The following assets
+are traded at time $0$, at prices known at time $0$.
+
+\begin{itemize}
+  \item \emph{The zero-coupon bond} pays $1$ at time $T$ in every state and costs $B>0$ at
+    time $0$. Buying bonds is lending; selling bonds is borrowing.
+  \item \emph{The stock} costs $S_0>0$ at time $0$ and is worth $S_T$ at time $T$, a random
+    variable with $S_T\ge0$ (limited liability: a share cannot be worth less than nothing).
+    It pays no dividend between $0$ and $T$.
+  \item \emph{European options.} A \emph{call} with strike $K\ge0$ and maturity $T$ gives its
+    holder the right, but not the obligation, to buy one share at time $T$ for the price $K$.
+    The holder exercises it exactly when $S_T>K$, so the call pays $(S_T-K)^+$. A \emph{put}
+    gives the right to sell one share for $K$ and pays $(K-S_T)^+$. Their prices at time $0$
+    are $C(K)$ and $P(K)$; the maturity is the same for all options and is left out of the
+    notation.
+  \item \emph{Forward contracts.} A forward with delivery price $K$ is the obligation to buy
+    one share at time $T$ for $K$. It pays $S_T-K$, which can be negative.
+\end{itemize}
+
+\paragraph{Interest convention.} Interest is compounded once per unit of time, as in the
+binomial model of \cref{ch:04-binomial}, where the unit of time is one period: a dollar
+deposited at time $0$ at the rate $r>-1$ grows to $(1+r)^T$ at time $T$, so
+\begin{equation}\label{eq:arb-bond}
+  B=(1+r)^{-T}.
+\end{equation}
+With continuous compounding, used from \cref{ch:06-black-scholes-formula} on, $B=e^{-rT}$
+instead. Every result of this chapter is stated in terms of $B$, so it holds verbatim under
+either convention. Usually $r\ge0$, that is $B\le1$, but we never use this unless we say so.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch03-payoffs}
+  \caption{Payoffs at time $T$, as functions of $S_T$, of a long call, a long put and a long
+    forward with strike $K$, and of a butterfly: long one call at $K_1$ and one at $K_3$,
+    short two at $K_2=\frac12(K_1+K_3)$. The payoff of a short position is the negative.}
+  \label{fig:arb-payoffs}
+\end{figure}
+
+\paragraph{Frictionless markets and static portfolios.} We work in an idealized market:
+(i) every asset can be bought or sold in any real quantity; (ii) assets are bought and sold
+at the same price (no bid--ask spread) and without transaction costs; (iii) every contract
+is honoured. A \emph{static portfolio} holds fixed quantities $\theta_1,\dots,\theta_n$ of
+traded assets from time $0$ to time $T$. If asset $i$ costs $\pi_i$ and pays $X_i$,
+assumptions (i) and (ii) make the cost and the payoff of the portfolio linear:
+\[
+  v=\sum_{i=1}^n\theta_i\pi_i,\qquad V=\sum_{i=1}^n\theta_iX_i .
+\]
+A holding $\theta_i>0$ is a \emph{long} position, and $\theta_i<0$ a \emph{short} one. Being
+short an option means having written it: the writer of a call receives $C(K)$ today and
+pays $(S_T-K)^+$ at $T$. Being short the stock means having borrowed a share and sold it
+for $S_0$; at time $T$ the short seller buys a share back for $S_T$ and returns it to the
+lender, so the payoff is $-S_T$.
+
+\section{Arbitrage}\label{sec:arb-arbitrage}
+
+\begin{definition}[Arbitrage]\label{def:arb-arbitrage}
+A static portfolio with cost $v$ and payoff $V$ is an \emph{arbitrage} if $V\ge0$ almost
+surely and either
+\begin{enumerate}[label=(\alph*)]
+  \item $v<0$, or
+  \item $v=0$ and $\Prob(V>0)>0$.
+\end{enumerate}
+The market is \emph{free of arbitrage} if no portfolio of traded assets is an arbitrage.
+\end{definition}
+
+An arbitrage of type (a) brings money today against a position that is never a liability;
+one of type (b) is a free lottery ticket. Since the bond is traded, an arbitrage of type (a)
+yields one of type (b): adding $-v/B$ bonds gives a portfolio that costs nothing and pays
+$V-v/B\ge-v/B>0$ almost surely. (The converse fails in general: a lottery ticket need not
+bring money today.) So the market is free of arbitrage exactly when every portfolio that
+costs nothing and never loses has a payoff equal to zero almost surely: there is no free
+lunch.
+
+\begin{remark}[What the probability does]\label{rem:arb-model-free}
+$\Prob$ enters \cref{def:arb-arbitrage} only through its null sets. Replacing $\Prob$ by an
+equivalent measure (\cref{def:pr-equivalent}) changes neither the arbitrages nor anything
+deduced from their absence. In particular, the probabilities that investors assign to
+future states, and their attitudes towards risk, play no role. The relations of
+\cref{sec:arb-relations} follow from inequalities between payoffs that hold in every state,
+so they hold whatever $\Prob$ is: they are \emph{model-free}.
+\end{remark}
+
+\begin{proposition}[No dominance and the law of one price]\label{prop:arb-dominance}
+Assume that the market is free of arbitrage, and consider two portfolios with costs
+$v,\tilde v$ and payoffs $V,\tilde V$.
+\begin{enumerate}[label=(\roman*)]
+  \item (No dominance) If $V\ge\tilde V$ almost surely, then $v\ge\tilde v$. If moreover
+    $\Prob(V>\tilde V)>0$, then $v>\tilde v$.
+  \item (Law of one price) If $V=\tilde V$ almost surely, then $v=\tilde v$.
+\end{enumerate}
+In particular, a portfolio whose payoff is nonnegative has a nonnegative cost; and if a
+portfolio \emph{replicates} a traded asset, that is, has the same payoff almost surely, its
+cost is the price of the asset.
+\end{proposition}
+
+\begin{proof}
+(i) Hold the first portfolio and short the second. This costs $v-\tilde v$ and pays
+$V-\tilde V\ge0$ almost surely. If $v<\tilde v$, it is an arbitrage of type (a); if
+$v=\tilde v$ and $\Prob(V>\tilde V)>0$, it is an arbitrage of type (b). Both are excluded.
+(ii) Apply (i) twice, exchanging the roles of the two portfolios. The last two claims are
+(i) with the empty portfolio as the second portfolio, and (ii) applied to the replicating
+portfolio and to the portfolio that holds one unit of the asset.
+\end{proof}
+
+\begin{remark}[From a payoff inequality to a price relation, and back]\label{rem:arb-recipe}
+Every result of \cref{sec:arb-relations} follows the same recipe. To prove a price
+relation, find two portfolios whose payoffs are ordered in every state, and apply
+\cref{prop:arb-dominance}. To exploit a violation of the relation, run the proof backwards:
+if $V\ge\tilde V$ in every state but the quotes have $v<\tilde v$, buy the cheap portfolio
+and sell the expensive one. This collects $\tilde v-v>0$ today, and the position that
+remains, $V-\tilde V$, is never a liability. The art is in finding the two portfolios.
+\end{remark}
+
+A second way to rule out arbitrage is to exhibit prices that are expectations.
+
+\begin{definition}[Pricing measure]\label{def:arb-pricing-measure}
+A probability measure $\Q$ on $(\Omega,\F)$, equivalent to $\Prob$, is a \emph{pricing
+measure} if every traded payoff $X$ is $\Q$-integrable and has price $B\,\EQ[X]$ at time $0$.
+\end{definition}
+
+For the stock, $B\,\EQ[S_T]=S_0$: under $\Q$ the stock earns on average the same return as
+the bond. This is why a pricing measure is also called a \emph{risk-neutral measure}. When
+$\Omega$ is finite and every state has positive probability, $q(\omega)=B\,\Q(\{\omega\})$
+is the price that $\Q$ assigns to a claim paying $1$ in the state $\omega$ and nothing
+otherwise (it is a market price if that claim is traded or replicable); these numbers are
+called \emph{state prices}.
+
+\begin{lemma}\label{lem:arb-pricing-measure}
+If a pricing measure exists, the market is free of arbitrage. It remains so after adding a
+new asset with a $\Q$-integrable payoff $X$ and price $B\,\EQ[X]$.
+\end{lemma}
+
+\begin{proof}
+By linearity, a portfolio with payoff $V$ costs $v=B\,\EQ[V]$. If $V\ge0$ $\Prob$-almost
+surely, then also $\Q$-almost surely, because the two measures have the same null sets;
+hence $v\ge0$, which excludes type (a). If moreover $v=0$, then $\EQ[V]=0$ for a
+nonnegative $V$, so $V=0$ $\Q$-almost surely, hence $\Prob$-almost surely, which excludes
+type (b). For the second claim, note that $\Q$ is still a pricing measure for the enlarged
+market.
+\end{proof}
+
+The converse is the \emph{fundamental theorem of asset pricing}: in a one-period market with
+finitely many traded assets, absence of arbitrage implies that a pricing measure exists. It
+is proved for the binomial model in \cref{ch:04-binomial} (\cref{thm:bin-ftap}) and in
+general in \textcite{follmer-schied}, Section~1.2. \textcite{harrison-pliska} proved the
+multi-period version on a finite probability space and developed its continuous-time
+counterpart, and \textcite{dalang-morton-willinger} extended the discrete-time theorem to
+general probability spaces. We do not need it here. The relations of \cref{sec:arb-relations} use the
+absence of arbitrage directly, and pricing measures appear in \cref{sec:arb-replication}
+only as an assumption.
+
+\section{Price relations from static arbitrage}\label{sec:arb-relations}
+
+In this section the market of \cref{sec:arb-market} is free of arbitrage. The relations were
+derived systematically by \textcite{merton1973} from dominance arguments alone, without any
+model for the stock; put--call parity goes back at least to \textcite{stoll1969}.
+
+\begin{proposition}[Forward price]\label{prop:arb-forward}
+A forward with delivery price $K$ is worth $S_0-BK$ at time $0$. In particular, the delivery
+price that makes it free to enter, the \emph{forward price}, is
+\[
+  F=\frac{S_0}{B}=S_0(1+r)^T .
+\]
+\end{proposition}
+
+\begin{proof}
+One share together with $-K$ bonds (a loan of $BK$) pays $S_T-K$ at time $T$, the payoff of
+the forward. By the law of one price the forward is worth $S_0-BK$, which vanishes exactly
+when $K=S_0/B$.
+\end{proof}
+
+The trade behind the proof is the \emph{cash-and-carry}. Suppose that a dealer agrees today,
+at no cost, to buy the share at time $T$ for $K>F$. Borrow $S_0$ (sell $S_0/B=F$ bonds), buy
+the share, and sell it forward to the dealer. Nothing is paid today; at time $T$ the share
+is delivered for $K$ and the loan is repaid with $F$, a sure profit of $K-F$. If $K<F$, do
+the opposite: short the share, lend the proceeds, and buy forward.
+
+\begin{remark}[Forwards and futures]
+A \emph{futures} contract has the payoff profile of a forward, but gains and losses are paid
+every day as the futures price moves (marking to market). Futures and forward prices
+coincide when interest rates are deterministic and can differ when they are random; see
+\textcite{hull}, Chapter~5. Only forwards appear in these notes.
+\end{remark}
+
+\begin{proposition}[Put--call parity]\label{prop:arb-parity}
+For every strike $K\ge0$,
+\[
+  C(K)-P(K)=S_0-BK .
+\]
+\end{proposition}
+
+\begin{proof}
+For every real $x$, $(x-K)^+-(K-x)^+=x-K$. So a long call and a short put with strike $K$
+pay $S_T-K$, the payoff of a forward, and by the law of one price they cost what the forward
+costs, $S_0-BK$ by \cref{prop:arb-forward}.
+\end{proof}
+
+At the forward price $K=F$ the right-hand side vanishes: a call and a put struck at the
+forward have the same price. If the quotes have $C(K)-P(K)>S_0-BK$, the call is expensive
+relative to the rest: sell the call, buy the put, buy one share and borrow $BK$. This
+collects $C(K)-P(K)-S_0+BK>0$ today, and the position pays
+$-(S_T-K)^++(K-S_T)^++S_T-K=0$ in every state. The reverse inequality is traded in reverse.
+
+\begin{proposition}[Bounds]\label{prop:arb-bounds}
+For every strike $K\ge0$,
+\[
+  (S_0-BK)^+\le C(K)\le S_0,\qquad (BK-S_0)^+\le P(K)\le BK .
+\]
+\end{proposition}
+
+\begin{proof}
+For every $x\ge0$,
+\[
+  0\le(x-K)^+,\quad x-K\le(x-K)^+\le x,\qquad
+  0\le(K-x)^+,\quad K-x\le(K-x)^+\le K,
+\]
+where both upper bounds use $x\ge0$ (and the first one also $K\ge0$). At $x=S_T$, each inequality compares an option with
+nothing, with a long or short forward, with one share, or with $K$ bonds, and
+\cref{prop:arb-dominance} turns it into the corresponding inequality between prices. For
+example, $(S_T-K)^+\ge S_T-K$ and \cref{prop:arb-forward} give $C(K)\ge S_0-BK$.
+\end{proof}
+
+Each bound has its trade. If $C(K)<S_0-BK$, buy the call, short one share and lend $BK$:
+this collects $S_0-BK-C(K)>0$, and the position pays $(S_T-K)^+-S_T+K=(K-S_T)^+\ge0$. If
+$C(K)>S_0$, sell the call and buy one share: this collects $C(K)-S_0$, and the position pays
+$S_T-(S_T-K)^+=\min(S_T,K)\ge0$.
+
+\begin{remark}[Strict bounds and early exercise]\label{rem:arb-strict}
+The second half of \cref{prop:arb-dominance}(i) makes the bounds strict when the payoffs
+differ with positive probability: $C(K)>0$ if $\Prob(S_T>K)>0$, and $C(K)>S_0-BK$ if
+$\Prob(S_T<K)>0$. When $B\le1$, the lower bound gives $C(K)\ge S_0-BK\ge S_0-K$: a European
+call on a stock without dividends is worth at least what exercising it immediately would
+bring. Applied at every date before maturity, provided the bond price for the remaining
+maturity is at most $1$ at every date (interest rates stay nonnegative), this observation of
+\textcite{merton1973} shows that nothing is gained by exercising an American call on such a
+stock before maturity; American options are the subject of \cref{ch:04-binomial}. Nothing similar holds
+for puts, whose lower bound $BK-S_0$ lies below the exercise value $K-S_0$ when $B<1$, nor
+for calls on a stock that pays dividends (\exref{ex:arb-dividend}).
+\end{remark}
+
+The last group of relations concerns the shape of the price as a function of the strike.
+
+\begin{proposition}[Prices as functions of the strike]\label{prop:arb-strike}
+Let $0\le K_1<K_2$ and $\lambda\in[0,1]$. Then
+\begin{enumerate}[label=(\roman*)]
+  \item (monotonicity) $C(K_1)\ge C(K_2)$ and $P(K_1)\le P(K_2)$;
+  \item (slope bounds) $C(K_1)-C(K_2)\le B(K_2-K_1)$ and $P(K_2)-P(K_1)\le B(K_2-K_1)$;
+  \item (convexity) $C\big(\lambda K_1+(1-\lambda)K_2\big)\le\lambda C(K_1)+(1-\lambda)C(K_2)$,
+    and the same holds for $P$.
+\end{enumerate}
+Moreover $C(0)=S_0$ and $P(0)=0$. In words: on $[0,\infty)$, the map $K\mapsto C(K)$ is
+convex and nonincreasing, with difference quotients in $[-B,0]$, and $K\mapsto P(K)$ is
+convex and nondecreasing, with difference quotients in $[0,B]$.
+\end{proposition}
+
+\begin{proof}
+Fix $x\ge0$ and look at the call payoff $K\mapsto(x-K)^+$ as a function of the strike. It is
+nonincreasing; it is convex, as the maximum of the two affine functions $0$ and $x-K$; and
+\begin{equation}\label{eq:arb-spread}
+  (x-K_1)^+-(x-K_2)^+=\min\big((x-K_1)^+,\,K_2-K_1\big)\in[0,K_2-K_1] .
+\end{equation}
+At $x=S_T$ these properties say, in every state: (i) $(S_T-K_1)^+\ge(S_T-K_2)^+$; (ii) the
+\emph{call spread}, long a call at $K_1$ and short a call at $K_2$, pays at most $K_2-K_1$,
+the payoff of $K_2-K_1$ bonds; (iii) with $K_\lambda=\lambda K_1+(1-\lambda)K_2$,
+\begin{equation}\label{eq:arb-butterfly}
+  \lambda(S_T-K_1)^++(1-\lambda)(S_T-K_2)^+-(S_T-K_\lambda)^+\ge0 .
+\end{equation}
+\Cref{prop:arb-dominance} turns each of them into the claimed relation for calls. A call
+with strike $0$ pays $S_T$, so $C(0)=S_0$ by the law of one price; a put with strike $0$
+pays nothing, so $P(0)=0$. The put relations follow in the same way from
+$K\mapsto(K-x)^+$, or from parity: $P(K)=C(K)-S_0+BK$ differs from $C(K)$ by an affine
+function of $K$ with slope $B$. This preserves convexity, turns (ii) for calls into (i) for
+puts, and turns (i) for calls into (ii) for puts.
+\end{proof}
+
+Run backwards, as in \cref{rem:arb-recipe}, the proof gives the trades. If (i) fails, buy
+the call at $K_1$ and sell the call at $K_2$: a call spread that costs less than nothing. If
+(ii) fails, sell that call spread and lend $B(K_2-K_1)$. If (iii) fails, buy the portfolio
+in \eqref{eq:arb-butterfly}.
+
+The portfolio in \eqref{eq:arb-butterfly} is a \emph{butterfly}: long $\lambda$ calls at
+$K_1$ and $1-\lambda$ calls at $K_2$, short one call at the strike $K_\lambda$ in between.
+Its payoff is a tent, zero outside $(K_1,K_2)$ and largest at $K_\lambda$
+(\cref{fig:arb-payoffs}). Convexity of $C$ says that a butterfly never has a negative price.
+
+\begin{example}[A butterfly arbitrage]\label{eg:arb-butterfly}
+Let $S_0=100$ and $B=0.97$, and suppose that calls with strikes $95$, $100$ and $105$ are
+quoted at $8.00$, $5.50$ and $2.60$. The bounds, monotonicity and the slope bounds all hold,
+but $\frac12(8.00+2.60)=5.30<5.50$: the middle call is too expensive. Sell two calls with
+strike $100$ and buy one call with strike $95$ and one with strike $105$. This collects
+$11.00-10.60=0.40$ today. At time $T$ the position pays
+$(S_T-95)^+-2(S_T-100)^++(S_T-105)^+$, which is zero outside $(95,105)$, rises to $5$ at
+$S_T=100$, and is never negative.
+\end{example}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.84\textwidth]{ch03-call-bounds}
+  \caption{No-arbitrage constraints on the call price as a function of the strike. Every
+    admissible curve starts at $C(0)=S_0$, stays in the shaded region between
+    $(S_0-BK)^+$ and $S_0$, and is convex and nonincreasing with slopes in $[-B,0]$
+    (\cref{prop:arb-bounds,prop:arb-strike}). Two such curves are shown, from the lognormal
+    model of \cref{ch:06-black-scholes-formula} with total volatility $v=0.15$ and $v=0.5$;
+    here $S_0=100$ and $B=0.9$.}
+  \label{fig:arb-call-bounds}
+\end{figure}
+
+\paragraph{Checking a quoted curve.} In practice calls are quoted at finitely many strikes
+$0<K_1<\dots<K_n$. Put $K_0=0$ and $c_0=S_0$ (the stock is the call with strike $0$), let
+$c_i$ be the quote at $K_i$, and let
+\[
+  s_i=\frac{c_i-c_{i-1}}{K_i-K_{i-1}},\qquad i=1,\dots,n,
+\]
+be the slopes of the piecewise-linear interpolation of the quotes.
+\Cref{prop:arb-bounds,prop:arb-strike} require
+\begin{equation}\label{eq:arb-checks}
+  -B\le s_1\le s_2\le\dots\le s_n\le0\qquad\text{and}\qquad c_n\ge0 .
+\end{equation}
+Conversely, these finitely many conditions imply every inequality of
+\cref{prop:arb-bounds,prop:arb-strike} between quoted strikes: a piecewise-linear function
+with nondecreasing slopes is convex, and, for instance,
+$c_i=S_0+\sum_{j\le i}s_j(K_j-K_{j-1})\ge S_0-BK_i$. Whether quotes satisfying
+\eqref{eq:arb-checks} allow an arbitrage depends on $\Prob$: with $S_0=100$, $B=1$ and
+$C(100)=5$ they hold, yet if $\Prob(S_T\le100)=1$, selling the call is an arbitrage. The right
+question is whether there is always a model in which such quotes are arbitrage-free. Yes,
+except in one boundary case.
+
+\begin{proposition}[The relations are complete]\label{prop:arb-sufficient}
+Let $c_0=S_0,c_1,\dots,c_n$ satisfy \eqref{eq:arb-checks}, with $c_n=0$ if $s_n=0$. Then
+there are finitely many points $x_j\ge0$ and weights $q_j>0$ such that
+\[
+  \sum_jq_j=B,\qquad \sum_jq_jx_j=S_0,\qquad \sum_jq_j(x_j-K_i)^+=c_i\quad(i=1,\dots,n).
+\]
+Consequently, in the model where $S_T$ takes the values $x_j$ with probabilities $q_j/B$,
+$\Q=\Prob$ is a pricing measure for the bond, the stock and the calls with prices $c_i$, and
+this market is free of arbitrage.
+\end{proposition}
+
+\begin{proof}
+Put weight $B+s_1$ at $0$, weight $s_{i+1}-s_i$ at $K_i$ for $1\le i\le n-1$, and, if
+$s_n<0$, weight $-s_n$ at $x_*=K_n+c_n/(-s_n)$. By \eqref{eq:arb-checks} all weights are
+nonnegative; discard those that vanish. The total weight telescopes to $B$. Let
+$G(K)=\sum_jq_j(x_j-K)^+$. On each interval $[K_{i-1},K_i]$, $1\le i\le n$, no point $x_j$
+lies strictly inside, so $G$ is affine there, with slope
+\[
+  -\sum_{x_j\ge K_i}q_j=-\Big(\sum_{l=i}^{n-1}(s_{l+1}-s_l)-s_n\Big)=s_i .
+\]
+Moreover $G(K_n)=-s_n(x_*-K_n)=c_n$ if $s_n<0$, and $G(K_n)=0=c_n$ if $s_n=0$. Two functions
+that are affine with the same slope on each $[K_{i-1},K_i]$ and agree at $K_n$ agree at every
+$K_i$. Hence $G(K_i)=c_i$ for $i\ge1$, and $G(0)=\sum_jq_jx_j=c_0=S_0$. The last claim is
+\cref{lem:arb-pricing-measure}.
+\end{proof}
+
+If $K_{i-1},K_i,K_{i+1}$ are equally spaced (for $i=1$ this means $K_1=K_2-K_1$, since
+$K_0=0$), the weight $s_{i+1}-s_i$ at $K_i$ is $(c_{i+1}-2c_i+c_{i-1})/(K_{i+1}-K_i)$: the
+price of a butterfly, divided by the spacing. In the boundary case $s_n=0<c_n$ the last call
+spread costs nothing and pays off when $S_T>K_{n-1}$; it is an arbitrage in every model in
+which $\Prob(S_T>K_{n-1})>0$, and in the other models selling the last call is one, but there
+need not be a single portfolio that is an arbitrage in every model (for an instance, see
+\exref{ex:arb-weak}). Apart from this case, every finite set of quotes satisfying
+\eqref{eq:arb-checks}, that is, compatible with \cref{fig:arb-call-bounds}, is consistent
+with some model: no-arbitrage alone gives relations between prices, not prices. (For a
+continuum of strikes one must add $C(K)\to0$ as $K\to\infty$, which holds under any pricing
+measure by dominated convergence.)
+
+\demo{03-arbitrage.ipynb}{perturb a quoted call-price curve and watch which relations break;
+for each violation the checker returns the arbitrage portfolio, its profit and its payoff.}
+
+\section{Static replication}\label{sec:arb-replication}
+
+The relations of \cref{sec:arb-relations} came from payoffs built out of a few calls.
+Conversely, many payoffs can be built out of calls. We start with piecewise-linear ones.
+
+\begin{lemma}[Piecewise-linear payoffs]\label{lem:arb-piecewise}
+Let $g:[0,\infty)\to\R$ be continuous and piecewise linear, with kinks only at
+$0<K_1<\dots<K_m$, and let $w_i=g'(K_i+)-g'(K_i-)$ be the change of slope at $K_i$. Then
+\[
+  g(x)=g(0)+g'(0+)\,x+\sum_{i=1}^mw_i(x-K_i)^+\qquad\text{for all }x\ge0 .
+\]
+Hence $g(S_T)$ is replicated by $g(0)$ bonds, $g'(0+)$ shares and $w_i$ calls with strike
+$K_i$, and its price is $Bg(0)+g'(0+)S_0+\sum_iw_iC(K_i)$.
+\end{lemma}
+
+\begin{proof}
+Both sides are continuous and piecewise linear with kinks only at the $K_i$. They agree at
+$0$ and have the same slope on $[0,K_1]$, and their slopes jump by the same amount $w_i$ at
+each $K_i$, because $(x-K_i)^+$ is linear away from $K_i$ and its slope jumps by $1$ there. So
+they have the same slope on every interval and agree everywhere. The price follows from the
+law of one price.
+\end{proof}
+
+The forward, the call spread and the butterfly are examples; \exref{ex:arb-payoffs} has
+more. A smooth payoff is a limit of piecewise-linear ones, in which the changes of slope
+$w_i$ become $f''(K)\,\dd K$. It is convenient to expand around a point $\kappa>0$ rather than
+around $0$, with puts below $\kappa$ and calls above.
+
+\begin{theorem}[Carr--Madan formula]\label{thm:arb-carr-madan}
+Let $f:(0,\infty)\to\R$ be twice continuously differentiable and $\kappa>0$. For every $x>0$,
+\begin{equation}\label{eq:arb-carr-madan}
+  f(x)=f(\kappa)+f'(\kappa)(x-\kappa)+\int_0^\kappa f''(K)\,(K-x)^+\,\dd K
+  +\int_\kappa^\infty f''(K)\,(x-K)^+\,\dd K .
+\end{equation}
+For each $x$, at most one of the two integrals is nonzero, and it is the integral of a
+continuous function over the bounded interval between $x$ and $\kappa$. If $f$ is twice
+continuously differentiable on $[0,\infty)$, \eqref{eq:arb-carr-madan} also holds at $x=0$.
+\end{theorem}
+
+\begin{proof}
+We use Taylor's formula with integral remainder: for $x,\kappa>0$,
+\begin{equation}\label{eq:arb-taylor}
+  f(x)=f(\kappa)+f'(\kappa)(x-\kappa)+\int_\kappa^xf''(K)\,(x-K)\,\dd K ,
+\end{equation}
+which holds because an integration by parts gives
+\[
+  \int_\kappa^xf''(K)(x-K)\,\dd K=\Big[f'(K)(x-K)\Big]_{K=\kappa}^{K=x}+\int_\kappa^xf'(K)\,\dd K
+  =-f'(\kappa)(x-\kappa)+f(x)-f(\kappa).
+\]
+If $x\ge\kappa$, then $x-K=(x-K)^+$ for $K\in[\kappa,x]$ and $(x-K)^+=0$ for $K>x$, so the
+remainder in \eqref{eq:arb-taylor} is the call integral of \eqref{eq:arb-carr-madan}; the put
+integral vanishes because $(K-x)^+=0$ for $K\le\kappa\le x$. If $x<\kappa$, the remainder is
+$\int_x^\kappa f''(K)(K-x)\,\dd K$, which is the put integral because $(K-x)^+=0$ for $K\le x$;
+the call integral vanishes because $(x-K)^+=0$ for $K\ge\kappa>x$. If $f$ is twice
+continuously differentiable on $[0,\infty)$, the same computation applies at $x=0$.
+\end{proof}
+
+Read as a portfolio, \eqref{eq:arb-carr-madan} replicates $f(S_T)$ statically with
+$f(\kappa)$ bonds, $f'(\kappa)$ forwards with delivery price $\kappa$, and, for every strike
+$K$, $f''(K)\,\dd K$ puts if $K<\kappa$ and calls if $K>\kappa$. All the options are out of
+the money with respect to $\kappa$. The usual choice is the forward price, $\kappa=F$, for
+which the forwards cost nothing (\cref{prop:arb-forward}). The proof uses only Taylor's
+formula, which holds more generally whenever $f'$ is locally absolutely continuous on
+$(0,\infty)$, with $f''$ its derivative defined almost everywhere. The piecewise-linear payoffs of
+\cref{lem:arb-piecewise} are the discrete counterpart: a kink of size $w_i$ at $K_i$ plays the
+role of $f''(K)\,\dd K$.
+
+\paragraph{Finitely many strikes.} Markets quote finitely many strikes. Let
+$k_0<k_1<\dots<k_m$ be a grid of positive strikes with spacing at most $h$, and let $f_h$ be
+the continuous piecewise-linear function equal to $f$ at the grid points and extended
+linearly beyond $k_0$ and $k_m$. By \cref{lem:arb-piecewise}, $f_h(S_T)$ is replicated exactly
+by bonds, shares and calls at the grid strikes; by parity, the calls with strikes below
+$\kappa$ can be exchanged for puts, as in \eqref{eq:arb-carr-madan}. The weight at $k_i$ is the
+change of slope of $f_h$, which for equal spacing is
+$\big(f(k_{i+1})-2f(k_i)+f(k_{i-1})\big)/h\approx f''(k_i)\,h$: a Riemann sum for the strip.
+The replication error vanishes at the grid points and, between two of them, is bounded by
+\begin{equation}\label{eq:arb-interp-error}
+  |f(x)-f_h(x)|\le\frac{h^2}{8}\max_{[k_{i-1},k_i]}|f''|,\qquad x\in[k_{i-1},k_i].
+\end{equation}
+To see this, take $x\in(a,b)=(k_{i-1},k_i)$ and $E=f(x)-f_h(x)$. The function
+$\varphi(t)=f(t)-f_h(t)-E\frac{(t-a)(t-b)}{(x-a)(x-b)}$ vanishes at $a$, $x$ and $b$, so by
+Rolle's theorem, applied twice, $\varphi''(\xi)=0$ for some $\xi\in(a,b)$. That is,
+$E=\frac12f''(\xi)(x-a)(x-b)$, and $|(x-a)(x-b)|\le(b-a)^2/4$. Outside $[k_0,k_m]$ the error is
+that of a linear extrapolation and need not be small: the strikes must cover the region
+where $S_T$ is likely to end up (\cref{fig:arb-carr-madan}).
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch03-carr-madan}
+  \caption{Static replication of $f(x)=-\log(x/\kappa)$, $\kappa=100$, with strikes on the
+    grid $50,75,\dots,200$ (left). The replicated payoff matches $f$ at the strikes, is
+    close to it in between, and is a linear extrapolation outside the grid. Right: the
+    largest error on $[50,200]$ as the spacing $h$ shrinks, against the bound
+    \eqref{eq:arb-interp-error}.}
+  \label{fig:arb-carr-madan}
+\end{figure}
+
+\demo{03-arbitrage.ipynb}{replicate a smooth payoff with a finite strip of puts and calls,
+and move the strike spacing and range to see the replication error.}
+
+To turn \eqref{eq:arb-carr-madan} into a price, we need to price a portfolio holding a
+continuum of options. A pricing measure makes this precise.
+
+\begin{corollary}[Pricing with a strip of options]\label{cor:arb-strip}
+Let $\Q$ be a pricing measure for a market in which calls and puts with every strike $K>0$
+are traded, and assume $\Q(S_T>0)=1$. Let $f$ and $\kappa$ be as in \cref{thm:arb-carr-madan},
+and assume that
+\begin{equation}\label{eq:arb-strip-integrable}
+  \int_0^\kappa|f''(K)|\,P(K)\,\dd K+\int_\kappa^\infty|f''(K)|\,C(K)\,\dd K<\infty .
+\end{equation}
+Then $f(S_T)$ is $\Q$-integrable, and its price $B\,\EQ[f(S_T)]$ (\cref{lem:arb-pricing-measure})
+is
+\begin{equation}\label{eq:arb-strip}
+  Bf(\kappa)+f'(\kappa)(S_0-B\kappa)+\int_0^\kappa f''(K)\,P(K)\,\dd K
+  +\int_\kappa^\infty f''(K)\,C(K)\,\dd K .
+\end{equation}
+\end{corollary}
+
+\begin{proof}
+We use two results on exchanging an expectation with an integral in $K$, for a function
+$g(K,\omega)$ that is jointly measurable (here it is continuous in $K$): \emph{Tonelli's
+theorem}, by which $\EQ\big[\int g\,\dd K\big]=\int\EQ[g]\,\dd K$ whenever $g\ge0$, and
+\emph{Fubini's theorem}, by which the same identity holds whenever
+$\int\EQ\big[|g|\big]\,\dd K<\infty$; see \textcite{durrett}, Section~1.7. Write $X=S_T$, so
+that $P(K)=B\,\EQ[(K-X)^+]$ and $C(K)=B\,\EQ[(X-K)^+]$. By Tonelli's theorem,
+$\EQ\big[\int_0^\kappa|f''(K)|(K-X)^+\,\dd K\big]=B^{-1}\int_0^\kappa|f''(K)|P(K)\,\dd K<\infty$,
+and likewise for the call integral. So both integrals in \eqref{eq:arb-carr-madan}, evaluated
+at $x=X$, are $\Q$-integrable, and so is $f(X)$ by \eqref{eq:arb-carr-madan}, since $X$ is.
+Take $\EQ$ in \eqref{eq:arb-carr-madan}, exchange $\EQ$ with the integrals in $K$ by
+Fubini's theorem, multiply by $B$ and use $B\,\EQ[X]=S_0$.
+\end{proof}
+
+The price \eqref{eq:arb-strip} involves only market prices. A pricing measure is needed to
+give a meaning to a portfolio of infinitely many options, but which one it is does not
+matter: all pricing measures that reproduce the same option prices give $f(S_T)$ the same
+price. Read in the other direction, option prices across strikes pin down the law of $S_T$
+under $\Q$.
+
+\begin{proposition}[Breeden--Litzenberger]\label{prop:arb-breeden-litzenberger}
+Let $\Q$ be a pricing measure for a market in which calls with every strike $K>0$ are traded.
+\begin{enumerate}[label=(\roman*)]
+  \item For every $K>0$, the call price has one-sided derivatives
+    \[
+      \partial^+C(K)=-B\,\Q(S_T>K),\qquad \partial^-C(K)=-B\,\Q(S_T\ge K).
+    \]
+  \item If the law of $S_T$ under $\Q$ has a density $q_T$ that is continuous on an open
+    interval $I\subseteq(0,\infty)$, then $C$ is twice continuously differentiable on $I$ and
+    \[
+      C''(K)=B\,q_T(K),\qquad K\in I .
+    \]
+  \item Conversely, if $C$ is differentiable on an open interval $I\subseteq(0,\infty)$ and
+    $C'$ is locally absolutely continuous on $I$, then on $I$ the law of $S_T$ under $\Q$ has
+    the density $C''/B$: $\Q(a<S_T\le b)=B^{-1}\int_a^bC''(K)\,\dd K$ for $a<b$ in $I$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) For $h>0$, \eqref{eq:arb-spread} gives
+\[
+  \frac{C(K+h)-C(K)}{h}=-B\,\EQ\Big[\frac{\min\big((S_T-K)^+,h\big)}{h}\Big].
+\]
+The variable inside the expectation takes values in $[0,1]$ and converges to
+$\1_{\{S_T>K\}}$ as $h\downarrow0$, so dominated convergence gives the right derivative. In
+the same way, for $0<h<K$,
+$\big(C(K)-C(K-h)\big)/h=-B\,\EQ\big[\min\big((S_T-K+h)^+,h\big)/h\big]$, and the variable
+inside converges to $\1_{\{S_T\ge K\}}$.
+
+(ii) With a density, $\Q(S_T=K)=0$ for every $K$, so by (i) $C$ is differentiable on
+$(0,\infty)$ with $C'(K)=-B\int_K^\infty q_T(y)\,\dd y$. By the fundamental theorem of
+calculus, $C'$ is differentiable at every point of $I$, where $q_T$ is continuous, with
+derivative $B\,q_T(K)$, a continuous function on $I$.
+
+(iii) By (i), $C'(K)=\partial^+C(K)=-B\,\Q(S_T>K)$ for $K\in I$. For $a<b$ in $I$,
+$\Q(a<S_T\le b)=\big(C'(b)-C'(a)\big)/B=B^{-1}\int_a^bC''(K)\,\dd K$, by absolute continuity.
+\end{proof}
+
+So the curvature of the call price is the risk-neutral density, up to the factor $B$, and
+convexity in the strike (\cref{prop:arb-strike}) is the statement that this density is
+nonnegative. A butterfly with strikes $K-h$, $K$, $K+h$ costs approximately $B\,h^2q_T(K)$;
+divided by $h$, it is the price of a bet that $S_T$ ends near $K$, the continuous counterpart
+of the weights in the proof of \cref{prop:arb-sufficient}. The law of $S_T$ under $\Q$ need not
+be its law under $\Prob$: the risk-neutral density says what the market charges for payoffs,
+not how likely they are. Part (iii) is the version used on market data. It needs a
+differentiable call curve, which raw quotes at finitely many strikes do not provide: second
+differences of quotes are only rough estimates of $C''$, and they amplify rounding errors
+(\exref{ex:arb-density}). In practice one first fits an arbitrage-free curve to the quotes.
+
+\begin{remark}[What a model adds]\label{rem:arb-model}
+Everything in this chapter is static: portfolios are set up at time $0$ and never touched.
+Static arguments give relations between prices, not prices (\cref{prop:arb-sufficient}).
+A static portfolio of the bond and the stock pays an affine function of $S_T$, and the payoff
+of a call is not affine, so in general a call cannot be replicated in this way; the exception,
+when $S_T$ takes only two values, is the one-period binomial model. There are two ways
+forward. One is a model for how $S$ evolves, with
+trading at intermediate dates: a call can then be replicated \emph{dynamically} by the bond
+and the stock, and its price is the cost of that strategy. This is the binomial model of
+\cref{ch:04-binomial} and the Black--Scholes model of \cref{ch:06-black-scholes-formula}. The
+other is to take option prices from the market and use \eqref{eq:arb-strip} to price other
+payoffs; \cref{ch:15-volatility} does this for variance swaps.
+\end{remark}
+
+\furtherreading
+\textcite{merton1973} derives the relations of \cref{sec:arb-relations}, and more, from
+dominance arguments; it is still a very readable paper. \textcite{hull}, Chapters~11
+and~12, discusses the same relations and the classical option strategies (spreads,
+straddles, butterflies) from a market perspective. \textcite{follmer-schied}, Chapter~1,
+develops the one-period theory in full generality: the fundamental theorem of asset pricing,
+and the interval of arbitrage-free prices of a payoff that cannot be replicated.
+\textcite{carr-madan} state the spanning formula \eqref{eq:arb-carr-madan} and use it to
+trade volatility, and \textcite{breeden-litzenberger} is the original source of
+\cref{prop:arb-breeden-litzenberger}. The one-period binomial model, which is where
+\cref{ch:04-binomial} starts, is in \textcite{shreve1}, Chapter~1.

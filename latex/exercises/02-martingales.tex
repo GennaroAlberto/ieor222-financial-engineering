@@ -1,0 +1,125 @@
+% Exercises for Chapter 2 (Martingales and random walks). Statements only: solutions are kept privately.
+% Throughout, S is the random walk of the notes: steps +1 with probability p and -1 with
+% probability q = 1 - p, natural filtration (F_n).
+
+\begin{exercise}[Doob martingales and the Doob decomposition]\label{ex:mg-doob}
+\medium Let $(\F_n)_{n\in\N}$ be a filtration.
+\begin{enumerate}[label=(\alph*)]
+  \item Let $Y$ be an integrable random variable and $M_n=\E[Y\mid\F_n]$. Show that $M$ is a
+    martingale. Interpret $M_n$ when $Y$ is the discounted payoff of a derivative with maturity
+    $N$ and the expectation is taken under a risk-neutral probability.
+  \item Let $X$ be an adapted, integrable process. Show that there is exactly one way (up to
+    almost sure equality) to write $X_n=X_0+M_n+A_n$ for all $n$, with $M$ a martingale, $A$
+    predictable ($A_n$ is $\F_{n-1}$-measurable for $n\ge1$) and $M_0=A_0=0$, and that
+    $A_n=\sum_{k=1}^n\E[X_k-X_{k-1}\mid\F_{k-1}]$. Show that $A$ is nondecreasing if and only
+    if $X$ is a submartingale.
+  \item Find $A$ for $X_n=S_n$ (any $p$), and for $X_n=S_n^2$ with $p=\frac12$ and $S_0=0$.
+  \item Let $p=\frac12$ and $S_0=0$. Show that for $X_n=|S_n|$, $A_n$ is the number of visits
+    of the walk to $0$ before time $n$, that is, the number of $k\in\{0,\dots,n-1\}$ with
+    $S_k=0$. Deduce a formula for $\E|S_n|$ in terms of the probabilities $\Prob(S_k=0)$. (This
+    decomposition is a discrete Tanaka formula.)
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[A discrete It\^o isometry]\label{ex:mg-isometry}
+\easy Let $M$ be a martingale with $\E[M_n^2]<\infty$ for every $n$, and $H$ a bounded
+predictable process ($|H_n|\le C_n$ for constants $C_n$). You may use that
+$\E[UV\mid\mathcal G]=U\,\E[V\mid\mathcal G]$ whenever $U$ is $\mathcal G$-measurable and $V$
+and $UV$ are integrable.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that the increments of $M$ are orthogonal,
+    $\E\big[(M_k-M_{k-1})(M_j-M_{j-1})\big]=0$ for $j<k$, and that
+    $\E[M_n^2]=\E[M_0^2]+\sum_{k=1}^n\E\big[(M_k-M_{k-1})^2\big]$.
+  \item Show that $\E\big[(H\cdot M)_n^2\big]=\sum_{k=1}^n\E\big[H_k^2(M_k-M_{k-1})^2\big]$. What
+    does this give when $M$ is the symmetric random walk?
+  \item Let $p=\frac12$, $S_0=0$ and $H_k=S_{k-1}$. Why is $H$ an admissible strategy for
+    \noteref{thm:mg-transform}? Show that $(H\cdot S)_n=\frac12(S_n^2-n)$, and check (b) by
+    computing both sides. You may use $\E[S_n^4]=3n^2-2n$.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Doubling at roulette]\label{ex:mg-roulette}
+\easy A gambler bets on red at roulette: each spin, independently, she wins her stake with
+probability $p=\frac{18}{37}$ and loses it with probability $q=\frac{19}{37}$. She uses the
+doubling strategy of \noteref{exa:mg-doubling} with a bankroll of $2^m-1$: she stakes
+$1,2,4,\dots$ and stops after her first win or after $m$ consecutive losses, whichever comes
+first. Let $G$ be her final gain.
+\begin{enumerate}[label=(\alph*)]
+  \item Find the law of $G$, and show that $\E[G]=1-(2q)^m$.
+  \item Explain why $\E[G]\le0$ follows from \noteref{thm:mg-transform} without any
+    computation.
+  \item What happens to $\E[G]$ and to $\Prob(G>0)$ as $m\to\infty$? Compute both for $m=10$.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[No clairvoyance]\label{ex:mg-stopping}
+\easy Let $\sigma$ and $\tau$ be stopping times for a filtration $(\F_n)$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $\sigma\wedge\tau$, $\sigma\vee\tau$ and $\sigma+\tau$ are stopping times.
+  \item Let $p=\frac12$, $S_0=0$, and $\tau=\inf\{n\ge0:S_n=1\}$. Show that $\tau-1$ is not a
+    stopping time. Show also that, for $N\ge2$, the last visit to $0$ up to time $N$,
+    $\lambda_N=\max\{n\le N:S_n=0\}$, is not a stopping time. What happens for $N=1$?
+  \item With $p=\frac12$ and $S_0=0$, fix $N\ge1$ and let $\rho$ be the first time at which the
+    walk attains its maximum over $\{0,\dots,N\}$. Show that $\rho$ is not a stopping time in
+    two ways: directly from the definition, and by computing the sign of $\E[S_\rho]$ and
+    comparing with \noteref{thm:mg-optional-stopping}. Interpret this for a trader who must
+    sell, by time $N$, a stock whose price is a martingale.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Reaching a target in a favourable game]\label{ex:mg-target}
+\medium Let $p>\frac12$, $S_0=0$, fix an integer $b\ge1$, and let
+$\sigma_b=\inf\{n\ge0:S_n=b\}$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $\sigma_b<\infty$ almost surely. \emph{Hint:} apply
+    \noteref{cor:mg-hitting} to the walk $-S$.
+  \item For $N\ge1$ let $\tau_N$ be the exit time from $(-N,b)$. Show that
+    $\E[\tau_N]\to\E[\sigma_b]$ as $N\to\infty$.
+  \item Deduce from \noteref{prop:mg-duration} that $\E[\sigma_b]=b/(p-q)$.
+  \item Why could you not apply Wald's identity (\noteref{prop:mg-wald}) to $\sigma_b$
+    directly? Once (c) is known, check it against Wald's identity. What happens as
+    $p\downarrow\frac12$, and how does it fit with \noteref{cor:mg-hitting}?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[The variance of the duration]\label{ex:mg-variance}
+\medium Let $p=\frac12$, $S_0=0$, fix an integer $b\ge1$, and let $\tau$ be the exit time from
+$(-b,b)$.
+\begin{enumerate}[label=(\alph*)]
+  \item Find deterministic numbers $c_n$, with $c_0=0$, such that $S_n^4-6nS_n^2+c_n$ is a
+    martingale.
+  \item Show that $\E\big[S_\tau^4-6\tau S_\tau^2+c_\tau\big]=0$. Justify every limit.
+  \item Deduce that $\Var(\tau)=\frac23b^2(b^2-1)$. Check the cases $b=1$ and $b=2$ by a
+    direct argument.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[The law of an exit time]\label{ex:mg-laplace}
+\hard Let $p=\frac12$, $S_0=0$, fix an integer $b\ge1$, and let $\tau$ be the exit time from
+$(-b,b)$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that, for every $\theta\in\R$, $Y_n=\cosh(\theta S_n)/(\cosh\theta)^n$ is a
+    martingale.
+  \item Show that $\E\big[(\cosh\theta)^{-\tau}\big]=1/\cosh(\theta b)$ for every $\theta\in\R$.
+  \item Take $b=2$. Compute $\E[s^\tau]$ for $s\in(0,1]$, and identify the law of $\tau$.
+  \item Let $\theta\downarrow0$ in (b) to show that $\E[\tau]=b^2$, without using
+    \noteref{prop:mg-duration}. Justify the exchange of limit and expectation.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Simulating the gambler's ruin]\label{ex:mg-ruin-sim}
+\medium This is a computational exercise. Let $p=0.6$, $S_0=0$, and let $\tau$ be the first
+time the walk hits $-10$ or $10$.
+\begin{enumerate}[label=(\alph*)]
+  \item Compute $\E[S_n]$ and $\Var(S_n)$. Use the notes to compute $\Prob(S_\tau=10)$ and
+    $\E[\tau]$ to four significant digits.
+  \item Simulate $10^4$ walks of $100$ steps, plot two of them, and compare the sample mean of
+    $S_{100}$ with $\E[S_{100}]$, with a $95\%$ confidence interval.
+  \item For each simulated walk, find $\tau$. Some walks may still be inside $(-10,10)$ at time
+    $100$: how do you handle them? Estimate $\Prob(S_\tau=10)$ and $\E[\tau]$ with $95\%$
+    confidence intervals and compare with (a).
+  \item Repeat (c) with $p=\frac12$, first with the walks cut at $100$ steps (counting a walk
+    that has not exited as $\tau=100$), then without cutting. Explain the difference, its sign,
+    and why it is much larger than for $p=0.6$.
+\end{enumerate}
+\end{exercise}

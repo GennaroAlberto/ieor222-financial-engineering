@@ -1,6 +1,717 @@
-\begin{planned}
-  \item probability spaces as models of an economy; $\sigma$-algebras as information, $\sigma(X)$, measurability
-  \item conditional expectation: the discrete case, then the general partial-averaging definition, with its properties (tower property, taking out what is known, independence)
-  \item filtrations, adapted processes, independence
-  \item changing the probability measure on a finite space and for Gaussian variables, as a first look at Girsanov
-\end{planned}
+% Chapter 1: Probability as information.
+
+A derivative pays an amount that depends on how prices move until its maturity. To price
+and hedge it we must say what can happen, how likely each scenario is, and what is known
+at each date. A probability space takes care of the first two. This chapter is mostly
+about the third: information is a $\sigma$-algebra, the best estimate of a random quantity
+given some information is a conditional expectation, and a trading strategy may only use
+the information available when it is chosen. The last section introduces an idea that
+runs through the whole course: prices are expectations under a measure other than the
+real-world one, obtained by reweighting the scenarios.
+
+We work mostly on finite probability spaces, where every statement reduces to a finite
+computation, and we say at each step what changes on a general space.
+
+\section{A finite model of an economy}\label{sec:pr-finite}
+
+Toss a coin $n$ times. Each toss should land heads ($H$) with probability $p\in(0,1)$ and
+tails ($T$) with probability $q=1-p$, independently of the others (\cref{lem:pr-tosses}
+checks that the model below does this). An outcome is a word
+$\omega=\omega_1\cdots\omega_n$ in the letters $H$ and $T$, and the set of outcomes is
+$\Omega_n=\{H,T\}^n$. Write $H_k(\omega)$ for the number of heads among the first $k$
+tosses, and set
+\begin{equation}\label{eq:pr-coin}
+  \Prob(\omega)=p^{H_n(\omega)}q^{\,n-H_n(\omega)},\qquad \Prob(A)=\sum_{\omega\in A}\Prob(\omega)
+  \quad(A\subseteq\Omega_n),
+\end{equation}
+where $\Prob(\omega)$ is short for $\Prob(\{\omega\})$. We call $\Prob$ the
+\emph{$p$-coin}. To turn the coin into a market, fix $S_0>0$ and $0<d<u$, and let a stock
+price be multiplied by $u$ after each head and by $d$ after each tail:
+\begin{equation}\label{eq:pr-stock}
+  S_k(\omega)=S_0\,u^{H_k(\omega)}d^{\,k-H_k(\omega)},\qquad k=0,1,\dots,n .
+\end{equation}
+This is the binomial model of \cref{ch:04-binomial}. In our smallest example, $n=2$,
+$S_0=4$, $u=\frac32$ and $d=\frac12$: then $S_1$ is $6$ or $2$ according to the first toss,
+and $S_2(HH)=9$, $S_2(HT)=S_2(TH)=3$, $S_2(TT)=1$.
+
+\begin{definition}[$\sigma$-algebra, probability space]\label{def:pr-sigma-algebra}
+Let $\Omega$ be a nonempty set. A collection $\F$ of subsets of $\Omega$ is a
+\emph{$\sigma$-algebra} if (i) $\Omega\in\F$; (ii) $A\in\F$ implies $A^c=\Omega\setminus
+A\in\F$; (iii) $A_1,A_2,\ldots\in\F$ implies $\bigcup_{j\ge1}A_j\in\F$. The sets in $\F$
+are \emph{events}, and $(\Omega,\F)$ is a \emph{measurable space}. A \emph{probability
+measure} on $(\Omega,\F)$ is a map $\Prob:\F\to[0,1]$ with $\Prob(\Omega)=1$ and
+$\Prob\big(\bigcup_jA_j\big)=\sum_j\Prob(A_j)$ for every sequence of pairwise disjoint events
+(\emph{countable additivity}). The triple $(\Omega,\F,\Prob)$ is a \emph{probability space}.
+\end{definition}
+
+On a finite $\Omega$ we take $\F=2^\Omega$, and a probability measure amounts to weights
+$\Prob(\omega)\ge0$ summing to one, as in \eqref{eq:pr-coin}. On $[0,1)$, no countably
+additive probability defined on all subsets is invariant under translations mod~$1$ (Vitali;
+see \textcite{williams}, Chapter~1 and Appendix~A1), which is why $\F$ may be smaller than
+the power set. Countable unions are needed so that limiting events, such as
+$\bigcup_k\{S_k>b\}$ with infinitely many dates, are events (\exref{ex:pr-algebras} shows
+that finite unions are not enough). In finance, $(\Omega,\F,\Prob)$
+models the economy: an outcome is a complete scenario up to the horizon, and $\Prob$, the
+\emph{real-world} or \emph{historical} probability, gives the frequencies of the
+scenarios. Other measures will appear; the letter $\Prob$ is reserved for this one.
+
+\section{Information}\label{sec:pr-information}
+
+\subsection{\texorpdfstring{$\sigma$}{Sigma}-algebras as information}
+
+Suppose that an outcome $\omega$ has been drawn but we are told only the first toss. Some
+events are then \emph{resolved}: we know for sure whether they occurred. In the two-toss
+model, $A_H=\{HH,HT\}$ and $A_T=\{TH,TT\}$ are resolved after the first toss, while
+$\{HH\}$ is not. The resolved events form a $\sigma$-algebra: if we know whether $A$
+occurred, we know whether $A^c$ did, and if we know it for each of $A_1,A_2,\ldots$, we
+know whether one of them did. We therefore model \emph{information} by a $\sigma$-algebra
+$\mathcal G\subseteq\F$, the events that the information decides. In the two-toss model,
+the information at dates $0$, $1$, $2$ is
+\[
+  \F_0=\{\emptyset,\Omega_2\},\qquad
+  \F_1=\{\emptyset,A_H,A_T,\Omega_2\},\qquad
+  \F_2=2^{\Omega_2}\ \ (16\text{ events}),
+\]
+and more information means more events: $\F_0\subseteq\F_1\subseteq\F_2$.
+
+The \emph{$\sigma$-algebra generated} by a collection $\mathcal C$ of subsets,
+$\sigma(\mathcal C)$, is the intersection of all $\sigma$-algebras containing $\mathcal C$,
+hence the smallest one: the information obtained by learning, for each set in $\mathcal C$,
+whether it occurred. The \emph{Borel $\sigma$-algebra} $\mathcal B(\R^k)$ is generated by
+the rectangles of intervals, and $f:\R^k\to\R$ is \emph{Borel} if $f^{-1}(B)\in\mathcal
+B(\R^k)$ for $B\in\mathcal B(\R)$. Continuous functions, indicators of Borel sets, and sums,
+products and limits of Borel functions are Borel (\textcite{durrett}, Section~1.3).
+
+\begin{definition}[Random variables, $\sigma(X)$, measurability]\label{def:pr-measurable}
+Let $(\Omega,\F)$ be a measurable space and $\mathcal G\subseteq\F$ a $\sigma$-algebra.
+\begin{enumerate}[label=(\roman*)]
+  \item A \emph{random variable} is a function $X:\Omega\to\R$ such that
+    $\{X\in B\}:=\{\omega:X(\omega)\in B\}\in\F$ for every Borel set $B\subseteq\R$. A
+    \emph{random vector} $X:\Omega\to\R^k$ satisfies this for every $B\in\mathcal B(\R^k)$.
+  \item The \emph{$\sigma$-algebra generated by $X$} is
+    $\sigma(X)=\big\{\{X\in B\}:B\in\mathcal B(\R)\big\}$ (with $\mathcal B(\R^k)$ for a
+    random vector), and $\sigma(X_1,\dots,X_k)=\sigma\big((X_1,\dots,X_k)\big)$.
+  \item $X$ is \emph{$\mathcal G$-measurable} if $\sigma(X)\subseteq\mathcal G$, that is,
+    $\{X\in B\}\in\mathcal G$ for every Borel set $B$.
+\end{enumerate}
+\end{definition}
+
+Preimages commute with complements and unions, so $\sigma(X)$ is a $\sigma$-algebra (with
+intervals alone in place of Borel sets, it would not be closed under unions). It is the
+information revealed by observing $X$, and ``$X$ is $\mathcal G$-measurable'' reads:
+\emph{$X$ is known once $\mathcal G$ is known}. It suffices that $\{X\le b\}\in\mathcal G$
+for all $b$, because the sets $B$ with $\{X\in B\}\in\mathcal G$ form a $\sigma$-algebra.
+Likewise, with rectangles, a random vector is $\mathcal G$-measurable if and only if each
+coordinate is, and $\sigma(X_1,\dots,X_k)$ is the smallest $\sigma$-algebra containing
+every $\sigma(X_i)$.
+
+\subsection{Partitions}
+
+A \emph{partition} of $\Omega$ is a finite collection $\mathcal P=\{A_1,\dots,A_m\}$ of
+nonempty, pairwise disjoint events with union $\Omega$; its elements are \emph{atoms}. The
+unions of atoms, including $\emptyset$, form a $\sigma$-algebra with $2^m$ elements, which
+is $\sigma(\mathcal P)$. Knowing $\sigma(\mathcal P)$ means knowing which atom contains
+$\omega$, and nothing more.
+
+\begin{lemma}[Information on a finite space]\label{lem:pr-partition}
+\begin{enumerate}[label=(\alph*)]
+  \item If a $\sigma$-algebra $\mathcal G$ has finitely many elements (for instance, if
+    $\Omega$ is finite), there is exactly one partition $\mathcal P$ with
+    $\mathcal G=\sigma(\mathcal P)$; its atoms are the minimal nonempty sets of $\mathcal G$.
+  \item A random variable is $\sigma(\mathcal P)$-measurable if and only if it is constant on
+    each atom of $\mathcal P$.
+  \item If $X$ takes finitely many values, $\sigma(X)$ is generated by the partition into the
+    level sets $\{X=x\}$.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+(a) Let $A(\omega)$ be the intersection of the finitely many sets of $\mathcal G$ containing
+$\omega$, the smallest such set. If $\omega'\in A(\omega)$, then
+$A(\omega')\subseteq A(\omega)$; and $\omega\in A(\omega')$, since otherwise
+$A(\omega)\setminus A(\omega')$ would be a smaller set of $\mathcal G$ containing $\omega$.
+So $A(\omega')=A(\omega)$. Hence two such sets are equal or disjoint (a common point
+$\omega''$ gives $A(\omega)=A(\omega'')=A(\omega')$): they form a partition, and each
+$A\in\mathcal G$ is the union of the $A(\omega)$ with $\omega\in A$. In any partition
+generating $\mathcal G$ the atoms are the minimal nonempty sets of $\mathcal G$, which gives
+uniqueness. (b) If $X=c_i$ on $A_i$, then $\{X\in B\}=\bigcup_{i:\,c_i\in B}A_i$.
+Conversely, if $X(\omega)\ne X(\omega')$ with $\omega,\omega'$ in an atom $A$, then
+$\{X=X(\omega)\}$ is a union of atoms containing $\omega$, hence containing $A\ni\omega'$, a
+contradiction. (c) The level sets lie in $\sigma(X)$, and by (b) $X$ is measurable with
+respect to the $\sigma$-algebra they generate.
+\end{proof}
+
+On a finite space, information is a partition, and more information is a finer one:
+$\mathcal G\subseteq\mathcal H$ if and only if each atom of $\mathcal G$ is a union of atoms
+of $\mathcal H$.
+
+\begin{example}[What a price reveals]\label{exa:pr-two-tosses}
+In the two-toss model, the atoms of $\F_1$ are $A_H$ and $A_T$, and those of $\F_2$ are the
+singletons. Since $S_2$ takes the values $9$, $3$, $1$, the atoms of $\sigma(S_2)$ are
+$\{HH\}$, $\{HT,TH\}$, $\{TT\}$: observing $S_2$ reveals how many heads occurred, but not
+in which order. So $S_2$ is $\F_2$- but not $\F_1$-measurable; $S_1$ is not
+$\sigma(S_2)$-measurable, since it differs on $HT$ and $TH$; and neither of $\F_1$ and
+$\sigma(S_2)$ contains the other.
+\end{example}
+
+\begin{proposition}[Functions of known quantities are known]\label{prop:pr-functions}
+If $X_1,\dots,X_k$ are $\mathcal G$-measurable and $f:\R^k\to\R$ is Borel, then
+$f(X_1,\dots,X_k)$ is $\mathcal G$-measurable.
+\end{proposition}
+
+\begin{proof}
+The vector $X=(X_1,\dots,X_k)$ is $\mathcal G$-measurable, and
+$\{f(X)\in B\}=\{X\in f^{-1}(B)\}$ with $f^{-1}(B)$ Borel.
+\end{proof}
+
+Conversely, by the \emph{Doob--Dynkin lemma}, a $\sigma(Y)$-measurable $X$ is $f(Y)$ for a
+Borel $f$. On a finite space, $X$ is constant on each level set $\{Y=y\}$
+(\cref{lem:pr-partition}): let $f(y)$ be that constant, and $0$ off the range of $Y$. The
+general case is \exref{ex:pr-doob-dynkin}.
+
+\begin{remark}[What changes on a general space]\label{rem:pr-general}
+On an infinite $\Omega$, a $\sigma$-algebra need not come from a partition, and atoms may
+carry no probability: if $X$ has a density, each $\{X=x\}$ is null, though observing $X$ is
+very informative. Information is then described by events, and \cref{sec:pr-condexp}
+defines conditional expectations through events.
+\end{remark}
+
+\subsection{Filtrations and adapted processes}
+
+\begin{definition}[Filtration]\label{def:pr-filtration}
+Let $\mathbb T\subseteq[0,\infty)$ be a set of dates, such as $\{0,\dots,n\}$, $\N$ or
+$[0,T]$. A \emph{filtration} on $(\Omega,\F)$ is a family $\Fil=(\F_t)_{t\in\mathbb T}$ of
+$\sigma$-algebras with $\F_s\subseteq\F_t\subseteq\F$ whenever $s\le t$.
+\end{definition}
+
+\begin{example}[The coin-toss filtration]\label{exa:pr-coin-filtration}
+On $\Omega_n$, the information carried by the first $k$ tosses is the $\sigma$-algebra
+$\F_k$ generated by the partition into the $2^k$ sets
+$A_w=\{\omega:\omega_1\cdots\omega_k=w\}$, $w\in\{H,T\}^k$. Then $\F_0=\{\emptyset,\Omega_n\}$,
+$\F_n=2^{\Omega_n}$, and $\F_k\subseteq\F_{k+1}$ because each atom splits in two,
+$A_w=A_{wH}\cup A_{wT}$: the atoms of $\F_k$ are the nodes at depth $k$ of the binary tree of
+the tosses. The information carried by the later tosses is the $\sigma$-algebra
+$\mathcal G_k$ generated by the sets $\{\omega:\omega_{k+1}\cdots\omega_n=w'\}$,
+$w'\in\{H,T\}^{n-k}$.
+\end{example}
+
+\begin{definition}[Stochastic process; adapted and predictable]\label{def:pr-adapted}
+A \emph{stochastic process} is a family $X=(X_t)_{t\in\mathbb T}$ of random variables; for
+fixed $\omega$, $t\mapsto X_t(\omega)$ is a \emph{path}. The process is \emph{adapted} to
+$(\F_t)_{t\in\mathbb T}$ if $X_t$ is $\F_t$-measurable for every $t$. In discrete time,
+$(X_k)_{k\ge1}$ is \emph{predictable} if $X_k$ is $\F_{k-1}$-measurable for every $k\ge1$.
+\end{definition}
+
+The \emph{natural filtration} $\F^X_t=\sigma(X_s:s\le t)$, the smallest $\sigma$-algebra
+containing every $\sigma(X_s)$ with $s\le t$, is the smallest filtration to which $X$ is
+adapted. In the coin-toss model the price is adapted but not predictable, and since
+$u\ne d$, $S_k/S_{k-1}$ reveals the $k$-th toss, so $\F^S_k=\F_k$. Adaptedness is the form
+of a constraint every trader faces: the number $\Delta_k$ of shares held from date $k$ to
+$k+1$ must be chosen with what is known at date $k$. Without it there would be nothing to
+study: knowing $\omega$, one would buy whatever is about to go up.
+
+\section{Independence}\label{sec:pr-independence}
+
+Measurability means that $\mathcal G$ determines $X$. Independence is the opposite
+extreme: $\mathcal G$ says nothing about $X$.
+
+\begin{definition}[Independence]\label{def:pr-independence}
+Let $(\Omega,\F,\Prob)$ be a probability space.
+\begin{enumerate}[label=(\roman*)]
+  \item $\sigma$-algebras $\mathcal G_1,\dots,\mathcal G_m\subseteq\F$ are
+    \emph{independent} if $\Prob(A_1\cap\cdots\cap A_m)=\Prob(A_1)\cdots\Prob(A_m)$ for all
+    $A_i\in\mathcal G_i$. An infinite family is independent if every finite subfamily is.
+  \item Random variables or vectors $X_1,\dots,X_m$ are \emph{independent} if
+    $\sigma(X_1),\dots,\sigma(X_m)$ are, that is,
+    $\Prob(X_1\in B_1,\dots,X_m\in B_m)=\prod_i\Prob(X_i\in B_i)$ for all Borel $B_i$. A random
+    variable $X$ is \emph{independent of} $\mathcal G$ if $\sigma(X)$ and $\mathcal G$ are
+    independent. Events are independent if their indicators are.
+\end{enumerate}
+\end{definition}
+
+Functions of independent variables are independent, since $\sigma(f(X))\subseteq\sigma(X)$.
+Independence is a property of the measure: the same variables can be independent under one
+measure and not under another (\exref{ex:pr-two-tosses}). For variables with finitely many
+values it suffices to check $\Prob(X_1=x_1,\dots,X_m=x_m)=\prod_i\Prob(X_i=x_i)$ and sum
+over $x_i\in B_i$; in general, half-lines $B_i=(-\infty,b_i]$ suffice, by Dynkin's
+$\pi$--$\lambda$ theorem (\textcite{durrett}, Section~2.1).
+
+\begin{lemma}[Past and future tosses]\label{lem:pr-tosses}
+Under the $p$-coin the tosses are independent with $\Prob(\omega_j=H)=p$, and for every
+$k$ the $\sigma$-algebras $\F_k$ and $\mathcal G_k$ are independent.
+\end{lemma}
+
+\begin{proof}
+For a word $v$ of length $\ell$ with $h$ heads, let $\pi(v)=p^hq^{\ell-h}$. For words $w$,
+$w'$ of lengths $k$, $n-k$, the event $A_w\cap\{\omega_{k+1}\cdots\omega_n=w'\}$ is the
+outcome $ww'$, of probability $\pi(w)\pi(w')$. Summing over $w'$, or over $w$, gives
+$\Prob(A_w)=\pi(w)$ and $\Prob(\omega_{k+1}\cdots\omega_n=w')=\pi(w')$, since
+$(p+q)^\ell=1$. So the product rule holds for atoms, and by summation for all $A\in\F_k$,
+$B\in\mathcal G_k$. Summing $\Prob(A_w)=\pi(w)$ over the words of length $j$ ending in $H$
+gives $\Prob(\omega_j=H)=p$, so $\Prob(\omega_1=a_1,\dots,\omega_n=a_n)=\pi(a_1\cdots a_n)
+=\prod_j\Prob(\omega_j=a_j)$: the tosses are independent.
+\end{proof}
+
+In particular $H_n-H_k$, the number of heads among the tosses after date $k$, is
+$\mathcal G_k$-measurable, independent of $\F_k$, and binomial with parameters $n-k$, $p$.
+
+\section{Conditional expectation}\label{sec:pr-condexp}
+
+Between the two extremes, information tells us something about $X$ without determining it.
+The conditional expectation is the best estimate of $X$ that the information allows.
+
+\subsection{Conditioning on a partition}
+
+For an event $A$ with $\Prob(A)>0$, the elementary conditional expectation
+$\E[X\mid A]=\E[X\1_A]/\Prob(A)$ is the average of $X$ over $A$.
+
+\begin{definition}[Conditional expectation given a partition]\label{def:pr-condexp-discrete}
+Let $\mathcal P=\{A_1,\dots,A_m\}$ be a partition of $\Omega$ into events,
+$\mathcal G=\sigma(\mathcal P)$, and $X$ integrable. The \emph{conditional expectation of $X$
+given $\mathcal G$} is
+\begin{equation}\label{eq:pr-condexp-discrete}
+  \E[X\mid\mathcal G]=\sum_{i:\,\Prob(A_i)>0}\frac{\E[X\1_{A_i}]}{\Prob(A_i)}\,\1_{A_i}.
+\end{equation}
+If $Y$ takes finitely many values, $\E[X\mid Y]:=\E[X\mid\sigma(Y)]=\varphi(Y)$, where
+$\varphi(y)=\E[X\mid Y=y]$ if $\Prob(Y=y)>0$ and $\varphi(y)=0$ otherwise.
+\end{definition}
+
+It is a random variable, not a number: once we learn which atom contains $\omega$, our
+estimate of $X$ is its average over that atom. On null atoms any value would do.
+
+\begin{example}[Two tosses]\label{exa:pr-two-tosses-ce}
+Under the $p$-coin, $\E[S_2\mid\F_1]=(9p^2+3pq)/p=9p+3q$ on $A_H$ and $(3pq+q^2)/q=3p+q$ on
+$A_T$. As $S_1$ is $6$ on $A_H$ and $2$ on $A_T$,
+\[
+  \E[S_2\mid\F_1]=(pu+qd)\,S_1=\big(\tfrac12+p\big)S_1,\qquad \E[S_2]=\big(\tfrac12+p\big)^2S_0 .
+\]
+For $p=\frac12$, the forecast of tomorrow's price is today's price. Conditioning can also
+look backwards: on $\{S_2=3\}=\{HT,TH\}$, $\E[S_1\mid S_2]=(6pq+2pq)/(2pq)=4$ whatever $p$.
+\end{example}
+
+The variable \eqref{eq:pr-condexp-discrete} (i) is $\mathcal G$-measurable, being constant on
+atoms, and (ii) satisfies $\E\big[\E[X\mid\mathcal G]\1_A\big]=\E[X\1_A]$ for every
+$A\in\mathcal G$: as $A$ is a disjoint union of atoms, take $A=A_i$, where both sides equal
+$\E[X\1_{A_i}]$. Conversely, an integrable $Y'$ with (i) and (ii) equals a constant $c_i$ on
+each $A_i$ (\cref{lem:pr-partition}), and (ii) with $A=A_i$ gives
+$c_i\Prob(A_i)=\E[X\1_{A_i}]$: $Y'$ agrees with \eqref{eq:pr-condexp-discrete} on every atom
+of positive probability, that is, almost surely.
+
+\subsection{The general definition}
+
+Properties (i) and (ii) make sense for any $\sigma$-algebra, with no atoms in sight, and
+they determine the conditional expectation up to a null set. They become the definition.
+
+\begin{definition}[Conditional expectation]\label{def:pr-condexp}
+Let $X$ be an integrable random variable on $(\Omega,\F,\Prob)$ and $\mathcal G\subseteq\F$
+a $\sigma$-algebra. A \emph{conditional expectation of $X$ given $\mathcal G$} is an
+integrable random variable $Y$ such that
+\begin{enumerate}[label=(\roman*)]
+  \item $Y$ is $\mathcal G$-measurable;
+  \item $\E[Y\1_A]=\E[X\1_A]$ for every $A\in\mathcal G$ \emph{(partial averaging)}.
+\end{enumerate}
+We write $Y=\E[X\mid\mathcal G]$, $\E[X\mid Y]=\E[X\mid\sigma(Y)]$ for a random variable or
+vector $Y$, and $\Prob(A\mid\mathcal G)=\E[\1_A\mid\mathcal G]$.
+\end{definition}
+
+The estimate uses only the information $\mathcal G$, and on every event that $\mathcal G$
+decides it has the same average as $X$; with $A=\Omega$, $\E\big[\E[X\mid\mathcal G]\big]=\E[X]$.
+
+\begin{theorem}[Existence and uniqueness]\label{thm:pr-condexp-exists}
+Let $X$ be integrable and $\mathcal G\subseteq\F$ a $\sigma$-algebra. A conditional
+expectation $\E[X\mid\mathcal G]$ exists; any two are equal almost surely; and
+$\E\big|\E[X\mid\mathcal G]\big|\le\E|X|$.
+\end{theorem}
+
+\begin{proof}
+\emph{Uniqueness.} Let $Y,Y'$ be two conditional expectations and $A=\{Y>Y'\}$, which is in
+$\mathcal G$ by \cref{prop:pr-functions}. By (ii), $W=(Y-Y')\1_A\ge0$ has
+$\E[W]=\E[X\1_A]-\E[X\1_A]=0$. Then $W=0$ almost surely: by Markov's inequality
+$\Prob(W\ge1/j)\le j\,\E[W]=0$ for all $j\ge1$, and $\{W>0\}=\bigcup_j\{W\ge1/j\}$. As $W>0$
+on $A$, $\Prob(A)=0$; exchanging $Y$ and $Y'$ gives $\Prob(Y<Y')=0$. \emph{The bound.} With
+$A=\{Y>0\}\in\mathcal G$, $\E|Y|=\E[Y\1_A]-\E[Y\1_{A^c}]=\E[X\1_A]-\E[X\1_{A^c}]\le\E|X|$.
+\emph{Existence.} For partitions, and so on finite spaces, \eqref{eq:pr-condexp-discrete}
+works. In general, for $X\ge0$, $\nu(A)=\E[X\1_A]$ is a finite measure on $(\Omega,\mathcal
+G)$ vanishing on $\Prob$-null sets, and its Radon--Nikodym density with respect to $\Prob$ on
+$\mathcal G$ satisfies (i) and (ii); for general $X$, use $X=X^+-X^-$. See
+\textcite{durrett}, Section~4.1, or \textcite{williams}, Sections~6.11 and~9.5, which avoids
+Radon--Nikodym by starting from the existence of orthogonal projections in $L^2$; compare
+\cref{prop:pr-projection}.
+\end{proof}
+
+Every identity or inequality between conditional expectations holds almost surely; we
+will not repeat it. If every outcome of a finite space has positive probability, ``almost
+surely'' means ``everywhere''.
+
+\subsection{Properties}
+
+\begin{proposition}[Properties of conditional expectation]\label{prop:pr-condexp-properties}
+Let $X$ and $Y$ be integrable, $\mathcal G,\mathcal H\subseteq\F$ $\sigma$-algebras, and
+$a,b\in\R$.
+\begin{enumerate}[label=(\roman*)]
+  \item \emph{Linearity:} $\E[aX+bY\mid\mathcal G]=a\E[X\mid\mathcal G]+b\E[Y\mid\mathcal G]$.
+  \item \emph{Positivity:} if $X\ge0$, then $\E[X\mid\mathcal G]\ge0$. Hence $X\le Y$ implies
+    $\E[X\mid\mathcal G]\le\E[Y\mid\mathcal G]$, and
+    $\big|\E[X\mid\mathcal G]\big|\le\E\big[|X|\,\big|\,\mathcal G\big]$.
+  \item \emph{Taking out what is known:} if $Z$ is $\mathcal G$-measurable and $ZX$ is
+    integrable (for instance, if $Z$ is bounded), then
+    $\E[ZX\mid\mathcal G]=Z\,\E[X\mid\mathcal G]$. In particular,
+    $\E[Z\mid\mathcal G]=Z$ for every integrable $\mathcal G$-measurable $Z$.
+  \item \emph{Tower property:} if $\mathcal H\subseteq\mathcal G$, then
+    $\E\big[\E[X\mid\mathcal G]\,\big|\,\mathcal H\big]=\E[X\mid\mathcal H]$.
+  \item \emph{Independence:} if $X$ is independent of $\mathcal G$, then
+    $\E[X\mid\mathcal G]=\E[X]$.
+  \item \emph{Conditional Jensen:} if $\phi:\R\to\R$ is convex and $\phi(X)$ is integrable,
+    then $\phi\big(\E[X\mid\mathcal G]\big)\le\E[\phi(X)\mid\mathcal G]$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+Each time we check (i) and (ii) of \cref{def:pr-condexp} for a candidate and conclude by
+uniqueness. (i) $a\E[X\mid\mathcal G]+b\E[Y\mid\mathcal G]$ is $\mathcal G$-measurable, and its integral
+over $A\in\mathcal G$ is $a\E[X\1_A]+b\E[Y\1_A]=\E[(aX+bY)\1_A]$.
+
+(ii) Let $W=\E[X\mid\mathcal G]$ and $A=\{W<0\}\in\mathcal G$. Then $W\1_A\le0$ while
+$\E[W\1_A]=\E[X\1_A]\ge0$, so $W\1_A=0$ almost surely and $\Prob(A)=0$. The other claims
+follow by applying this to $Y-X$ and to $|X|\pm X$. (iii) Let $W=\E[X\mid\mathcal G]$. If $Z=\1_B$ with $B\in\mathcal G$, then for
+$A\in\mathcal G$, $\E[\1_BW\1_A]=\E[W\1_{A\cap B}]=\E[X\1_{A\cap B}]=\E[\1_BX\1_A]$. By
+linearity the claim holds for every $\mathcal G$-measurable $Z$ with finitely many values,
+which on a finite space is every $Z$. In general, let first $X,Z\ge0$, and let
+$Z_j=\min(j,2^{-j}\lfloor2^jZ\rfloor)$; these take finitely many values, are
+$\mathcal G$-measurable, and increase to $Z$. For $A\in\mathcal G$,
+$\E[Z_jW\1_A]=\E[Z_jX\1_A]$, and $W\ge0$ by (ii), so monotone convergence gives
+\begin{equation}\label{eq:pr-takeout-positive}
+  \E\big[ZW\1_A\big]=\E\big[ZX\1_A\big],
+\end{equation}
+an identity in $[0,\infty]$ that holds even if $ZX$ is not integrable. Here it is, so
+$A=\Omega$ shows $ZW$ integrable, and $ZW=\E[ZX\mid\mathcal G]$. For general signs, each of
+the four products $Z^\pm X^\pm$ is integrable, being at most $|ZX|$; the nonnegative case
+and (i) give $\E[ZX\mid\mathcal G]=(Z^+-Z^-)\big(\E[X^+\mid\mathcal G]-\E[X^-\mid\mathcal G]\big)
+=ZW$.
+
+(iv) $\E[X\mid\mathcal H]$ is $\mathcal H$-measurable, and for $A\in\mathcal H\subseteq\mathcal G$,
+$\E\big[\E[X\mid\mathcal H]\1_A\big]=\E[X\1_A]=\E\big[\E[X\mid\mathcal G]\1_A\big]$, which is
+the defining property of $\E\big[\E[X\mid\mathcal G]\,\big|\,\mathcal H\big]$.
+
+(v) We need $\E[X\1_A]=\E[X]\Prob(A)$ for $A\in\mathcal G$. If $X$ takes finitely many
+values, this is the product rule for $\{X=x\}$ and $A$, summed over $x$. For $X\ge0$, apply
+it to the functions $X_j=\min(j,2^{-j}\lfloor2^jX\rfloor)$ of $X$, which increase to $X$,
+and use monotone convergence. In general, use $X=X^+-X^-$.
+
+(vi) A convex $\phi$ on $\R$ is continuous and lies above its tangent lines: with $a_c$ the
+right derivative at $c$, $\phi(x)\ge\phi(c)+a_c(x-c)$ for all $x$, and $c\mapsto a_c$ is
+nondecreasing, hence bounded on bounded sets. By (i) and (ii), for each $c$,
+$\E[\phi(X)\mid\mathcal G]\ge\phi(c)+a_c\big(\E[X\mid\mathcal G]-c\big)$ outside a null set.
+Outside the union of the countably many null sets for rational $c$, this holds for all
+rational $c$ at once; letting $c\to\E[X\mid\mathcal G]$ along the rationals, the right side
+tends to $\phi(\E[X\mid\mathcal G])$.
+\end{proof}
+
+On a finite space, $\E[\,\cdot\mid\mathcal G]$ is on each atom $A_i$ of positive probability
+the expectation under $\Prob(\,\cdot\mid A_i)$, so (i), (ii) and (vi) are properties of
+ordinary expectations, atom by atom. If $\mathcal G\subseteq\mathcal H$, (iii) gives
+$\E\big[\E[X\mid\mathcal G]\,\big|\,\mathcal H\big]=\E[X\mid\mathcal G]$, so with (iv) the
+smaller $\sigma$-algebra wins in either order; when neither contains the other, the order
+matters (\exref{ex:pr-four-points}).
+
+\begin{remark}[Nonnegative variables]\label{rem:pr-nonnegative}
+For $X\ge0$, not necessarily integrable, $\E[X\mid\mathcal G]$ is defined with values in
+$[0,\infty]$ as the limit of $\E[\min(X,j)\mid\mathcal G]$, which is nondecreasing in $j$ by
+positivity. By monotone convergence on both sides, it is $\mathcal G$-measurable and satisfies
+(ii) of \cref{def:pr-condexp} as an identity in $[0,\infty]$. Any other $\mathcal
+G$-measurable $Y'\ge0$ with this property agrees with it almost surely: with $Y$ the limit
+and $A=\{Y'<Y,\ Y'\le m\}\in\mathcal G$, $\E[Y\1_A]=\E[Y'\1_A]\le m$, so $(Y-Y')\1_A\ge0$
+has zero mean and $\Prob(A)=0$; let $m\to\infty$ and exchange $Y$, $Y'$. When $X$ is
+integrable this is the usual $\E[X\mid\mathcal G]$, and \eqref{eq:pr-takeout-positive} says
+that $\E[ZX\mid\mathcal G]=Z\,\E[X\mid\mathcal G]$ for all $\mathcal G$-measurable $Z\ge0$.
+\end{remark}
+
+\begin{example}[A path-dependent payoff]\label{exa:pr-max}
+\Cref{fig:pr-condexp} shows the running maximum $X=\max_{j\le4}S_j$ of the stock
+\eqref{eq:pr-stock} with $S_0=4$, $u=\frac32$, $d=\frac12$ under the $0.6$-coin, and
+$\E[X\mid\F_k]$ for $k\le3$, computed with \coderef{code/src/ieor222/cointoss.py}. Each step
+function averages the next one over coarser atoms: the tower property. On $A_{HT}$ and
+$A_{TH}$ the price is the same, $S_2=3$, yet $\E[X\mid\F_2]$ is $6.27$ on the first and
+$5.11$ on the second: a path that went up first has recorded a higher maximum, and
+$\E[X\mid\F_2]$ is not a function of $S_2$ alone.
+\end{example}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch01-condexp}
+  \caption{The running maximum $X$ of \cref{exa:pr-max} on the $16$ outcomes of four tosses,
+    each with width equal to its probability, and $\E[X\mid\F_k]$ for $k=0,\dots,3$. Vertical
+    lines separate the atoms of $\F_k$; on each atom the blue level is the probability-weighted
+    average of $X$, so the areas above and below it balance.}
+  \label{fig:pr-condexp}
+\end{figure}
+
+\demo{01-probability.ipynb}{conditional expectations on the coin-toss tree, for any $n$, $p$
+and payoff.}
+
+\subsection{The independence lemma}
+
+To condition on $\mathcal G$, freeze what $\mathcal G$ knows and average over what it does
+not.
+
+\begin{lemma}[Independence lemma]\label{lem:pr-independence}
+Let $\mathcal G\subseteq\F$, let $X$ be a $\mathcal G$-measurable random vector in $\R^k$ and
+$Y$ a random vector in $\R^l$ independent of $\mathcal G$, and let $f:\R^{k+l}\to\R$ be a
+Borel function such that $f\ge0$ or $f(X,Y)$ is integrable. Then
+\[
+  \E\big[f(X,Y)\,\big|\,\mathcal G\big]=g(X),\qquad\text{where } g(x)=\E\big[f(x,Y)\big] .
+\]
+If $f\ge0$, $g$ takes values in $[0,\infty]$ and the left side is understood as in
+\cref{rem:pr-nonnegative}. If $f(X,Y)$ is integrable, $f(x,Y)$ is integrable for
+$\Prob_X$-almost every $x$, where $\Prob_X$ is the law of $X$; $g$ is defined at those $x$
+and set to $0$ elsewhere.
+\end{lemma}
+
+\begin{proof}
+\emph{Finitely many values} (all that is needed on a finite space). Let $X$ take the
+values $x_i$ and $Y$ the values $y_j$. Then
+$g(x)=\sum_jf(x,y_j)\Prob(Y=y_j)$ is Borel, so $g(X)$ is $\mathcal G$-measurable. For
+$A\in\mathcal G$, the event $A\cap\{X=x_i\}\in\mathcal G$ is independent of $\{Y=y_j\}$, so
+\[
+  \E\big[f(X,Y)\1_A\big]=\sum_{i,j}f(x_i,y_j)\Prob\big(A\cap\{X=x_i\}\big)\Prob(Y=y_j)
+  =\sum_ig(x_i)\Prob\big(A\cap\{X=x_i\}\big),
+\]
+which is $\E[g(X)\1_A]$. \emph{General case.} Let $\mathcal D$ be the class of Borel sets
+$D\subseteq\R^{k+l}$ such that $f=\1_D$ satisfies the lemma with
+$g_D(x)=\Prob\big((x,Y)\in D\big)$ Borel. For a rectangle $B\times C$,
+$g(x)=\1_B(x)\Prob(Y\in C)$ and, for $A\in\mathcal G$,
+$\E[\1_B(X)\1_C(Y)\1_A]=\Prob(A\cap\{X\in B\})\Prob(Y\in C)=\E[g(X)\1_A]$ by independence. So
+$\mathcal D$ contains the rectangles, a class closed under intersections, and $\R^{k+l}$; it
+is closed under proper differences (subtract the identities) and increasing unions
+(monotone convergence, in $g$ and in the identity). By Dynkin's $\pi$--$\lambda$ theorem,
+$\mathcal D=\mathcal B(\R^{k+l})$. By linearity the lemma holds for nonnegative Borel $f$
+with finitely many values. For Borel $f\ge0$, take such $f_j$ increasing to $f$: the $g_j$
+increase to $g$, which is Borel, and monotone convergence in
+$\E[f_j(X,Y)\1_A]=\E[g_j(X)\1_A]$ gives $\E[f(X,Y)\1_A]=\E[g(X)\1_A]$ in $[0,\infty]$ for
+all $A\in\mathcal G$, which is the claim. If $f(X,Y)$ is integrable, apply this to $f^\pm$:
+$\E[g^\pm(X)]=\E[f^\pm(X,Y)]<\infty$, so the Borel set $N$ where $g^+$ or $g^-$ is infinite
+has $\Prob(X\in N)=0$. Off $N$, $f(x,Y)$ is integrable and $g=g^+-g^-$; so $g(X)=g^+(X)-g^-(X)$
+almost surely, and linearity gives the claim.
+\end{proof}
+
+The lemma is how option prices at intermediate dates are computed throughout the course.
+
+\begin{example}[Forecasting a function of the price]\label{exa:pr-markov}
+Fix $k\le n$ and a function $h$, and write $S_n=S_kR$ with
+$R=u^{H_n-H_k}d^{\,(n-k)-(H_n-H_k)}$. Here $S_k$ is $\F_k$-measurable, and $R$ is
+$\mathcal G_k$-measurable, hence independent of $\F_k$, with $H_n-H_k$ binomial
+(\cref{lem:pr-tosses}). The independence lemma with $f(x,y)=h(xy)$ gives
+\begin{equation}\label{eq:pr-binomial-forecast}
+  \E\big[h(S_n)\,\big|\,\F_k\big]=g(S_k),\qquad
+  g(x)=\sum_{j=0}^{n-k}\binom{n-k}{j}p^jq^{\,n-k-j}\,h\big(x\,u^jd^{\,n-k-j}\big).
+\end{equation}
+The forecast depends on the past only through the current price (the Markov property);
+with $h(x)=x$, $\E[S_n\mid\F_k]=(pu+qd)^{n-k}S_k$. With $p$ replaced by the risk-neutral
+probability, \eqref{eq:pr-binomial-forecast} is the binomial pricing formula of
+\cref{ch:04-binomial}.
+\end{example}
+
+\subsection{The best predictor}
+
+Write $L^2$ for the square-integrable random variables, and $L^2(\mathcal G)$ for those that
+are also $\mathcal G$-measurable.
+
+\begin{proposition}[Conditional expectation as orthogonal projection]\label{prop:pr-projection}
+Let $X\in L^2$ and $\mathcal G\subseteq\F$. Then $\E[X\mid\mathcal G]\in L^2(\mathcal G)$,
+\begin{equation}\label{eq:pr-orthogonal}
+  \E\big[(X-\E[X\mid\mathcal G])\,Z\big]=0\qquad\text{for all }Z\in L^2(\mathcal G),
+\end{equation}
+and for every $Z\in L^2(\mathcal G)$,
+\begin{equation}\label{eq:pr-pythagoras}
+  \E\big[(X-Z)^2\big]=\E\big[(X-\E[X\mid\mathcal G])^2\big]+\E\big[(\E[X\mid\mathcal G]-Z)^2\big].
+\end{equation}
+Hence $\E[X\mid\mathcal G]$ minimizes $\E[(X-Z)^2]$ over $L^2(\mathcal G)$, and any other
+minimizer equals it almost surely.
+\end{proposition}
+
+\begin{proof}
+Let $Y=\E[X\mid\mathcal G]$. Conditional Jensen with $\phi(x)=x^2$ gives
+$Y^2\le\E[X^2\mid\mathcal G]$, so $\E[Y^2]\le\E[X^2]$. For $Z\in L^2(\mathcal G)$, $ZX$ is
+integrable since $|ZX|\le\frac12(Z^2+X^2)$, and by the tower property and taking out what
+is known, $\E[ZX]=\E\big[\E[ZX\mid\mathcal G]\big]=\E[ZY]$: this is \eqref{eq:pr-orthogonal}.
+Expanding $(X-Z)^2=\big((X-Y)+(Y-Z)\big)^2$, the cross term vanishes by
+\eqref{eq:pr-orthogonal} applied to $Y-Z$, which gives \eqref{eq:pr-pythagoras}. Its last
+term is zero only if $Z=Y$ almost surely.
+\end{proof}
+
+So $\E[X\mid\mathcal G]$ is the orthogonal projection of $X$ onto $L^2(\mathcal G)$: the best
+mean-square prediction of $X$ that uses only the information $\mathcal G$. For trivial
+$\mathcal G$ the predictors are constants, and the best is $\E[X]$, with error $\Var(X)$.
+Taking $Z=\E[X]$ in \eqref{eq:pr-pythagoras} splits the variance into residual and
+explained parts, $\Var(X)=\E\big[(X-\E[X\mid\mathcal G])^2\big]+\Var\big(\E[X\mid\mathcal
+G]\big)$ (\exref{ex:pr-conditional-variance}). For $\mathcal G=\sigma(Y)$, $L^2(\mathcal G)$
+consists of the square-integrable functions of $Y$ (Doob--Dynkin): $\E[X\mid Y]$ is the best
+predictor among \emph{all} functions of $Y$, the target of nonparametric regression. Linear
+regression projects onto the affine functions $a+bY$ only, and by \eqref{eq:pr-pythagoras}
+its mean squared error is larger by $\E\big[(\E[X\mid Y]-a-bY)^2\big]$; the two agree
+exactly when $\E[X\mid Y]$ is affine, as for Gaussian vectors (\exref{ex:pr-density}).
+\Cref{fig:pr-projection} shows a case where they do not.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.64\textwidth]{ch01-projection}
+  \caption{The call payoff $X=(S_{10}-100)^+$ ($S_0=100$, $u=1.15$, $d=1/u$, $p=\frac12$)
+    against $S_6$. Grey: the conditional law of $X$ given $S_6$, with area proportional to
+    probability. Blue: $\E[X\mid S_6]$, from \eqref{eq:pr-binomial-forecast}. Gold: the best
+    affine predictor, with a larger mean squared error (MSE).}
+  \label{fig:pr-projection}
+\end{figure}
+
+\demo{01-probability.ipynb}{polynomial regressions of a payoff on $S_k$ that reach $\E[X\mid S_k]$.}
+
+\section{Changing the probability measure}\label{sec:pr-change}
+
+In the binomial model, prices will be expectations under a coin whose probability of
+heads differs from the real-world $p$ (\cref{ch:04-binomial}); in continuous time, under a
+measure that changes the drift of the stock (\cref{ch:11-risk-neutral}). Outcomes, events
+and information stay the same; only the weights of the outcomes change.
+
+\begin{definition}[Equivalent measures; Radon--Nikodym derivative]\label{def:pr-equivalent}
+Probability measures $\Prob$ and $\Q$ on $(\Omega,\F)$ are \emph{equivalent} if they have the
+same null sets: $\Prob(A)=0$ if and only if $\Q(A)=0$. Let $\Omega$ be finite, $\F=2^\Omega$,
+and $\Prob(\omega)>0$ for every $\omega$. Then $\Q$ is equivalent to $\Prob$ if and only if
+$\Q(\omega)>0$ for every $\omega$, and the \emph{Radon--Nikodym derivative} of $\Q$ with
+respect to $\Prob$ is the random variable
+\[
+  \frac{\dd\Q}{\dd\Prob}(\omega)=Z(\omega):=\frac{\Q(\omega)}{\Prob(\omega)} .
+\]
+\end{definition}
+
+(If every $\Q(\omega)>0$, the only null set of either measure is $\emptyset$; outcomes that
+$\Prob$ rules out can be removed from $\Omega$.) Equivalent measures agree on what is
+possible, not on how likely it is. Each outcome is reweighted by $Z$:
+$\Q(\omega)=Z(\omega)\Prob(\omega)$, so $Z>0$ and $\E[Z]=1$. For example,
+the $p$-coin $\Prob$ and the $\tilde p$-coin $\Q$ on $\Omega_n$, with $p,\tilde p\in(0,1)$ and
+$\tilde q=1-\tilde p$, are equivalent, and
+\begin{equation}\label{eq:pr-coin-density}
+  \frac{\dd\Q}{\dd\Prob}=\Big(\frac{\tilde p}{p}\Big)^{H_n}\Big(\frac{\tilde q}{q}\Big)^{n-H_n}.
+\end{equation}
+
+\begin{proposition}[Change of measure]\label{prop:pr-change-of-measure}
+Let $Z\ge0$ be a random variable on $(\Omega,\F,\Prob)$ with $\E[Z]=1$, and let
+$\Q(A)=\E[Z\1_A]$ for $A\in\F$.
+\begin{enumerate}[label=(\alph*)]
+  \item $\Q$ is a probability measure, every $\Prob$-null set is $\Q$-null, and
+    \begin{equation}\label{eq:pr-change}
+      \EQ[X]=\E[ZX]\qquad\text{for every }X\ge0\text{ and every }X\text{ with }\E\big[Z|X|\big]<\infty .
+    \end{equation}
+  \item If $Z>0$ almost surely, then $\Q$ is equivalent to $\Prob$, and $\E[X]=\EQ[X/Z]$ for
+    $X\ge0$ and for integrable $X$: $\dd\Prob/\dd\Q=1/Z$.
+  \item On a finite space as in \cref{def:pr-equivalent}, every $\Q$ equivalent to $\Prob$ is of
+    this form, with $Z=\dd\Q/\dd\Prob$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+On a finite space, $\EQ[X]=\sum_\omega X(\omega)Z(\omega)\Prob(\omega)=\E[ZX]$, which is
+(c) and \eqref{eq:pr-change}. In general, $\Q(\Omega)=\E[Z]=1$, and countable additivity
+follows from $Z\1_{\bigcup_jA_j}=\sum_jZ\1_{A_j}$ (disjoint $A_j$) by monotone
+convergence. If $\Prob(A)=0$, then $Z\1_A=0$ almost surely and $\Q(A)=0$. Identity
+\eqref{eq:pr-change} holds for indicators, then for finitely many values by linearity, for
+$X\ge0$ by monotone convergence, and in general by $X=X^+-X^-$. (b) If $\Q(A)=0$, then
+$Z\1_A=0$ almost surely, so $\Prob(A)=0$; and \eqref{eq:pr-change} for $X/Z$ gives
+$\EQ[X/Z]=\E[X]$.
+\end{proof}
+
+On a general space, the converse is the Radon--Nikodym theorem: if $\Q$ is equivalent to
+$\Prob$, there is $Z>0$, unique almost surely, with $\E[Z]=1$ and $\Q(A)=\E[Z\1_A]$ for all
+$A\in\F$, written $\dd\Q/\dd\Prob$ (\textcite{shreve2}, Section~1.6). A change of measure
+leaves alone events, random variables, filtrations and measurability, and between
+equivalent measures ``almost surely'' means the same thing. What changes are expectations,
+laws, independence, and conditional expectations, which transform as follows.
+
+\begin{proposition}[Bayes' formula]\label{prop:pr-bayes}
+Let $\Omega$ be finite, $\F=2^\Omega$, $\Prob$ and $\Q$ equivalent with $\Prob(\omega)>0$ for
+every $\omega$, and $Z=\dd\Q/\dd\Prob$. For every $\sigma$-algebra $\mathcal G$ and every
+random variable $X$,
+\begin{equation}\label{eq:pr-bayes}
+  \EQ[X\mid\mathcal G]=\frac{\E[ZX\mid\mathcal G]}{\E[Z\mid\mathcal G]} .
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+By \cref{lem:pr-partition}, $\mathcal G=\sigma(\mathcal P)$ for a partition $\mathcal P$,
+whose atoms have positive probability under both measures. On an atom $A$, by
+\eqref{eq:pr-condexp-discrete} under $\Q$ and \eqref{eq:pr-change},
+\[
+  \EQ[X\mid\mathcal G]=\frac{\EQ[X\1_A]}{\Q(A)}=\frac{\E[ZX\1_A]}{\E[Z\1_A]}
+  =\frac{\E[ZX\1_A]/\Prob(A)}{\E[Z\1_A]/\Prob(A)}=\frac{\E[ZX\mid\mathcal G]}{\E[Z\mid\mathcal G]} .
+  \qedhere
+\]
+\end{proof}
+
+On each atom, the $\Q$-average of $X$ is the $Z$-weighted $\Prob$-average, normalized by
+the average weight. On a general space, with $Z$ as in \cref{prop:pr-change-of-measure} and
+$\EQ|X|<\infty$, \eqref{eq:pr-bayes} holds $\Q$-almost surely (\exref{ex:pr-bayes-general};
+\textcite{shreve2}, Lemma~5.2.2, is the special case $Z>0$ in density-process form).
+
+\begin{remark}[The density process]\label{rem:pr-density-process}
+For $A\in\mathcal G$, $\Q(A)=\E\big[\E[Z\mid\mathcal G]\1_A\big]$: on the information
+$\mathcal G$, the density of $\Q$ is $\E[Z\mid\mathcal G]$. Given a filtration, the
+\emph{density process} $Z_k=\E[Z\mid\F_k]$ satisfies $\E[Z_j\mid\F_k]=Z_k$ for $k\le j$ (a
+martingale, \cref{ch:02-martingales}). For $\F_j$-measurable $X$ and $k\le j$,
+$\E[ZX\mid\F_k]=\E\big[\E[ZX\mid\F_j]\,\big|\,\F_k\big]=\E[Z_jX\mid\F_k]$, so Bayes' formula
+reads $\EQ[X\mid\F_k]=\E[Z_jX\mid\F_k]/Z_k$: the form used for Girsanov's theorem. For the
+two coins, see \exref{ex:pr-coin-measures}.
+\end{remark}
+
+\subsection{The Gaussian shift}
+
+On a general space, the most important change of measure is the following.
+
+\begin{proposition}[Gaussian shift]\label{prop:pr-gaussian-shift}
+Let $X\sim\mathcal N(0,1)$ under $\Prob$, $\theta\in\R$, and
+\[
+  Z=\exp\Big(\theta X-\frac{\theta^2}{2}\Big),\qquad \Q(A)=\E[Z\1_A],\quad A\in\F .
+\]
+Then $Z>0$, $\E[Z]=1$, $\Q$ is equivalent to $\Prob$, and $X\sim\mathcal N(\theta,1)$ under
+$\Q$; equivalently, $X-\theta$ is standard normal under $\Q$. More precisely,
+$\EQ[h(X)]=\E[h(X+\theta)]$ for every Borel $h\ge0$ and every Borel $h$ with
+$\E|h(X+\theta)|<\infty$.
+\end{proposition}
+
+\begin{proof}
+Let $\varphi$ be the standard normal density. Completing the square gives
+$e^{\theta x-\theta^2/2}\varphi(x)=\varphi(x-\theta)$, so for Borel $h\ge0$, as $X$ has
+density $\varphi$ under $\Prob$,
+\[
+  \E\big[Z\,h(X)\big]=\int_\R h(x)\,e^{\theta x-\theta^2/2}\varphi(x)\,\dd x
+  =\int_\R h(x)\varphi(x-\theta)\,\dd x=\E\big[h(X+\theta)\big].
+\]
+With $h=1$, $\E[Z]=1$, so \cref{prop:pr-change-of-measure} applies, and $Z>0$ makes $\Q$
+equivalent to $\Prob$. By \eqref{eq:pr-change} the left side is $\EQ[h(X)]$. With
+$h=\1_{(-\infty,b]}$, $\Q(X\le b)=\Prob(X+\theta\le b)$, the $\mathcal N(\theta,1)$
+distribution function at $b$. For integrable $h(X+\theta)$, use $h=h^+-h^-$.
+\end{proof}
+
+For $\theta>0$, the weight $Z$ exceeds one exactly where $X>\theta/2$ (for $\theta<0$, where
+$X<\theta/2$), and it moves probability in exactly the way that shifts the Gaussian without deforming it. Averaging $Z\,h(X)$ over samples drawn
+under $\Prob$ estimates $\EQ[h(X)]$: this is \emph{importance sampling}
+(\exref{ex:pr-importance}). The cost: $\E[Z^2]=e^{\theta^2}$, so for large $|\theta|$ a few
+samples carry most of the weight.
+
+\begin{remark}[A first look at Girsanov's theorem]\label{rem:pr-girsanov}
+Let $W$ be a Brownian motion with a filtration $(\F_t)$ (\cref{def:bm,def:bm-filtration}),
+$T>0$,
+$\theta\in\R$, and $\dd\Q/\dd\Prob=Z_T=\exp(\theta W_T-\frac{\theta^2}2T)$. For
+$0<t\le T$, the density of $\Q$ on $\F_t$ is $\E[Z_T\mid\F_t]=\exp(\theta
+W_t-\frac{\theta^2}2t)$ (\cref{thm:bm-martingales}), which is the density of
+\cref{prop:pr-gaussian-shift} for $X=W_t/\sqrt t$ and shift $\theta\sqrt t$; so
+$W_t\sim\mathcal N(\theta t,t)$ under $\Q$. Girsanov's theorem (\cref{ch:11-risk-neutral})
+shows much more: $(W_t-\theta t)_{t\le T}$ is a $\Q$-Brownian motion. An exponential change
+of measure adds a drift; this is how risk-neutral pricing replaces the expected return of a
+stock by the interest rate.
+\end{remark}
+
+\demo{01-probability.ipynb}{reweighting a fair coin into a biased one, and $\mathcal N(0,1)$
+samples into $\mathcal N(\theta,1)$ samples, by $\dd\Q/\dd\Prob$.}
+
+\furtherreading
+\textcite{shreve1}, Chapters~2--3, and \textcite{shreve2}, Chapters~1--2, cover this material
+on coin-toss and general spaces; \textcite{williams} and \textcite{durrett} give the measure
+theory in full; \textcite{follmer-schied}, Chapter~1, brings equivalent measures to arbitrage.
