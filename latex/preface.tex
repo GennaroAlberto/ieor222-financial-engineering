@@ -1,0 +1,48 @@
+\chapter*{About these notes}
+\addcontentsline{toc}{chapter}{About these notes}
+
+These are lecture notes for IEOR 222, \emph{Financial Engineering}, at UC Berkeley: the
+mathematics of pricing and hedging derivatives, from discrete-time models to stochastic
+calculus, risk-neutral pricing and the numerical methods used in practice.
+
+% TODO(Alberto): check the wording of this acknowledgement before publishing.
+They grew out of the discussion sections I taught as graduate student instructor for the
+course, which is taught by Thibaut Mastrolia, and they follow the structure of his
+lectures. The text, the proofs, the demos and the wording of the exercises were written
+for this repository; any mistakes are mine.
+
+\paragraph{How to use them.} Each chapter has three parts. The notes, in this document,
+develop the theory with complete proofs wherever the argument teaches something, and
+with precise references where it does not. The exercises are collected in a separate
+document; solutions are not published, so that the course is not spoiled for the next
+class. The interactive demos, marked \textcolor{cobalt}{$\blacktriangleright$}, are Python
+notebooks that open in Google Colab in one click: they let you move the parameters of
+each result and see it happen.
+
+\paragraph{Prerequisites.} Undergraduate probability (independence, the central limit
+theorem, Gaussian vectors, characteristic functions), multivariable calculus, and enough
+Python to read short scripts. A few results from measure theory are used without proof
+and stated where they first appear: the monotone and dominated convergence theorems, the
+Borel--Cantelli lemma and Dynkin's $\pi$--$\lambda$ theorem. No measure theory is assumed: the measure-theoretic ideas
+the course needs are introduced in \cref{ch:01-probability}.
+
+\paragraph{Corrections.} Please report errors, typos and unclear passages as issues on
+the \href{\repourl/issues}{GitHub repository}.
+
+\section*{Notation}
+\begin{center}
+\begin{tabular}{@{}ll@{}}
+\toprule
+$(\Omega,\F,\Prob)$ & probability space; $\Prob$ is the real-world (historical) measure\\
+$\Q$, $\EQ$ & a risk-neutral measure and its expectation\\
+$(\F_t)_{t\ge0}$ & filtration: the information available at time $t$\\
+$W$ & a Brownian motion\\
+$\mathcal N(m,v)$, $N(\cdot)$ & normal law with mean $m$ and variance $v$; standard normal CDF\\
+$\N$ & $\{0,1,2,\dots\}$\\
+$x^+$, $x\wedge y$ & $\max(x,0)$; $\min(x,y)$\\
+$\1_A$ & indicator of the event $A$\\
+$[X,X]_t$ & quadratic variation of $X$ on $[0,t]$\\
+$r$, $\sigma$, $K$, $T$ & interest rate, volatility, strike, maturity\\
+\bottomrule
+\end{tabular}
+\end{center}

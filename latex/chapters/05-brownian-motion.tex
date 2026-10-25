@@ -1,0 +1,448 @@
+% Chapter 5: Brownian motion.
+
+Every continuous-time model in these notes is driven by Brownian motion. We build it
+the way it arises in finance: as the limit of a random walk whose steps become small and
+frequent. A price that receives many small, independent shocks per unit of time moves,
+in the limit, like a Brownian path.
+
+Two features of the limit run through the rest of the course. Brownian motion is a
+martingale, which is what makes risk-neutral pricing work. And its paths are rough:
+over an interval of length $t$, the sum of squared increments does not vanish as the
+mesh goes to zero, as it would for a smooth function, but converges to $t$. This
+\emph{quadratic variation} is why stochastic calculus differs from ordinary calculus
+(\cref{ch:08-ito-formula}).
+
+Throughout, $(\Omega,\F,\Prob)$ is a probability space and $\mathcal N(m,v)$ is the
+normal law with mean $m$ and variance $v$.
+
+\section{The symmetric random walk}\label{sec:bm-rw}
+
+Let $X_1,X_2,\dots$ be independent with $\Prob(X_j=1)=\Prob(X_j=-1)=\tfrac12$: the
+outcomes of a fair coin, with heads counted as $+1$ and tails as $-1$. The
+\emph{symmetric random walk} is
+\[
+  M_0 = 0,\qquad M_k = \sum_{j=1}^{k} X_j,\quad k\ge 1,
+\]
+and its natural filtration is $\F_k=\sigma(X_1,\dots,X_k)$, the information carried by
+the first $k$ tosses.
+
+\begin{proposition}\label{prop:bm-rw}
+Let $0=k_0<k_1<\dots<k_m$ be integers.
+\begin{enumerate}[label=(\roman*)]
+  \item The increments $M_{k_1}-M_{k_0},\,M_{k_2}-M_{k_1},\dots,M_{k_m}-M_{k_{m-1}}$ are
+    independent, and $M_{k_{i+1}}-M_{k_i}$ has mean $0$ and variance $k_{i+1}-k_i$.
+  \item $(M_k)_{k\ge0}$ is a martingale with respect to $(\F_k)_{k\ge0}$.
+  \item For every $k$ and every outcome $\omega$, the \emph{quadratic variation}
+    $[M,M]_k := \sum_{j=1}^{k}(M_j-M_{j-1})^2$ equals $k$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) The increment $M_{k_{i+1}}-M_{k_i}=\sum_{j=k_i+1}^{k_{i+1}}X_j$ is a function of the
+block $(X_{k_i+1},\dots,X_{k_{i+1}})$. Different increments use disjoint blocks of
+independent variables, so they are independent. Each $X_j$ has mean $0$ and variance
+$\E[X_j^2]=1$, and variances of independent variables add, so the increment has mean $0$
+and variance $k_{i+1}-k_i$.
+
+(ii) $M_k$ is a function of $X_1,\dots,X_k$, so it is $\F_k$-measurable, and $|M_k|\le k$
+is integrable. For $\ell\ge k$, the increment $M_\ell-M_k$ depends only on
+$X_{k+1},\dots,X_\ell$, which are independent of $\F_k$. Taking out what is known and
+using independence,
+\[
+  \E[M_\ell\mid\F_k]=M_k+\E[M_\ell-M_k\mid\F_k]=M_k+\E[M_\ell-M_k]=M_k .
+\]
+
+(iii) $(M_j-M_{j-1})^2=X_j^2=1$ for every $j$ and every $\omega$.
+\end{proof}
+
+\begin{remark}
+$\Var(M_k)$ and $[M,M]_k$ are both equal to $k$, but they are different objects. The
+variance is an average over all possible paths. The quadratic variation is computed
+along a single path, and here it happens not to depend on the path at all. For Brownian
+motion we will find the same number $t$ through a limit, not by exact counting.
+\end{remark}
+
+\section{Scaling the walk}\label{sec:bm-scaling}
+
+To pass to continuous time, speed the walk up and shrink its steps. Fix $n\ge1$ and take
+$n$ steps per unit of time, each of size $1/\sqrt n$.
+
+\begin{definition}[Scaled random walk]\label{def:bm-scaled}
+For $n\ge1$, the \emph{scaled random walk} is
+$W^{(n)}(t)=\frac{1}{\sqrt n}M_{nt}$ for $t\ge0$ with $nt\in\N$, extended to all $t\ge0$
+by linear interpolation between consecutive grid points $k/n$.
+\end{definition}
+
+The step size $1/\sqrt n$ is the only choice for which the limit is neither trivial nor
+explosive: with $n$ steps of size $h$ per unit of time, the variance at time $t$ is
+$nt\,h^2$, which stays finite and nonzero only if $h\propto 1/\sqrt n$.
+
+\begin{proposition}\label{prop:bm-scaled}
+Let $0\le s<t$ with $ns,nt\in\N$. Then $W^{(n)}(t)-W^{(n)}(s)$ has mean $0$ and
+variance $t-s$; increments over disjoint grid intervals are independent;
+$(W^{(n)}(k/n))_{k\ge0}$ is a martingale; and along every path
+\[
+  [W^{(n)},W^{(n)}](t):=\sum_{j=1}^{nt}\Big(W^{(n)}\big(\tfrac jn\big)-W^{(n)}\big(\tfrac{j-1}n\big)\Big)^2=t .
+\]
+\end{proposition}
+
+\begin{proof}
+Every statement is the corresponding part of \cref{prop:bm-rw} after dividing by
+$\sqrt n$. In particular, $\Var(W^{(n)}(t)-W^{(n)}(s))=\frac1n(nt-ns)=t-s$, and each of
+the $nt$ squared increments equals $\frac1n$.
+\end{proof}
+
+At a fixed time, the scaled walk is a normalized sum of independent coin tosses, so the
+central limit theorem applies. We prove the version we need directly.
+
+\begin{theorem}[Central limit theorem for the scaled walk]\label{thm:bm-clt}
+For every $t>0$, $W^{(n)}(t)$ converges in distribution to $\mathcal N(0,t)$ as
+$n\to\infty$.
+\end{theorem}
+
+\begin{proof}
+Let $k_n=\lfloor nt\rfloor$, so that $k_n/n\le t<(k_n+1)/n$ and $k_n/n\to t$. The
+characteristic function of $X_1/\sqrt n$ is $\E[e^{iuX_1/\sqrt n}]=\cos(u/\sqrt n)$, so by
+independence
+\[
+  \varphi_n(u):=\E\Big[e^{iuW^{(n)}(k_n/n)}\Big]=\cos\big(u/\sqrt n\big)^{k_n}.
+\]
+Since $\log\cos x=-\tfrac{x^2}{2}+O(x^4)$ as $x\to0$, for fixed $u$ and $n$ large,
+\[
+  \log\varphi_n(u)=k_n\log\cos\big(u/\sqrt n\big)=-\frac{u^2}{2}\,\frac{k_n}{n}+O\Big(\frac{k_n}{n^2}\Big)
+  \longrightarrow-\frac{u^2t}{2}.
+\]
+The limit $e^{-u^2t/2}$ is the characteristic function of $\mathcal N(0,t)$, so by Lévy's
+continuity theorem $W^{(n)}(k_n/n)$ converges in distribution to $\mathcal N(0,t)$.
+Finally, $W^{(n)}(t)$ interpolates between the grid values at $k_n/n$ and $(k_n+1)/n$,
+which differ by one step, so $|W^{(n)}(t)-W^{(n)}(k_n/n)|\le1/\sqrt n$ for every outcome.
+A perturbation that goes to $0$ surely does not change a limit in distribution
+(Slutsky's lemma), so $W^{(n)}(t)$ converges to $\mathcal N(0,t)$ as well.
+\end{proof}
+
+The same argument, applied to the vector of increments over disjoint intervals with the
+multivariate version of Lévy's continuity theorem, shows
+that $\big(W^{(n)}(t_1),\dots,W^{(n)}(t_m)\big)$ converges in distribution to a vector
+with independent Gaussian increments of variances $t_1,t_2-t_1,\dots,t_m-t_{m-1}$.
+\emph{Donsker's invariance principle} strengthens this to the convergence in distribution
+of the whole path $t\mapsto W^{(n)}(t)$, as a random continuous function, to Brownian
+motion; see \textcite{billingsley}, Theorem~8.2. We do not need that strength here. What
+matters is the shape of the limit, which the next definition records.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch05-scaled-walks}
+  \caption{Three paths of the scaled random walk $W^{(n)}$ for $n=8$, $64$ and $2048$
+    steps per unit of time. As $n$ grows, the paths become indistinguishable from
+    Brownian paths.}
+  \label{fig:bm-scaled-walks}
+\end{figure}
+
+\demo{05-brownian-motion.ipynb}{move the number of steps $n$ and watch the scaled walk and
+the histogram of $W^{(n)}(1)$ approach Brownian motion and $\mathcal N(0,1)$.}
+
+\section{Brownian motion}\label{sec:bm-def}
+
+\begin{definition}[Brownian motion]\label{def:bm}
+A stochastic process $W=(W_t)_{t\ge0}$ on $(\Omega,\F,\Prob)$ is a \emph{(standard)
+Brownian motion} if
+\begin{enumerate}[label=(\roman*)]
+  \item $W_0=0$;
+  \item for all $0=t_0<t_1<\dots<t_m$, the increments
+    $W_{t_1}-W_{t_0},\dots,W_{t_m}-W_{t_{m-1}}$ are independent;
+  \item for all $0\le s<t$, $W_t-W_s\sim\mathcal N(0,t-s)$;
+  \item for every $\omega$, the path $t\mapsto W_t(\omega)$ is continuous.
+\end{enumerate}
+\end{definition}
+
+That such a process exists is a theorem, due to Wiener (1923). The difficulty is
+property~(iv): it is easy to produce Gaussian variables with the right covariances at
+countably many times, and it takes work to show that they can be chosen to fit together
+into continuous paths. A short construction, due to Lévy, is in
+\textcite{morters-peres}, Theorem~1.3; we take existence for granted.
+
+The next result is the most convenient way to check that a process is a Brownian motion.
+Recall that a random vector is \emph{Gaussian} if every linear combination of its
+entries is normally distributed (a constant counts as a normal variable with variance
+$0$), and that the law of a Gaussian vector is determined by its means and covariances.
+
+\begin{proposition}[Gaussian characterization]\label{prop:bm-gaussian}
+Let $W$ be a process with continuous paths and $W_0=0$. Then $W$ is a Brownian motion if
+and only if, for all $0\le t_1<\dots<t_m$, the vector $(W_{t_1},\dots,W_{t_m})$ is
+Gaussian with mean zero and
+\begin{equation}\label{eq:bm-cov}
+  \Cov(W_s,W_t)=\min(s,t)\qquad\text{for all } s,t\ge0 .
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+($\Rightarrow$) The increments over $0<t_1<\dots<t_m$ are independent Gaussian variables,
+so they form a Gaussian vector, and $(W_{t_1},\dots,W_{t_m})$ is a linear transformation
+of it (partial sums), hence Gaussian with mean zero. For $s\le t$,
+\[
+  \Cov(W_s,W_t)=\Cov\big(W_s,\,W_s+(W_t-W_s)\big)=\Var(W_s)+\Cov(W_s-W_0,\,W_t-W_s)=s ,
+\]
+because the increments $W_s-W_0$ and $W_t-W_s$ are independent.
+
+($\Leftarrow$) The increments over $0=t_0<t_1<\dots<t_m$ are linear functions of a
+Gaussian vector, so they are jointly Gaussian. For $i<j$, using \eqref{eq:bm-cov} and
+$t_i<t_{i+1}\le t_j<t_{j+1}$,
+\[
+  \Cov\big(W_{t_{i+1}}-W_{t_i},\,W_{t_{j+1}}-W_{t_j}\big)
+  =t_{i+1}-t_{i+1}-t_i+t_i=0 .
+\]
+Uncorrelated entries of a Gaussian vector are independent, which gives property~(ii).
+Finally $W_t-W_s$ is Gaussian with mean zero and variance $t-2\min(s,t)+s=t-s$ for $s<t$,
+which is property~(iii).
+\end{proof}
+
+\begin{remark}[Independence of processes]\label{rem:bm-independence}
+A process $X$ is \emph{independent of a $\sigma$-algebra $\mathcal G$} if every vector
+$(X_{t_1},\dots,X_{t_m})$ is independent of $\mathcal G$, and two processes $X$ and $Y$ are
+\emph{independent} if every vector $(X_{s_1},\dots,X_{s_k})$ is independent of every vector
+$(Y_{t_1},\dots,Y_{t_m})$. By Dynkin's $\pi$--$\lambda$ theorem, these finite-dimensional
+conditions imply the independence of the $\sigma$-algebras $\sigma(X_t:t\ge0)$ and
+$\mathcal G$, respectively $\sigma(Y_t:t\ge0)$; see \textcite{durrett}, Section~2.1. We
+use the two forms interchangeably.
+\end{remark}
+
+\begin{proposition}[Symmetry, scaling, restart]\label{prop:bm-invariance}
+Let $W$ be a Brownian motion, and fix $c>0$ and $s\ge0$. Each of the following processes
+is again a Brownian motion:
+\begin{enumerate}[label=(\alph*)]
+  \item $(-W_t)_{t\ge0}$;
+  \item $\big(c^{-1/2}W_{ct}\big)_{t\ge0}$;
+  \item $\big(W_{s+t}-W_s\big)_{t\ge0}$, which is moreover independent of
+    $\F^W_s=\sigma(W_u:u\le s)$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+Each process has continuous paths, starts at $0$, and is a linear transformation of $W$,
+so its finite-dimensional vectors are centered Gaussian. By
+\cref{prop:bm-gaussian} it is enough to compute covariances:
+(a) $\Cov(-W_u,-W_t)=\min(u,t)$;
+(b) $\Cov\big(c^{-1/2}W_{cu},c^{-1/2}W_{ct}\big)=c^{-1}\min(cu,ct)=\min(u,t)$;
+(c) $\Cov(W_{s+u}-W_s,W_{s+t}-W_s)=\min(s+u,s+t)-s-s+s=\min(u,t)$.
+For the independence in (c): every vector $(W_{s+t_1}-W_s,\dots,W_{s+t_m}-W_s)$ is built
+from increments after time $s$, and every vector $(W_{u_1},\dots,W_{u_k})$ with
+$u_i\le s$ from increments before $s$. These vectors are independent by property~(ii),
+and \cref{rem:bm-independence} upgrades this to independence from $\F^W_s$.
+\end{proof}
+
+Property (b) is \emph{Brownian scaling}: zooming in on a Brownian path by a factor $c$ in
+time and $\sqrt c$ in space produces another Brownian path. No matter how closely you
+look, the path never straightens out. \Cref{sec:bm-qv} turns this picture into a theorem.
+A fourth invariance, time inversion, is \exref{ex:bm-inversion}.
+
+\begin{remark}[Laws of path functionals]\label{rem:bm-functionals}
+Because the paths are continuous, quantities such as $\sup_{u\le t}W_u$ or the first time
+$W$ leaves an interval are determined by the values of $W$ at rational times: for
+instance $\sup_{u\le t}W_u=\sup\big(\{W_u:u\in[0,t]\cap\mathbb Q\}\cup\{W_t\}\big)$. Their laws are
+therefore the same for every Brownian motion, on whatever probability space it is built.
+Combined with \cref{prop:bm-invariance}, this lets us move statements about such laws
+from one Brownian motion to another, for example from $W$ to $c^{-1/2}W_{c\,\cdot}$.
+\end{remark}
+
+\section{Filtrations and martingales}\label{sec:bm-martingales}
+
+In finance the information available at time $t$ is usually more than the path of one
+Brownian motion: other assets, news, and so on. We therefore allow filtrations larger than
+the one generated by $W$, as long as they do not see the future increments of $W$.
+
+\begin{definition}[Filtration for a Brownian motion]\label{def:bm-filtration}
+A \emph{filtration for the Brownian motion} $W$ is a family $(\F_t)_{t\ge0}$ of
+$\sigma$-algebras such that
+\begin{enumerate}[label=(\roman*)]
+  \item $\F_s\subseteq\F_t$ for $s\le t$ (information accumulates);
+  \item $W_t$ is $\F_t$-measurable for every $t$ (the present is known);
+  \item $W_t-W_s$ is independent of $\F_s$ for every $s<t$ (future increments are
+    unpredictable).
+\end{enumerate}
+\end{definition}
+
+The smallest example is the natural filtration $\F^W_t=\sigma(W_u:u\le t)$, for which
+(iii) is \cref{prop:bm-invariance}(c). A process $(X_t)$ is a \emph{martingale} with
+respect to $(\F_t)$ if $X_t$ is $\F_t$-measurable and integrable for every $t$, and
+$\E[X_t\mid\F_s]=X_s$ for all $s\le t$.
+
+\begin{theorem}\label{thm:bm-martingales}
+Let $W$ be a Brownian motion with filtration $(\F_t)$, and let $\sigma\in\R$. The
+following processes are martingales:
+\[
+  \text{(i) } W_t,\qquad
+  \text{(ii) } W_t^2-t,\qquad
+  \text{(iii) } Z_t=\exp\!\Big(\sigma W_t-\frac{\sigma^2}{2}t\Big).
+\]
+\end{theorem}
+
+\begin{proof}
+All three are functions of $(t,W_t)$, hence adapted. They are integrable because $W_t$
+is Gaussian: $\E[W_t^2]=t$, and the Gaussian moment generating function gives
+$\E[e^{\sigma W_t}]=e^{\sigma^2t/2}$. Fix $s<t$ and write $W_t=W_s+D$ with
+$D=W_t-W_s\sim\mathcal N(0,t-s)$. Here $W_s$ is $\F_s$-measurable and $D$ is independent
+of $\F_s$, so for any functions $f$ and $g$ with the needed integrability,
+$\E[f(W_s)g(D)\mid\F_s]=f(W_s)\,\E[g(D)]$.
+
+(i) $\E[W_t\mid\F_s]=W_s+\E[D]=W_s$.
+
+(ii) $W_t^2=W_s^2+2W_sD+D^2$, so $\E[W_t^2\mid\F_s]=W_s^2+2W_s\E[D]+\E[D^2]=W_s^2+(t-s)$.
+Subtracting $t$ from both sides gives $\E[W_t^2-t\mid\F_s]=W_s^2-s$.
+
+(iii) $Z_t=Z_s\exp\big(\sigma D-\frac{\sigma^2}{2}(t-s)\big)$, and
+$\E[e^{\sigma D}]=e^{\sigma^2(t-s)/2}$, so $\E[Z_t\mid\F_s]=Z_s$.
+\end{proof}
+
+\begin{remark}[The exponential martingale and stock prices]\label{rem:bm-exp}
+The martingale $Z$ in (iii) is the template for asset prices. In the Black--Scholes
+model of \cref{ch:06-black-scholes-formula}, the stock under the risk-neutral measure is
+$S_t=S_0\exp\big(\sigma W_t+(r-\frac{\sigma^2}2)t\big)$, so the discounted price is
+$e^{-rt}S_t=S_0Z_t$, a martingale. The correction $-\frac{\sigma^2}{2}t$ is exactly what
+cancels the convexity of the exponential: without it, $\E[e^{\sigma W_t}]=e^{\sigma^2t/2}$
+would grow.
+\end{remark}
+
+\begin{remark}[A martingale that dies]\label{rem:bm-dies}
+Let $\sigma\neq0$. Then $\E[Z_t]=1$ for all $t$, and yet $Z_t\to0$ almost surely as
+$t\to\infty$, because
+$W_t/t\to0$ (\exref{ex:bm-inversion}) makes the exponent
+$t\,(\sigma W_t/t-\sigma^2/2)$ tend to $-\infty$. The mean is carried by rarer and rarer
+paths that become very large. A martingale need not describe what a typical path does.
+\end{remark}
+
+\demo{05-brownian-motion.ipynb}{sample means of $W_t$, $W_t^2-t$ and $Z_t$ stay flat
+while those of $W_t^2$ and $e^{\sigma W_t}$ do not; and individual paths of $Z_t$ go to
+zero while their exact mean stays at one.}
+
+\section{Quadratic variation}\label{sec:bm-qv}
+
+Let $\Pi=\{0=t_0<t_1<\dots<t_n=t\}$ be a partition of $[0,t]$, with mesh
+$\|\Pi\|=\max_j(t_{j+1}-t_j)$. For a function $f$ and $p>0$, the
+\emph{$p$-variation of $f$ along $\Pi$} is
+\[
+  V_p(f;\Pi)=\sum_{j=0}^{n-1}\big|f(t_{j+1})-f(t_j)\big|^p .
+\]
+The first variation ($p=1$) measures how far the graph travels up and down. The
+quadratic variation ($p=2$) is the case that matters for stochastic calculus.
+
+\begin{lemma}[Smooth functions have zero quadratic variation]\label{lem:bm-smooth}
+If $f$ is continuously differentiable on $[0,t]$, then
+$V_2(f;\Pi)\le\big(\max_{[0,t]}|f'|\big)^2\,t\,\|\Pi\|$, which tends to $0$ as
+$\|\Pi\|\to0$.
+\end{lemma}
+
+\begin{proof}
+By the mean value theorem,
+$|f(t_{j+1})-f(t_j)|\le\max|f'|\,(t_{j+1}-t_j)$. Squaring and using
+$(t_{j+1}-t_j)^2\le\|\Pi\|\,(t_{j+1}-t_j)$,
+\[
+  V_2(f;\Pi)\le(\max|f'|)^2\sum_j(t_{j+1}-t_j)^2\le(\max|f'|)^2\,\|\Pi\|\,t .\qedhere
+\]
+\end{proof}
+
+Brownian paths behave in the opposite way.
+
+\begin{theorem}[Quadratic variation of Brownian motion]\label{thm:bm-qv}
+Let $W$ be a Brownian motion, $t>0$, and $(\Pi_n)$ partitions of $[0,t]$ with
+$\|\Pi_n\|\to0$. Then
+\begin{equation}\label{eq:bm-qv-l2}
+  \E\Big[\big(V_2(W;\Pi_n)-t\big)^2\Big]=2\sum_j\big(t^{(n)}_{j+1}-t^{(n)}_j\big)^2\le2t\,\|\Pi_n\|
+  \xrightarrow[n\to\infty]{}0,
+\end{equation}
+so $V_2(W;\Pi_n)\to t$ in $L^2$. If moreover $\sum_n\|\Pi_n\|<\infty$ (for example, for the
+dyadic partitions $t_j=jt2^{-n}$), then $V_2(W;\Pi_n)\to t$ almost surely.
+\end{theorem}
+
+We write this as $[W,W]_t=t$.
+
+\begin{proof}
+Fix $n$ and drop it from the notation. Write $\Delta_j=W_{t_{j+1}}-W_{t_j}$ and
+$h_j=t_{j+1}-t_j$, so that $\Delta_j\sim\mathcal N(0,h_j)$ independently, and
+\[
+  V_2(W;\Pi)-t=\sum_j\big(\Delta_j^2-h_j\big).
+\]
+The terms $\Delta_j^2-h_j$ are independent with mean $0$. Since
+$\E[\Delta_j^4]=3h_j^2$ (the fourth moment of $\mathcal N(0,h)$ is $3h^2$), each has
+variance $\E[\Delta_j^4]-h_j^2=2h_j^2$. The variance of a sum of independent terms is the
+sum of the variances, so
+\[
+  \E\big[(V_2(W;\Pi)-t)^2\big]=\sum_j2h_j^2\le2\|\Pi\|\sum_jh_j=2t\|\Pi\| .
+\]
+This is \eqref{eq:bm-qv-l2}.
+
+For the almost sure statement, fix $\varepsilon>0$. By Chebyshev's inequality and
+\eqref{eq:bm-qv-l2},
+$\Prob\big(|V_2(W;\Pi_n)-t|>\varepsilon\big)\le2t\|\Pi_n\|/\varepsilon^2$, which is summable
+in $n$. By the Borel--Cantelli lemma,\footnote{If events $A_n$ satisfy
+$\sum_n\Prob(A_n)<\infty$, then almost surely only finitely many of them occur.} almost
+surely $|V_2(W;\Pi_n)-t|\le\varepsilon$ for all $n$ large enough. Applying this to
+$\varepsilon=1/k$ for every integer $k\ge1$ (a countable intersection of almost sure
+events is almost sure) gives $V_2(W;\Pi_n)\to t$ almost
+surely.
+\end{proof}
+
+Note the mechanism. Each squared increment $\Delta_j^2$ is random, but there are many of
+them and they are independent, so their sum concentrates around its mean $t$: a law of
+large numbers along a single path. For the scaled random walk of \cref{sec:bm-scaling}
+there was nothing to average: every squared step was exactly $1/n$.
+
+\begin{corollary}[Infinite first variation]\label{cor:bm-fv}
+In the setting of \cref{thm:bm-qv}, with $\sum_n\|\Pi_n\|<\infty$,
+$V_1(W;\Pi_n)\to\infty$ almost surely. In particular, almost every Brownian path has
+infinite total variation on $[0,t]$: it is not the difference of two increasing
+functions. Riemann--Stieltjes sums $\sum_jg(t_j)(W_{t_{j+1}}-W_{t_j})$ still converge when
+the integrand $g$ itself has bounded variation (sum by parts), but they cannot be made to
+converge for every continuous $g$, and $\int_0^tW\,\dd W$ is the first casualty
+(\cref{ch:07-ito-integral}).
+\end{corollary}
+
+\begin{proof}
+For any partition,
+\[
+  V_2(W;\Pi)=\sum_j|\Delta_j|^2\le\Big(\max_j|\Delta_j|\Big)\sum_j|\Delta_j|
+  =\Big(\max_j|\Delta_j|\Big)\,V_1(W;\Pi).
+\]
+A continuous path is uniformly continuous on $[0,t]$, so $\max_j|\Delta_j|\to0$ as
+$\|\Pi_n\|\to0$, for every $\omega$. On the almost sure event where
+$V_2(W;\Pi_n)\to t>0$, the inequality forces $V_1(W;\Pi_n)\ge V_2(W;\Pi_n)/\max_j|\Delta_j|\to\infty$.
+The total variation, the supremum of $V_1(W;\Pi)$ over all partitions, is therefore
+infinite.
+\end{proof}
+
+The roughness goes further: almost every Brownian path is nowhere differentiable
+(Paley, Wiener and Zygmund, 1933; see \textcite{morters-peres}, Theorem~1.30).
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.82\textwidth]{ch05-variations}
+  \caption{$p$-variations of one Brownian path on $[0,1]$ along dyadic partitions with
+    $n=2^2,\dots,2^{18}$ intervals. The first variation grows like $\sqrt n$, the
+    quadratic variation settles at $t=1$ (\cref{thm:bm-qv}), and the cubic variation
+    goes to $0$ (\exref{ex:bm-pvariation}).}
+  \label{fig:bm-variations}
+\end{figure}
+
+\subsection*{The rules $\dd W\,\dd W=\dd t$, $\dd W\,\dd t=0$, $\dd t\,\dd t=0$}
+
+The same arguments compute the cross terms. Along partitions with $\|\Pi\|\to0$:
+\begin{itemize}
+  \item $\sum_j\Delta_j^2\to t$: this is \cref{thm:bm-qv}, written $\dd W\,\dd W=\dd t$;
+  \item $\big|\sum_j\Delta_j\,h_j\big|\le\max_j|\Delta_j|\sum_jh_j=t\max_j|\Delta_j|\to0$,
+    written $\dd W\,\dd t=0$;
+  \item $\sum_jh_j^2\le t\|\Pi\|\to0$ (\cref{lem:bm-smooth} for $f(s)=s$), written
+    $\dd t\,\dd t=0$.
+\end{itemize}
+These three rules are all the bookkeeping that It\^o's formula needs
+(\cref{ch:08-ito-formula}). The first is the one that has no counterpart in ordinary
+calculus: in a second-order Taylor expansion of $f(W_t)$, the term
+$\frac12f''(W_t)(\dd W_t)^2$ does not vanish but contributes $\frac12f''(W_t)\,\dd t$.
+
+\demo{05-brownian-motion.ipynb}{the $p$-variations of a Brownian path on finer and finer
+partitions, for any $p$ you choose.}
+
+\furtherreading
+\textcite{shreve2}, Chapter~3, covers the same ground at the same level and with the
+same notation. \textcite{morters-peres} is a complete and readable account of Brownian
+motion itself: construction, path properties and much more. \textcite{karatzas-shreve},
+Chapter~2, and \textcite{legall}, Chapter~2, give the measure-theoretic details that we
+have skipped, including the existence theorem.

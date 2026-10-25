@@ -1,0 +1,101 @@
+% Exercises for Chapter 5 (Brownian motion). Statements only: solutions are kept privately.
+% Throughout, W is a Brownian motion and (F_t) a filtration for W.
+
+\begin{exercise}[Covariances]\label{ex:bm-moments}
+\easy Let $0<s<t$.
+\begin{enumerate}[label=(\alph*)]
+  \item Compute the correlation of $W_s$ and $W_t$. What happens when $s/t\to0$ and when
+    $s/t\to1$?
+  \item Compute $\E[W_s^2W_t^2]$ and $\Cov(W_s^2,W_t^2)$.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Polynomial martingales]\label{ex:bm-hermite}
+\easy Let $0\le s<t$.
+\begin{enumerate}[label=(\alph*)]
+  \item Compute $\E[W_t^3\mid\F_s]$ and deduce that $(W_t^3)$ is not a martingale.
+  \item Show that $W_t^3-3tW_t$ is a martingale.
+  \item Find the constant $c$ for which $W_t^4-6tW_t^2+ct^2$ is a martingale.
+  \item Expand $\exp(\sigma W_t-\frac{\sigma^2}{2}t)$ in powers of $\sigma$. Explain,
+    without full rigour, why the coefficients of $\sigma$, $\sigma^2$, $\sigma^3$,
+    $\sigma^4$ should be martingales, and compare them with (b) and (c) and with
+    \noteref{thm:bm-martingales}.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Conditioning on the future]\label{ex:bm-bridge}
+\medium Let $0<t<s$.
+\begin{enumerate}[label=(\alph*)]
+  \item Find the constant $a$ such that $W_t-aW_s$ is independent of $W_s$.
+  \item Deduce $\E[W_t\mid W_s]$ and $\Var(W_t\mid W_s)$.
+  \item Interpret the result: given where the path is at time $s$, where do you expect it
+    to have been at time $t$, and how uncertain is that guess at $t$ close to $0$ and
+    to $s$?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Correlated Brownian motions]\label{ex:bm-correlated}
+\easy Let $W$ and $B$ be independent Brownian motions, $\rho\in[-1,1]$, and
+$Z_t=\rho W_t+\sqrt{1-\rho^2}\,B_t$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $Z$ is a Brownian motion.
+  \item Compute $\Cov(W_t,Z_t)$ and the correlation of $W_t$ and $Z_t$.
+  \item Given a target correlation matrix for two assets, explain how you would simulate
+    two correlated Brownian motions from two independent ones.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Time inversion]\label{ex:bm-inversion}
+\medium Define $X_0=0$ and $X_t=tW_{1/t}$ for $t>0$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that every vector $(X_{t_1},\dots,X_{t_m})$ is centered Gaussian with
+    $\Cov(X_s,X_t)=\min(s,t)$.
+  \item Show that $W_u/u\to0$ almost surely as $u\to\infty$. \emph{Hint:} first along the
+    integers, using the strong law of large numbers; then control
+    $Z_n=\sup_{u\in[n,n+1]}|W_u-W_n|$. The $Z_n$ are identically distributed (why?), and
+    you may use Doob's maximal inequality, $\E\big[\sup_{u\le1}W_u^2\big]\le4\,\E[W_1^2]$.
+  \item Conclude that $X$, after redefinition on a null set if necessary, is a Brownian
+    motion.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Exit from an interval]\label{ex:bm-exit}
+\medium Let $a<0<b$ and $\tau=\inf\{t\ge0:W_t\notin(a,b)\}$. A random time $\tau$ is a
+\emph{stopping time} if $\{\tau\le t\}\in\F_t$ for every $t$; exit times of a continuous
+adapted process from an open interval are stopping times. You may use: (i) if $M$ is a
+continuous martingale and $\tau$ a stopping time, then $(M_{t\wedge\tau})_{t\ge0}$ is a
+martingale; (ii) the monotone and dominated convergence theorems.
+\begin{enumerate}[label=(\alph*)]
+  \item Using the martingale $W_t^2-t$, show that $\E[\tau]<\infty$, and in particular
+    that $\tau<\infty$ almost surely.
+  \item Using the martingale $W_t$, compute $\Prob(W_\tau=b)$.
+  \item Show that $\E[\tau]=-ab$.
+  \item For $a=-b$, show with Brownian scaling (\noteref{prop:bm-invariance} and
+    \noteref{rem:bm-functionals}) that $\tau$ has the same law as $b^2\tau_1$, where
+    $\tau_1$ is the exit time from $(-1,1)$. Check that this agrees with (c).
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[All the $p$-variations]\label{ex:bm-pvariation}
+\medium Let $\Pi_n$ be the uniform partition of $[0,t]$ into $n$ intervals, and
+$c_p=\E|N|^p$ for $N\sim\mathcal N(0,1)$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $\E[V_p(W;\Pi_n)]=c_p\,t^{p/2}n^{1-p/2}$, and discuss its limit as
+    $n\to\infty$ for $p<2$, $p=2$ and $p>2$.
+  \item Show that $V_p(W;\Pi_n)\to0$ in probability for every $p>2$. \emph{Hint:} compare
+    with $V_2$ as in the proof of \noteref{cor:bm-fv}.
+  \item Show that $V_p(W;\Pi_n)\to\infty$ in probability for every $p<2$.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Simulating an exit time]\label{ex:bm-exit-sim}
+\medium This is a computational exercise. Take $a=-0.8$ and $b=0.5$, as in
+\exref{ex:bm-exit}.
+\begin{enumerate}[label=(\alph*)]
+  \item Simulate Brownian paths on a grid of step $h$ and estimate $\E[\tau]$ by the first
+    grid time at which the path leaves $(a,b)$. Report a $95\%$ confidence interval.
+  \item Repeat for $h=10^{-2},10^{-3},10^{-4}$. Is your estimate biased? In which
+    direction, and why? How does the bias appear to scale with $h$?
+  \item Compare with the exact value from \exref{ex:bm-exit}.
+\end{enumerate}
+\end{exercise}
