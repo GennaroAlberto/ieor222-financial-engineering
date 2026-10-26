@@ -9,6 +9,11 @@ Lecture notes with proofs, exercises, and interactive Python demos for IEOR 222
 
 The PDFs are rebuilt from the LaTeX sources on every push, after the code tests and the notebooks have run.
 
+These notes grew out of my own notes from taking the course as a student and from the
+discussion sections, worksheets and exercises I later prepared as its graduate student
+instructor (GSI). The general flow follows the lectures of Professor Thibaut Mastrolia,
+whom I thank for the structure of the course and for his great teaching. Any mistakes are mine.
+
 ## Contents
 
 Generated from [`latex/toc.tex`](latex/toc.tex). Chapters marked *in preparation* appear in the PDFs with their planned outline.
