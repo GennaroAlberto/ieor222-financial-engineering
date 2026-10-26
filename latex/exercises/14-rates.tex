@@ -1,0 +1,170 @@
+% Exercises for Chapter 14 (short-rate models). Statements only: solutions are kept privately.
+% Throughout, Q is the risk-neutral measure, \widetilde W a Q-Brownian motion with filtration
+% (F_t), D_t = exp(-int_0^t r_u du), and the notation is that of the notes (P(t,T), Y(t,T),
+% f(t,T), B(tau) = (1 - e^{-kappa tau})/kappa in the Gaussian models).
+
+\begin{exercise}[Yields, forward rates and bootstrapping]\label{ex:ir-bootstrap}
+\easy
+\begin{enumerate}[label=(\alph*)]
+  \item Let $T\mapsto P(t,T)$ be continuously differentiable and positive on $[t,T^*]$. Show that
+    $f(t,T)=Y(t,T)+(T-t)\,\partial_TY(t,T)$ for $t<T$. Deduce that the forward curve lies above the
+    yield curve where the yield curve is increasing, and below it where it is decreasing.
+  \item Three bonds with face value $100$ pay annual coupons and mature in $1$, $2$ and $3$ years:
+    the first pays $2\%$ of the face value at the end of each year, the second $3\%$, the third $4\%$,
+    and each repays the face value at maturity. Their prices are $99.20$, $99.60$ and $100.30$.
+    Assuming that a bond paying $c_1,\dots,c_n$ at times $T_1<\dots<T_n$ is worth
+    $\sum_ic_iP(0,T_i)$, find $P(0,1)$, $P(0,2)$ and $P(0,3)$, the yields $Y(0,k)$ and the forward
+    rates $F(0;1,2)$ and $F(0;2,3)$ of \noteref{eq:ir-forward}.
+  \item Check that $kY(0,k)=\sum_{j=1}^kF(0;j-1,j)$ (with $F(0;0,1)=Y(0,1)$), and explain this
+    identity with the strategy described after \noteref{eq:ir-forward}.
+  \item What is the price of a $3$-year bond with face value $100$ and an annual coupon of $5\%$?
+    Why must it be this price?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[The term premium in the Vasicek model]\label{ex:ir-term-premium}
+\easy Let $r$ follow the Vasicek model of \noteref{prop:ir-vasicek} under $\Q$, with parameters
+$\kappa>0$, $\theta$ and $\sigma>0$, and let $\lambda\in\R$ be a constant market price of risk: as in
+\noteref{rem:ir-market-price}, $\Prob$ is the measure under which $W_t=\widetilde W_t-\lambda t$ is a
+Brownian motion.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that under $\Prob$ the short rate is an Ornstein--Uhlenbeck process with the same
+    $\kappa$ and $\sigma$ and the long-run level $\theta_\Prob=\theta+\sigma\lambda/\kappa$.
+  \item Show that under $\Prob$ the bond maturing at $T$ has expected instantaneous return
+    $r_t-\lambda\sigma B(T-t)$ at time $t<T$. For which sign of $\lambda$ do long bonds earn more than
+    short ones on average? What is the ratio of the expected excess return to the volatility?
+  \item The \emph{term premium} is $\mathrm{TP}(T)=Y(0,T)-\frac1T\int_0^T\E^\Prob[r_t]\,\dd t$: the yield
+    in excess of the average short rate expected under $\Prob$. Show that
+    \[
+      \mathrm{TP}(T)=\big(R_\infty-\theta_\Prob\big)\Big(1-\frac{B(T)}T\Big)+\frac{\sigma^2B(T)^2}{4\kappa T},
+    \]
+    which does not depend on $r_0$, and find its limit as $T\to\infty$. Identify the two effects that
+    it combines.
+  \item Take $\kappa=0.3$, $\theta_\Prob=4\%$, $\sigma=1\%$, $\lambda=-0.3$ and $r_0=3\%$. Compute $\theta$,
+    $R_\infty$, $Y(0,10)$, $\frac1{10}\int_0^{10}\E^\Prob[r_t]\,\dd t$, $\mathrm{TP}(10)$, and the expected
+    excess return of the $10$-year bond at time $0$.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Vasicek bond prices from the integrated rate]\label{ex:ir-vasicek-gaussian}
+\medium Let $r$ follow the Vasicek model of \noteref{prop:ir-vasicek}, $0\le t<T$ and $\tau=T-t$. You
+may use that, for deterministic $g,h\in L^2[t,T]$,
+$\E\big[\int_t^Tg\,\dd\widetilde W\int_t^Th\,\dd\widetilde W\big]=\int_t^Tg(u)h(u)\,\dd u$.
+\begin{enumerate}[label=(\alph*)]
+  \item Integrate the equation of $r$ from $t$ to $T$ and use \noteref{prop:sde-ou}(i) to show that
+    \[
+      \int_t^Tr_u\,\dd u=\theta\tau+(r_t-\theta)B(\tau)+\sigma\int_t^TB(T-u)\,\dd\widetilde W_u .
+    \]
+  \item Deduce that, given $\F_t$, $\int_t^Tr_u\,\dd u$ is normal with mean
+    $m=\theta\tau+(r_t-\theta)B(\tau)$ and variance $v=\sigma^2\int_0^\tau B(u)^2\,\dd u$, and recover
+    \noteref{prop:ir-vasicek}(i) from $\EQ[e^{-X}]=e^{-\E X+\Var X/2}$ for a normal $X$.
+  \item Show that $Y(t,T)<m/\tau$, the average short rate expected under $\Q$, and that the difference
+    $v/(2\tau)$ increases to $\sigma^2/(2\kappa^2)$ as $\tau\to\infty$. Interpret $R_\infty$. For
+    $\kappa=0.15$, $\theta=5\%$, $\sigma=2.5\%$, compute the difference in basis points for $\tau=1$, $10$
+    and $30$ years.
+  \item Show that, given $\F_t$, the pair $\big(r_{t+h},\int_t^{t+h}r_u\,\dd u\big)$ is Gaussian with
+    covariance $\sigma^2B(h)^2/2$, and give its means and variances. Explain how to simulate
+    $(r_{t_k},\int_0^{t_k}r_u\,\dd u)_{k\le n}$ exactly on a grid.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Moments of the CIR rate]\label{ex:ir-cir-moments}
+\medium Let $r$ be the CIR rate of \noteref{prop:ir-cir} with $\kappa,\theta,\sigma>0$ and $r_0\ge0$. You
+may use that $\EQ\big[\sup_{s\le t}r_s\big]<\infty$ for every $t$.
+\begin{enumerate}[label=(\alph*)]
+  \item Compute $\dd(e^{\kappa t}r_t)$ and deduce that
+    $r_t=\theta+(r_0-\theta)e^{-\kappa t}+\sigma\int_0^te^{-\kappa(t-s)}\sqrt{r_s}\,\dd\widetilde W_s$.
+  \item Show that the stochastic integral in (a) has mean zero, and find $\EQ[r_t]$. Compare with the
+    Vasicek model.
+  \item Show that
+    $\Var(r_t)=\frac{\sigma^2r_0}{\kappa}\big(e^{-\kappa t}-e^{-2\kappa t}\big)+\frac{\sigma^2\theta}{2\kappa}\big(1-e^{-\kappa t}\big)^2$.
+  \item Find the limits of $\EQ[r_t]$ and $\Var(r_t)$ as $t\to\infty$, and check them against the
+    stationary gamma law of \exref{ex:sde-stationary}(d) when $2\kappa\theta\ge\sigma^2$.
+  \item A Vasicek model with the same $\kappa$ and $\theta$ has the same stationary mean and variance
+    if its volatility is $\sigma_V=\sigma\sqrt\theta$. For $\kappa=0.5$, $\theta=4\%$, $\sigma=10\%$, compute
+    the stationary probability of a negative rate in this Vasicek model, and the Feller ratio of the
+    CIR model. What do the two models agree on, and what not?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[The Hull--White model]\label{ex:ir-hull-white}
+\medium Let $\kappa>0$, $\sigma>0$, $r_0\in\R$, $\beta:[0,T^*]\to\R$ continuous, and let $r$ solve
+$\dd r_t=(\beta(t)-\kappa r_t)\,\dd t+\sigma\,\dd\widetilde W_t$.
+\begin{enumerate}[label=(\alph*)]
+  \item Use \noteref{thm:ir-affine} to show that $P(t,T)=\exp\big(A(t,T)-B(T-t)r_t\big)$ with
+    $B(\tau)=(1-e^{-\kappa\tau})/\kappa$ and
+    $A(t,T)=-\int_t^T\beta(s)B(T-s)\,\dd s+\frac{\sigma^2}2\int_0^{T-t}B(u)^2\,\dd u$.
+  \item Show that $f(0,T)=e^{-\kappa T}r_0+\int_0^T\beta(s)e^{-\kappa(T-s)}\,\dd s-\frac{\sigma^2}2B(T)^2$.
+  \item Let $f^M$ be a continuously differentiable forward curve and
+    $P^M(0,T)=\exp(-\int_0^Tf^M)$. Show that $P(0,T)=P^M(0,T)$ for all $T\le T^*$ if and only if
+    $r_0=f^M(0)$ and
+    \[
+      \beta(t)=(f^M)'(t)+\kappa f^M(t)+\frac{\sigma^2}{2\kappa}\big(1-e^{-2\kappa t}\big),\qquad t\le T^*.
+    \]
+    \emph{Hint:} $g(T)=f(0,T)+\frac{\sigma^2}2B(T)^2$ solves a linear differential equation.
+  \item Check that the formula of (c) tends to that of \noteref{prop:ir-ho-lee}(ii) as $\kappa\to0$.
+  \item Suppose the market curve is flat, $f^M\equiv\varphi$. Find $\beta$. Can a Vasicek model
+    (constant $\beta=\kappa\theta$) with $\sigma>0$ reproduce a flat curve?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Caplets are bond puts]\label{ex:ir-caplet}
+\medium Let $r$ be a short-rate model, $0<\delta$ and $T+\delta\le T^*$. The simple rate for $[T,T+\delta]$
+fixed at $T$ is $L=\big(1/P(T,T+\delta)-1\big)/\delta$: one dollar invested at $T$ in bonds maturing at
+$T+\delta$ grows to $1+\delta L$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that a claim paying an $\F_T$-measurable amount $X\ge0$ at time $T+\delta$ is worth
+    $X\,P(T,T+\delta)$ at time $T$, in the sense of \noteref{thm:rn-pricing}. Deduce that the claim
+    paying $\delta L$ at $T+\delta$ is worth $P(0,T)-P(0,T+\delta)$ at time $0$, and find the fixed rate
+    $k$ that makes the swap of $\delta L$ against $\delta k$, both paid at $T+\delta$, worth zero.
+  \item A \emph{caplet} with strike $k>0$ pays $\delta(L-k)^+$ at $T+\delta$. Show that it is worth
+    $(1+\delta k)\big(\frac1{1+\delta k}-P(T,T+\delta)\big)^+$ at time $T$: it is $1+\delta k$ puts on the
+    bond maturing at $T+\delta$, with expiry $T$.
+  \item In the Vasicek model, give the price of the caplet at time $0$. Compute it, per unit of
+    notional and in basis points, for $\kappa=0.15$, $\theta=5\%$, $\sigma=2.5\%$, $r_0=3\%$, $T=1$,
+    $\delta=0.5$ and $k=4\%$, together with the forward simple rate of (a).
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Options on coupon bonds]\label{ex:ir-jamshidian}
+\hard This exercise is partly computational. In the Vasicek model, a coupon bond pays $c_i>0$ at times
+$T<T_1<\dots<T_n\le T^*$, and a European call with strike $K>0$ and expiry $T$ pays
+$\big(\sum_ic_iP(T,T_i)-K\big)^+$ at $T$. Write $P(T,T_i)=\Pi_i(r_T)$, with
+$\Pi_i(x)=\exp\big(A(T_i-T)-B(T_i-T)x\big)$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $x\mapsto\sum_ic_i\Pi_i(x)$ is continuous and strictly decreasing on $\R$, with limits
+    $+\infty$ and $0$, so that there is a unique $r^*$ with $\sum_ic_i\Pi_i(r^*)=K$.
+  \item Let $K_i=\Pi_i(r^*)$. Show that
+    $\big(\sum_ic_iP(T,T_i)-K\big)^+=\sum_ic_i\big(P(T,T_i)-K_i\big)^+$ (\emph{Jamshidian's decomposition}),
+    and deduce the price of the call at time $0$ from \noteref{prop:ir-forward-measure}(iii).
+  \item Take $\kappa=0.15$, $\theta=5\%$, $\sigma=2.5\%$, $r_0=3\%$, $T=1$, a bond paying $5$ at times $2$
+    and $3$ and $105$ at time $4$, and $K=100$. Compute $r^*$, the $K_i$ and the price of the call.
+    Check the price by Monte Carlo with $2\times10^5$ exact draws of $\big(r_1,\int_0^1r_u\,\dd u\big)$
+    (\exref{ex:ir-vasicek-gaussian}(d)), with a $95\%$ confidence interval, and compute the put by
+    parity.
+  \item Where does the argument use that the model has a single factor? Would it apply if
+    $r_t=X_t+Y_t$ for two independent Ornstein--Uhlenbeck processes $X$ and $Y$?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[When the Feller condition fails]\label{ex:ir-feller-fails}
+\hard Let $r$ be the CIR rate of \noteref{prop:ir-cir}, with $\kappa,\theta,\sigma>0$ and $r_0>0$, let
+$\nu=2\kappa\theta/\sigma^2$, and for $c\ge0$ let $\tau_c=\inf\{t\ge0:r_t=c\}$ ($\inf\emptyset=\infty$).
+Define, for $x>0$,
+\[
+  s(x)=\int_1^xy^{-\nu}e^{2\kappa y/\sigma^2}\,\dd y .
+\]
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $\frac12\sigma^2x\,s''(x)+\kappa(\theta-x)s'(x)=0$ for $x>0$.
+  \item Let $0<a<r_0<b$ and $\tau=\tau_a\wedge\tau_b$. You may use that, for $0\le a<r_0<b$,
+    $\tau_a\wedge\tau_b<\infty$ almost surely: the rate leaves every bounded interval. Show that $\big(s(r_{t\wedge\tau})\big)_{t\ge0}$ is a bounded martingale, and deduce that
+    \[
+      \Q(\tau_a<\tau_b)=\frac{s(b)-s(r_0)}{s(b)-s(a)} .
+    \]
+  \item Let $\nu<1$. Show that $s(0+)=\lim_{x\downarrow0}s(x)$ is finite and that
+    $\Q(\tau_0<\tau_b)=\frac{s(b)-s(r_0)}{s(b)-s(0+)}>0$. \emph{Hint:} the events $\{\tau_a<\tau_b\}$
+    decrease as $a\downarrow0$; identify their intersection.
+  \item Still with $\nu<1$, show that $\Q(\tau_0<\infty)=1$.
+  \item Let $\nu\ge1$. Show that $s(0+)=-\infty$, and deduce \noteref{prop:ir-cir}(ii) again.
+\end{enumerate}
+\end{exercise}

@@ -1,0 +1,190 @@
+% Exercises for Chapter 11 (change of measure and risk-neutral pricing). Statements only:
+% solutions are kept privately.
+% Throughout, W is a Brownian motion with filtration (F_t), T > 0, and N is the standard
+% normal distribution function.
+
+\begin{exercise}[Two ways to compute under $\Q$]\label{ex:rn-two-ways}
+\easy Let $\theta\in\R$, let $\Q$ have density $Z_T=\exp(-\theta W_T-\frac{\theta^2}2T)$ with
+respect to $\Prob$, and let $\widetilde W_t=W_t+\theta t$, as in \noteref{thm:rn-girsanov}.
+Let $0\le t\le T$.
+\begin{enumerate}[label=(\alph*)]
+  \item Using \noteref{thm:rn-girsanov}, compute $\EQ[W_T\mid\F_t]$, the variance of $W_T$
+    under $\Q$, and $\Q(W_T>0)$.
+  \item Compute $\EQ[W_T\mid\F_t]$ again, this time with expectations under $\Prob$ only,
+    by Bayes' formula (\noteref{lem:rn-density}) and the independence lemma
+    (\noteref{lem:pr-independence}).
+  \item Show that $1/Z_t=\exp(\theta\widetilde W_t-\frac{\theta^2}2t)$, that $(1/Z_t)_{t\le T}$
+    is a $\Q$-martingale, and that $\Prob(A)=\EQ[\1_A/Z_T]$ for every event $A$. Explain why
+    this makes the roles of $\Prob$ and $\Q$ symmetric: what does Girsanov's theorem, applied
+    under $\Q$ to $\widetilde W$ with the constant $-\theta$, say?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Time-dependent coefficients]\label{ex:rn-deterministic}
+\medium Let $r,\mu,\sigma:[0,T]\to\R$ be continuous functions with $\sigma\ge\varepsilon>0$:
+the market of \noteref{sec:rn-pricing} with deterministic coefficients, money market
+$B_t=\exp\big(\int_0^tr(u)\,\dd u\big)$ and stock
+$S_t=S_0\exp\big(\int_0^t\sigma(u)\,\dd W_u+\int_0^t(\mu(u)-\frac12\sigma(u)^2)\,\dd u\big)$.
+Let $(\F_t)$ be the augmented filtration of $W$, let $\Q$ and $\widetilde W$ be as in
+\noteref{prop:rn-existence}, and for $0\le t<T$ and $\tau=T-t$ let
+\[
+  \bar r(t)=\frac1\tau\int_t^Tr(u)\,\dd u,\qquad\bar\sigma(t)^2=\frac1\tau\int_t^T\sigma(u)^2\,\dd u .
+\]
+\begin{enumerate}[label=(\alph*)]
+  \item Show that under $\Q$ the log-return $\log(S_T/S_t)$ is normal and independent of
+    $\F_t$, and give its mean and variance. You may use \noteref{prop:ito-deterministic}.
+  \item Show that the price at time $t$ of the call with strike $K>0$ is the Black--Scholes
+    price of \noteref{thm:bs-formula} with the constants $r$ and $\sigma$ replaced by $\bar
+    r(t)$ and $\bar\sigma(t)$.
+  \item Let $C_t$ be this price and $D_t=1/B_t$. For $t<T$, write $D_tC_t$ as an It\^o process
+    driven by $\widetilde W$, and use \noteref{prop:itf-decomposition} and
+    \noteref{eq:rn-wealth-q} to show that the hedge of \noteref{thm:rn-ftap}(iii) is
+    $\Delta_t=N(d_+)$, with $d_+$ computed from $\bar r(t)$, $\bar\sigma(t)$ and $S_t$. You may
+    use the delta of \noteref{prop:bs-greeks}.
+  \item A trader says that only the total variance $\int_t^T\sigma(u)^2\,\dd u$ until the
+    payment date $T$ matters. Is she right for calls? Take $r$ constant and
+    $\sigma(u)^2=\sigma_0^2\big(1+\kappa\sin(2\pi u/T)\big)$ with $\sigma_0>0$ and
+    $|\kappa|<1$, and consider the claim paying $(S_{T/2}-K)^+$ at time $T$. Show that its
+    price at time $0$ depends on $\kappa$, although $\int_0^T\sigma(u)^2\,\dd u$ does not.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[One source of risk, two stocks]\label{ex:rn-two-stocks}
+\medium Let $(\F_t)$ be the augmented filtration of $W$, let $r$ be a constant rate, and let
+two stocks follow $\dd S^i_t=\mu_iS^i_t\,\dd t+\sigma_iS^i_t\,\dd W_t$, with $S^i_0>0$,
+$\sigma_i>0$ and market prices of risk $\theta_i=(\mu_i-r)/\sigma_i$, $i=1,2$. A self-financing
+strategy holds $\Delta^1_t$ and $\Delta^2_t$ shares and has wealth
+$\dd X_t=\Delta^1_t\,\dd S^1_t+\Delta^2_t\,\dd S^2_t+r\big(X_t-\Delta^1_tS^1_t-\Delta^2_tS^2_t\big)\dd t$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that there is a probability measure equivalent to $\Prob$ on $\F_T$ under which
+    $e^{-rt}S^1_t$ and $e^{-rt}S^2_t$ are both martingales if and only if $\theta_1=\theta_2$.
+    \emph{Hint:} \noteref{thm:rn-ftap}(ii) for each stock alone.
+  \item Let $\theta_1>\theta_2$. Compute the discounted wealth of the strategy with $X_0=0$,
+    $\Delta^1_t=1/(\sigma_1S^1_t)$ and $\Delta^2_t=-1/(\sigma_2S^2_t)$, and show that it is a
+    tame arbitrage. Describe the position in words.
+  \item Let $\theta_1=\theta_2=\theta$ and let $\Q$ be the common risk-neutral measure. Let
+    $V>0$ be the price of a third traded asset, an It\^o process with
+    $\dd V_t=\alpha_tV_t\,\dd t+\beta_tV_t\,\dd W_t$, whose discounted price is a
+    $\Q$-martingale. Show that $\alpha_t-r=\theta\beta_t$, $\dd t\otimes\dd\Prob$-almost
+    everywhere: every traded asset driven by $W$ earns the same excess return per unit of
+    volatility. (For a call, this is the elasticity statement of \noteref{rem:dh-mu}(b).)
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Dividends, Black's formula and early exercise]\label{ex:rn-dividends}
+\easy Work in the setting of \noteref{prop:rn-dividends}, with $K>0$, $0\le t<T$ and
+$\tau=T-t$, and let $F_t=S_te^{(r-q)\tau}$ be the forward price.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $C_t=e^{-r\tau}\big(F_tN(d_+)-KN(d_-)\big)$ with
+    $d_\pm=\big(\log(F_t/K)\pm\frac12\sigma^2\tau\big)/(\sigma\sqrt\tau)$ (Black's formula), and
+    that $C_t-P_t=e^{-r\tau}(F_t-K)$. Why is it natural that the price depends on $S_t$, $r$
+    and $q$ only through $F_t$ and the discount factor?
+  \item Show that $C_t$ decreases and $P_t$ increases when $q$ increases, the other
+    parameters being fixed.
+  \item Let $q>0$. Using put--call parity and a bound on $P_t$, show that
+    $C_t-(S_t-K)\to-\infty$ as $S_t\to\infty$. Compute $C_t$ and $S_t-K$ for $S_t=150$, $K=100$,
+    $\tau=1$, $r=3\%$, $q=5\%$ and $\sigma=20\%$. What does this imply for an American call on
+    this stock? Compare with \noteref{thm:bin-american}(iv).
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Exchange rates from both sides]\label{ex:rn-fx}
+\medium Let $X$ be the price in dollars of one euro, with
+$\dd X_t=(r-r_f)X_t\,\dd t+\sigma X_t\,\dd\widetilde W_t$ under the dollar risk-neutral
+measure $\Q$ of \noteref{prop:rn-dividends}(iii), where $r$ and $r_f$ are the dollar and euro
+interest rates and $\sigma>0$. Let $Y_t=1/X_t$, the price in euros of one dollar.
+\begin{enumerate}[label=(\alph*)]
+  \item Compute $\dd Y_t$. Is $Y$ a geometric Brownian motion with drift $r_f-r$ under $\Q$?
+  \item A European investor measures wealth in units of the euro money market. Let $\Q^f$ be
+    the measure of \noteref{prop:rn-numeraire} for the numeraire $N_t=X_te^{r_ft}$, the euro
+    money market account valued in dollars. Show that $W^f_t=\widetilde W_t-\sigma t$ is a
+    $\Q^f$-Brownian motion, that $\dd Y_t=(r_f-r)Y_t\,\dd t-\sigma Y_t\,\dd W^f_t$, and that
+    $e^{-r_ft}e^{rt}Y_t$, the dollar money market valued in euros and discounted at the euro
+    rate, is a $\Q^f$-martingale.
+  \item \emph{(Siegel's paradox.)} Compute $\EQ[X_T]$, $\E^{\Q^f}[Y_T]$ and $\EQ[Y_T]$, and
+    compare them with the forward rate $F=X_0e^{(r-r_f)T}$ and with $1/F$. Evaluate them for
+    $X_0=1.10$, $r=4\%$, $r_f=2\%$, $\sigma=10\%$ and $T=1$. Why do the two investors agree on
+    the forward rate but not on the expected exchange rate?
+  \item Show that the dollar price of a call on one euro with strike $K$ dollars equals $X_0K$
+    times the euro price of a put on one dollar with strike $1/K$ euros, both with maturity
+    $T$.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[An option to exchange two stocks]\label{ex:rn-exchange}
+\hard Let $(\widetilde W^1,\widetilde W^2)$ be a two-dimensional Brownian motion under a
+measure $\Q$, $\rho\in(-1,1)$, $\widetilde B^1=\widetilde W^1$ and
+$\widetilde B^2=\rho\widetilde W^1+\sqrt{1-\rho^2}\,\widetilde W^2$. For $i=1,2$ let
+$S^i_t=S^i_0\exp\big(\sigma_i\widetilde B^i_t+(r-\frac{\sigma_i^2}2)t\big)$, with $S^i_0>0$,
+$\sigma_i>0$ and $r\in\R$: two stocks under a risk-neutral measure. An exchange option pays
+$(S^1_T-S^2_T)^+$ at $T$. Let $\bar\sigma^2=\sigma_1^2-2\rho\sigma_1\sigma_2+\sigma_2^2$.
+\begin{enumerate}[label=(\alph*)]
+  \item Let $\Q^2$ be the measure with numeraire $S^2$ of \noteref{prop:rn-numeraire}. Using
+    \noteref{rem:rn-girsanov-remarks}(c), find a two-dimensional $\Q^2$-Brownian motion
+    $(\widehat W^1,\widehat W^2)$.
+  \item Show that $U=S^1/S^2$ satisfies $U_t=U_0\exp\big(\bar\sigma\bar B_t-\frac12\bar\sigma^2t\big)$
+    for a $\Q^2$-Brownian motion $\bar B$ that you should identify. How could you have
+    predicted that $U$ is a $\Q^2$-martingale?
+  \item Deduce that the price at time $0$ is $S^1_0N(d_+)-S^2_0N(d_-)$, with
+    $d_\pm=\big(\log(S^1_0/S^2_0)\pm\frac12\bar\sigma^2T\big)/(\bar\sigma\sqrt T)$.
+  \item Write the price as $V(S^1_0,S^2_0)$. Show that $V(x_1,x_2)=x_2\,g(x_1/x_2)$ for a
+    function $g$, that $\partial_1V=N(d_+)$ and $\partial_2V=-N(d_-)$, and that
+    $V=x_1\partial_1V+x_2\partial_2V$. Why does $r$ not appear? Suggest a hedge.
+  \item What is the limit of the price as $\bar\sigma\downarrow0$?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[A second source of risk]\label{ex:rn-incomplete}
+\hard Let $(W^1,W^2)$ be a two-dimensional Brownian motion under $\Prob$ and $(\F_t)$ the
+augmented filtration it generates. The money market has a constant rate $r$, and the only
+stock follows $\dd S_t=\mu S_t\,\dd t+\sigma S_t\,\dd W^1_t$, $\sigma>0$; let
+$\theta=(\mu-r)/\sigma$. Self-financing strategies in the stock and the money market are as in
+\noteref{sec:rn-pricing}, with $\Delta$ progressively measurable for this $(\F_t)$.
+\begin{enumerate}[label=(\alph*)]
+  \item For $\nu\in\R$, let $\Q^\nu$ have density
+    $\exp\big(-\theta W^1_T-\nu W^2_T-\frac12(\theta^2+\nu^2)T\big)$ with respect to $\Prob$.
+    Show that every $\Q^\nu$ is a risk-neutral measure, and that $W^1_t+\theta t$ and
+    $W^2_t+\nu t$ are independent $\Q^\nu$-Brownian motions.
+  \item A claim pays $1$ at $T$ if $W^2_T>0$: a bet on a risk that the stock does not carry.
+    Compute $e^{-rT}\E^{\Q^\nu}[\1_{\{W^2_T>0\}}]$, and the set of its values as $\nu$ ranges
+    over $\R$.
+  \item Show that no self-financing strategy with bounded discounted wealth replicates the
+    claim. \emph{Hint:} under each $\Q^\nu$, write the discounted wealth as an integral against
+    $W^1_t+\theta t$, and use that a bounded local martingale is a martingale.
+  \item Show that $W^2$ is not of the form $\int_0^t\Gamma_u\,\dd W^1_u$ with $\Gamma\in\mathbb
+    H^2_{\mathrm{loc}}$, and say which hypothesis of \noteref{thm:rn-representation} fails.
+    Compare with the trinomial model of \noteref{prop:bin-trinomial}.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Reweighting with a random market price of risk]\label{ex:rn-reweight-sim}
+\medium This is a computational exercise. Let $(\F_t)$ be the augmented filtration of $W$, let
+$r$ and $\sigma>0$ be constants, $a\ge0$, and $\lambda(s)=a\tanh\big(\log(s/S_0)\big)$ for
+$s>0$. Under $\Prob$, the stock is $S_t=e^{Y_t}$, where
+\[
+  \dd Y_t=\Big(r+\sigma\lambda\big(e^{Y_t}\big)-\frac{\sigma^2}2\Big)\dd t+\sigma\,\dd W_t,
+  \qquad Y_0=\log S_0 :
+\]
+after a rise, the expected return goes up.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that this equation has a unique solution (\noteref{thm:sde-existence}), that
+    $\dd S_t=\alpha_tS_t\,\dd t+\sigma S_t\,\dd W_t$ for a bounded process $\alpha$ that you
+    should identify, and that under the risk-neutral measure of \noteref{prop:rn-existence}
+    the stock is the Black--Scholes stock \noteref{eq:bs-model}. What is the price of a call,
+    and does it depend on $a$?
+  \item Simulate under $\Prob$ with the Euler scheme
+    $Y_{j+1}=Y_j+(r+\sigma\lambda_j-\frac{\sigma^2}2)h+\sigma\Delta W_j$, $\lambda_j=\lambda(e^{Y_j})$,
+    on the grid $t_j=jh$, $h=T/n$, and weight each path by
+    $Z^h=\exp\big(-\sum_j\lambda_j\Delta W_j-\frac h2\sum_j\lambda_j^2\big)$. Show that the
+    weighted average of $e^{-rT}(e^{Y_n}-K)^+$ is an unbiased estimator of the Black--Scholes
+    price for every $h$, although the Euler scheme does not have the law of $Y_T$.
+    \emph{Hint:} under the measure with density $Z^h$, the variables $\Delta W_j+\lambda_jh$
+    are independent $\mathcal N(0,h)$; condition on $\F_{t_{n-1}}$, use
+    \noteref{prop:pr-gaussian-shift}, and induct.
+  \item Implement it with $S_0=K=100$, $r=3\%$, $\sigma=20\%$, $T=1$, $10^5$ paths, $n=50$ and
+    $n=250$, and $a=1$ and $a=3$. Report the weighted estimates with $95\%$ confidence
+    intervals, the plain averages of $e^{-rT}(e^{Y_n}-K)^+$, and the effective sample size
+    $(\sum_iZ^h_i)^2/\sum_i(Z^h_i)^2$. Comment on what the plain averages estimate, and on the
+    size of the confidence intervals for the two values of $a$.
+\end{enumerate}
+\end{exercise}

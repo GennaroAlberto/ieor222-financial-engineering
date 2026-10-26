@@ -1,5 +1,618 @@
-\begin{planned}
-  \item zero-coupon bonds and the yield curve
-  \item the Ho--Lee, Vasicek and CIR models; the bond-pricing PDE and affine term structures
-  \item demo: simulating short rates and bond prices
-\end{planned}
+% Chapter 14: Short-rate models.
+
+Until now the interest rate was a constant, or a bounded process given in advance
+(\cref{sec:rn-pricing}). A zero-coupon bond pays $1$ at its maturity $T$; by \cref{thm:rn-pricing},
+its price at time $t$ is $\EQ\big[e^{-\int_t^Tr_u\,\dd u}\,\big|\,\F_t\big]$, so a model for the short
+rate $r$ under a risk-neutral measure $\Q$ prices every bond, and with it the yield curve. The
+affine models give bond prices in closed form through Riccati equations (\cref{thm:ir-affine}):
+the Ho--Lee and Vasicek models, with Gaussian rates that can be negative, and the
+Cox--Ingersoll--Ross model, whose rate is nonnegative. Bond options are priced with the forward
+measure, and a last remark describes the approach of Heath, Jarrow and Morton.
+
+\paragraph{Setting.} Throughout, $(\Omega,\F,\Q)$ is a probability space, $\widetilde W$ is a
+$\Q$-Brownian motion with a filtration $(\F_t)$ (\cref{def:bm-filtration}, under $\Q$), every
+$\Q$-null event belongs to $\F_0$, and $T^*>0$ is the longest maturity considered. Stochastic
+integrals, It\^o processes and It\^o's formula are those of
+\cref{ch:07-ito-integral,ch:08-ito-formula} (\cref{rem:itf-standing}), applied under $\Q$, and
+solutions of stochastic differential equations are those of \cref{def:sde-solution}, with
+$\widetilde W$ in place of $W$. Why we work under $\Q$ from the start is explained in
+\cref{rem:ir-market-price}.
+
+\section{Bonds, yields and forward rates}\label{sec:ir-bonds}
+
+\begin{definition}[Bonds, yields, forward rates]\label{def:ir-bond}
+A \emph{zero-coupon bond} with maturity $T\le T^*$ pays $1$ at time $T$; its price at time
+$t\le T$ is $P(t,T)>0$, with $P(T,T)=1$. For $t<T$, the \emph{yield} is
+$Y(t,T)=-\log P(t,T)/(T-t)$: the constant continuously compounded rate at which $P(t,T)$ grows
+to $1$ by time $T$. For $t\le T_1<T_2\le T^*$, the \emph{forward rate} for $[T_1,T_2]$ seen at
+time $t$ is
+\begin{equation}\label{eq:ir-forward}
+  F(t;T_1,T_2)=\frac{\log P(t,T_1)-\log P(t,T_2)}{T_2-T_1}.
+\end{equation}
+If $T\mapsto P(t,T)$ is continuously differentiable, the \emph{instantaneous forward rate} is
+$f(t,T)=-\partial_T\log P(t,T)$, so that $P(t,T)=\exp\big(-\int_t^Tf(t,u)\,\dd u\big)$. The
+\emph{short rate} is $r_t=\lim_{T\downarrow t}Y(t,T)$, when the limit exists. The maps
+$T\mapsto Y(t,T)$ and $T\mapsto f(t,T)$ are the \emph{yield curve} and the \emph{forward curve}
+at time $t$.
+\end{definition}
+
+The yield is the average of the forward rates, $Y(t,T)=\frac1{T-t}\int_t^Tf(t,u)\,\dd u$, and
+the short rate is $f(t,t)$ when $f$ is continuous. The forward rate is the rate of a loan that
+can be locked in today by trading bonds. At time $t$, buy one bond maturing at $T_1$ and sell
+$P(t,T_1)/P(t,T_2)$ bonds maturing at $T_2$. This costs nothing, pays $1$ at $T_1$ and costs
+$P(t,T_1)/P(t,T_2)=e^{F(t;T_1,T_2)(T_2-T_1)}$ at $T_2$: a loan from $T_1$ to $T_2$ at the
+continuously compounded rate $F=F(t;T_1,T_2)$, agreed at $t$. A costless contract to receive $1$ at
+$T_1$ against $e^{k(T_2-T_1)}$ at $T_2$ with $k<F$ would be an arbitrage (\cref{def:arb-arbitrage}):
+enter it, sell one $T_1$-bond and buy $e^{k(T_2-T_1)}$ bonds maturing at $T_2$, which brings
+$P(t,T_2)(e^{F(T_2-T_1)}-e^{k(T_2-T_1)})>0$ today and nothing later; for $k>F$, reverse it. A bond paying
+coupons $c_1,\dots,c_n$ at times $T_1<\dots<T_n$ is, by the same static argument, worth
+$\sum_ic_iP(t,T_i)$, which is how zero-coupon prices are extracted from coupon bonds
+(\exref{ex:ir-bootstrap}).
+
+\section{Short-rate models}\label{sec:ir-short-rate}
+
+\begin{definition}[Short-rate model]\label{def:ir-short-rate}
+Let $b,\sigma:[0,T^*]\times\R\to\R$ be Borel functions and $I\subseteq\R$ an interval. A
+\emph{short-rate model} is a solution $r$ on $[0,T^*]$, with values in $I$, of
+\begin{equation}\label{eq:ir-sde}
+  \dd r_t=b(t,r_t)\,\dd t+\sigma(t,r_t)\,\dd\widetilde W_t ,
+\end{equation}
+with $r_0\in I$ a constant, such that $\EQ[D_T]<\infty$ for every $T\le T^*$, where
+$D_t=\exp\big(-\int_0^tr_u\,\dd u\big)$ is the discount factor; the money market is worth $1/D_t$
+at time $t$. The \emph{bond prices} of the model are, for $0\le t\le T\le T^*$,
+\begin{equation}\label{eq:ir-bond}
+  P(t,T)=\EQ\Big[e^{-\int_t^Tr_u\,\dd u}\,\Big|\,\F_t\Big]=\frac{\EQ[D_T\mid\F_t]}{D_t}.
+\end{equation}
+\end{definition}
+
+The condition $\EQ[D_T]<\infty$ holds if $r$ is bounded below. The conditional expectation in
+\eqref{eq:ir-bond} is that of a positive variable (\cref{rem:pr-nonnegative}), and taking out what
+is known gives its second form, so $D_tP(t,T)=\EQ[D_T\mid\F_t]$: for every maturity, the
+discounted bond price is a positive $\Q$-martingale on $[0,T]$, and the discounted money market
+is constant. So $\Q$ is a risk-neutral measure (\cref{def:rn-measure}) for the market made of
+the money market and the bonds, with respect to any real-world measure equivalent to $\Q$; prices
+of other claims are given by \cref{thm:rn-pricing}. When the discounted bond prices are It\^o
+processes, $\dd\big(D_tP(t,T)\big)=D_tP(t,T)\,\sigma^P_t\,\dd\widetilde W_t$, as in all the models
+below, the discounted wealth of a self-financing strategy in the money market and finitely many
+bonds is a stochastic integral against $\widetilde W$, a $\Q$-local martingale, and the argument
+of \cref{thm:rn-pricing}(ii) and \cref{thm:rn-ftap}(i) shows that no tame strategy is an
+arbitrage.
+
+In a diffusion model the bond price should be a function of the current rate, and this function
+solves a partial differential equation, the analogue of the Black--Scholes equation.
+
+\begin{proposition}[The bond-pricing equation]\label{prop:ir-pde}
+Let $r$ be a short-rate model, $T\le T^*$, $F\in C^{1,2}([0,T]\times\R)$, and
+\[
+  G(t,x)=\partial_tF(t,x)+b(t,x)\,\partial_xF(t,x)+\tfrac12\sigma(t,x)^2\,\partial_{xx}F(t,x)-x\,F(t,x).
+\]
+\begin{enumerate}[label=(\roman*)]
+  \item If $G=0$ on $[0,T)\times I$ and $F(T,\cdot)=1$ on $I$, then
+    $D_tF(t,r_t)=F(0,r_0)+\int_0^tD_u\sigma(u,r_u)\partial_xF(u,r_u)\,\dd\widetilde W_u$ is a
+    $\Q$-local martingale on $[0,T]$. If it is a $\Q$-martingale, then $P(t,T)=F(t,r_t)$ for
+    $0\le t\le T$.
+  \item Conversely, let $(\F_t)$ be the filtration generated by $\widetilde W$ and augmented by the
+    $\Q$-null sets, and suppose that $P(t,T)=F(t,r_t)$ for $t\in[0,T]$. Then $G(t,r_t)=0$ for
+    $\dd t\otimes\dd\Q$-almost every $(t,\omega)\in[0,T]\times\Omega$, and
+    \begin{equation}\label{eq:ir-bond-dynamics}
+      \dd P(t,T)=r_tP(t,T)\,\dd t+\sigma(t,r_t)\,\partial_xF(t,r_t)\,\dd\widetilde W_t .
+    \end{equation}
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+By It\^o's formula (\cref{thm:itf-process}) and the product rule (\cref{cor:itf-product}), with
+$\dd D_t=-r_tD_t\,\dd t$ and $[D,F(\cdot,r)]=0$ because $D$ has no $\dd\widetilde W$-part,
+\[
+  \dd\big(D_tF(t,r_t)\big)=D_t\,G(t,r_t)\,\dd t+D_t\,\sigma(t,r_t)\,\partial_xF(t,r_t)\,\dd\widetilde W_t .
+\]
+The integrand of the stochastic integral is in $\mathbb H^2_{\mathrm{loc}}$, since $\sigma(\cdot,r)$
+is (\cref{def:sde-solution}) and $D$ and $\partial_xF(\cdot,r)$ are continuous.
+(i) If $G=0$ on $[0,T)\times I$, the $\dd t$-term vanishes and the integral is a local martingale
+(\cref{rem:ito-local}). If it is a martingale, then
+$D_tF(t,r_t)=\EQ[D_TF(T,r_T)\mid\F_t]=\EQ[D_T\mid\F_t]=D_tP(t,T)$.
+(ii) Now $D_tF(t,r_t)=D_tP(t,T)$ is a $\Q$-martingale, so by \cref{thm:rn-representation}(i),
+applied under $\Q$ to $\widetilde W$, it is an It\^o process with zero drift. By uniqueness of the
+decomposition (\cref{prop:itf-decomposition}(ii)), $D_tG(t,r_t)=0$ for $\dd t\otimes\dd\Q$-almost
+every $(t,\omega)$, and $D>0$. Then $P(t,T)=D_tP(t,T)\cdot D_t^{-1}$ with
+$\dd(D_t^{-1})=r_tD_t^{-1}\,\dd t$, and the product rule gives \eqref{eq:ir-bond-dynamics}.
+\end{proof}
+
+If $r_t$ has a density $p_t(x)>0$, continuous in $(t,x)\in(0,T]\times I$ (Vasicek), then by (ii) and
+Fubini $\EQ\int_0^T|G(t,r_t)|\,\dd t=\int_0^T\!\int_I|G|p_t\,\dd x\,\dd t=0$, so $G=0$ on
+$(0,T)\times I^\circ$ if $b$, $\sigma$ are continuous. Part (i) is the Feynman--Kac formula (\cref{thm:fk-feynman-kac}) with the discount rate
+$k(t,x)=x$; that theorem applies directly when the rate is bounded below and stays in an open
+interval, as in the CIR model under Feller's condition, with $I=(0,\infty)$.
+For Gaussian rates $k$ is unbounded below, and the martingale property is checked by hand in
+\cref{thm:ir-affine}. Formula \eqref{eq:ir-bond-dynamics} says that every bond earns the short
+rate on average under $\Q$, with a volatility $\sigma\,\partial_x\log F$ that depends on its
+maturity.
+
+\begin{remark}[Where is the real-world measure?]\label{rem:ir-market-price}
+The short rate is not the price of a traded asset, so, unlike the drift of the stock in
+\cref{sec:rn-girsanov}, its drift under $\Q$ is not determined by its drift under the real-world
+measure. Let $\lambda$ be a bounded progressively measurable process and $\Prob$ the measure of
+\cref{thm:rn-girsanov}, applied under $\Q$ with $\Theta=-\lambda$, under which
+$W_t=\widetilde W_t-\int_0^t\lambda_u\,\dd u$ is a Brownian motion on $[0,T^*]$. Under $\Prob$,
+$\dd r_t=\big(b(t,r_t)+\sigma(t,r_t)\lambda_t\big)\dd t+\sigma(t,r_t)\,\dd W_t$, and a bond with
+$\dd P(t,T)=r_tP(t,T)\,\dd t+\sigma^P_tP(t,T)\,\dd\widetilde W_t$ satisfies
+\[
+  \dd P(t,T)=\big(r_t+\lambda_t\sigma^P_t\big)P(t,T)\,\dd t+\sigma^P_tP(t,T)\,\dd W_t .
+\]
+Every bond earns, in excess of the short rate, $\lambda_t$ times its volatility: $\lambda$ is the
+\emph{market price of interest-rate risk}, the same for all maturities (as in \exref{ex:rn-two-stocks}).
+The short rate reveals $b+\sigma\lambda$, bond prices reveal $b$: so short-rate models are specified
+under $\Q$ and fitted to bond prices, and the risk premium is modelled separately
+(\exref{ex:ir-term-premium}).
+\end{remark}
+
+\section{Affine term structures}\label{sec:ir-affine}
+
+Guess a bond price of the form $F(t,x)=e^{A-Bx}$, with $A$ and $B$ functions of time. Then
+$\partial_xF=-BF$ and $\partial_{xx}F=B^2F$, and the bond-pricing equation, divided by $F$, is a
+polynomial in $x$ of degree one if $b$ and $\sigma^2$ are affine in $x$. Each coefficient must
+vanish, which gives two ordinary differential equations.
+
+\begin{theorem}[Affine term structures]\label{thm:ir-affine}
+Let $\beta_0:[0,T^*]\to\R$ be continuous, and let $\beta_1\in\R$ and $\alpha_0,\alpha_1\ge0$ be
+constants. Let $I=\R$ if $\alpha_1=0$, and $I=[-\alpha_0/\alpha_1,\infty)$ if
+$\alpha_1>0$, so that $\alpha_0+\alpha_1x\ge0$ on $I$. Let $r$ be a solution with values in $I$ of
+\begin{equation}\label{eq:ir-affine-sde}
+  \dd r_t=\big(\beta_0(t)+\beta_1r_t\big)\dd t+\sigma_t\,\dd\widetilde W_t,\qquad
+  \sigma_t=\sqrt{\alpha_0+\alpha_1r_t},
+\end{equation}
+that is, of \eqref{eq:ir-sde} with $\sigma(t,x)=\sqrt{(\alpha_0+\alpha_1x)^+}$, with $r_0\in I$.
+\begin{enumerate}[label=(\roman*)]
+  \item Let $\gamma=\sqrt{\beta_1^2+2\alpha_1}$. The function
+    \begin{equation}\label{eq:ir-riccati-B}
+      B(\tau)=\frac{2(e^{\gamma\tau}-1)}{(\gamma-\beta_1)(e^{\gamma\tau}-1)+2\gamma}\quad(\gamma>0),
+      \qquad B(\tau)=\tau\quad(\gamma=0),
+    \end{equation}
+    is the unique solution on $[0,\infty)$ of the \emph{Riccati equation}
+    $B'(\tau)=1+\beta_1B(\tau)-\frac12\alpha_1B(\tau)^2$, $B(0)=0$, and $B(\tau)>0$ for $\tau>0$.
+  \item For $0\le t\le T\le T^*$ let
+    $A(t,T)=\int_t^T\big(-\beta_0(s)B(T-s)+\frac12\alpha_0B(T-s)^2\big)\,\dd s$. Then
+    $\EQ[D_T]<\infty$, so $r$ is a short-rate model, and
+    \begin{align}
+      P(t,T)&=\exp\big(A(t,T)-B(T-t)\,r_t\big),\label{eq:ir-affine}\\
+      D_tP(t,T)&=P(0,T)\exp\Big(-\int_0^tB(T-u)\sigma_u\,\dd\widetilde W_u-\frac12\int_0^tB(T-u)^2\sigma_u^2\,\dd u\Big).
+      \label{eq:ir-affine-density}
+    \end{align}
+    In particular $\dd P(t,T)=r_tP(t,T)\,\dd t-B(T-t)\sigma_tP(t,T)\,\dd\widetilde W_t$, and the
+    yield $Y(t,T)=\big(B(T-t)r_t-A(t,T)\big)/(T-t)$ and the forward rate
+    $f(t,T)=-\partial_TA(t,T)+B'(T-t)\,r_t$ are affine functions of $r_t$.
+  \item If $\beta_0$ is constant, then $A(t,T)=A(T-t)$, where $A(\tau)=\int_0^\tau\big(-\beta_0B(u)+\frac12\alpha_0B(u)^2\big)\dd u$
+    solves $A'=-\beta_0B+\frac12\alpha_0B^2$, $A(0)=0$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+(i) If $\gamma=0$ then $\beta_1=\alpha_1=0$ and $B(\tau)=\tau$ solves $B'=1$. Let $\gamma>0$, write
+$u=e^{\gamma\tau}-1$ and $d=(\gamma-\beta_1)u+2\gamma$. Since $\gamma\ge|\beta_1|$, $d\ge2\gamma>0$, and
+$B=2u/d>0$ for $\tau>0$. Differentiating, $B'=2\gamma e^{\gamma\tau}\big(d-(\gamma-\beta_1)u\big)/d^2=
+4\gamma^2(u+1)/d^2$. On the other side, using $2\alpha_1=\gamma^2-\beta_1^2$,
+\[
+  d^2\Big(1+\beta_1B-\frac{\alpha_1}2B^2\Big)=d^2+2\beta_1ud-(\gamma^2-\beta_1^2)u^2
+  =4\gamma^2u+4\gamma^2 ,
+\]
+because the coefficient of $u^2$ is $(\gamma-\beta_1)^2+2\beta_1(\gamma-\beta_1)-\gamma^2+\beta_1^2=0$ and
+that of $u$ is $4\gamma(\gamma-\beta_1)+4\beta_1\gamma$. So $B$ solves the equation. If $\tilde B$ is
+another solution on some $[0,\tau_0]$, both are bounded there by some $L$, the right-hand side
+$q(y)=1+\beta_1y-\frac12\alpha_1y^2$ is Lipschitz on $[-L,L]$ with some constant $c$, and
+$|B-\tilde B|(\tau)\le c\int_0^\tau|B-\tilde B|$; Gronwall's lemma (\cref{lem:sde-gronwall}) gives
+$\tilde B=B$.
+
+(ii) Fix $T$ and let $M_t=D_t\exp\big(A(t,T)-B(T-t)r_t\big)$ for $t\le T$. Its logarithm
+$A(t,T)-B(T-t)r_t-\int_0^tr_u\,\dd u$ is affine in $r_t$ with $C^1$ coefficients, so no second
+derivative appears in its differential. With $\partial_tA(t,T)=\beta_0(t)B(T-t)-\frac12\alpha_0B(T-t)^2$
+and $\dd\big(B(T-t)r_t\big)=-B'(T-t)r_t\,\dd t+B(T-t)\,\dd r_t$, and writing $B$ for $B(T-t)$,
+\begin{align*}
+  \dd\log M_t&=\Big(\beta_0B-\frac{\alpha_0}2B^2+B'r_t-B\big(\beta_0+\beta_1r_t\big)-r_t\Big)\dd t-B\sigma_t\,\dd\widetilde W_t\\
+  &=\Big(-\frac{\alpha_0}2B^2+r_t\big(B'-\beta_1B-1\big)\Big)\dd t-B\sigma_t\,\dd\widetilde W_t
+  =-\frac12B^2\sigma_t^2\,\dd t-B\sigma_t\,\dd\widetilde W_t ,
+\end{align*}
+by the Riccati equation and $\sigma_t^2=\alpha_0+\alpha_1r_t$ on $I$. So $M_t=M_0Z_t$, where $Z$ is the
+exponential of \cref{thm:rn-girsanov} (under $\Q$, for $\widetilde W$) with
+$\Theta_u=B(T-u)\sigma_u$, a continuous process. We show that $M$ is a $\Q$-martingale on $[0,T]$.
+If $\alpha_1=0$, $\Theta_u=\sqrt{\alpha_0}\,B(T-u)$ is deterministic and bounded on $[0,T]$, and
+\cref{thm:rn-girsanov}(ii)--(iii) apply. If $\alpha_1>0$, then $r_t\ge-c$ with $c=\alpha_0/\alpha_1$, so
+$D_t\le e^{cT}$ and $e^{-B(T-t)r_t}\le e^{cB(T-t)}$; as $A(\cdot,T)$ and $B$ are continuous on
+$[0,T]$, $M$ is bounded by a constant. By \cref{thm:rn-girsanov}(i), $M$ is a local martingale:
+with the stopping times $\tau_n$ of \cref{rem:ito-local}, for $s\le t\le T$ and $E\in\F_s$,
+$\EQ[M_{t\wedge\tau_n}\1_E]=\EQ[M_{s\wedge\tau_n}\1_E]$, and since $\tau_n=T$ for $n$ large, almost
+surely, dominated convergence gives $\EQ[M_t\1_E]=\EQ[M_s\1_E]$.
+
+Since $A(T,T)=0$ and $B(0)=0$, $M_T=D_T$. Hence $\EQ[D_T]=M_0<\infty$ and
+$D_tP(t,T)=\EQ[D_T\mid\F_t]=\EQ[M_T\mid\F_t]=M_t$, which is \eqref{eq:ir-affine}; and
+$M_t=M_0Z_t$ with $M_0=P(0,T)$ is \eqref{eq:ir-affine-density}. The product rule applied to
+$P(t,T)=M_t/D_t$, with $\dd M_t=-B(T-t)\sigma_tM_t\,\dd\widetilde W_t$ (\cref{thm:rn-girsanov}(i)),
+gives the dynamics. The yield and the forward rate follow from the definitions; $A(t,T)$ is
+differentiable in $T$, with $\partial_TA(t,T)=\int_t^T\big(-\beta_0(s)+\alpha_0B(T-s)\big)B'(T-s)\,\dd s$,
+because the integrand of $A$ vanishes at $s=T$.
+
+(iii) Substitute $u=T-s$.
+\end{proof}
+
+\begin{remark}[Affine drift and variance are also necessary]\label{rem:ir-duffie-kan}
+Suppose that $b$ and $\sigma$ do not depend on $t$ and that, for every maturity,
+$F(t,x)=\exp\big(A(T-t)-B(T-t)x\big)$ solves the bond-pricing equation of \cref{prop:ir-pde} on
+$[0,T)\times I$. Dividing by $F$, $-A'(\tau)+B'(\tau)x-b(x)B(\tau)+\frac12\sigma(x)^2B(\tau)^2-x=0$ for
+all $\tau>0$ and $x\in I$. Here $B$ is continuous, $B(0)=0$, and $B\not\equiv0$ (otherwise
+$-A'=x$ on $I$), so it takes two distinct nonzero values $B(\tau_1)$, $B(\tau_2)$. The two
+equations are then a linear system for $\big(b(x),\sigma(x)^2\big)$ with nonzero determinant
+$\frac12B(\tau_1)B(\tau_2)\big(B(\tau_1)-B(\tau_2)\big)$ and right-hand side affine in $x$: so $b$
+and $\sigma^2$ are affine. \Citet{duffie-kan-1996} develop the multi-factor version, in which
+$r$ is an affine function of a diffusion in $\R^d$ with affine drift and covariance, and the
+Riccati equations become a system; see also \textcite{shreve2}, Section~10.2.
+\end{remark}
+
+The simplest affine model has $\beta_1=\alpha_1=0$.
+
+\begin{proposition}[The Ho--Lee model]\label{prop:ir-ho-lee}
+Let $\sigma>0$, $r_0\in\R$ and $\beta:[0,T^*]\to\R$ continuous, and let
+$r_t=r_0+\int_0^t\beta(s)\,\dd s+\sigma\widetilde W_t$, the solution of
+$\dd r_t=\beta(t)\,\dd t+\sigma\,\dd\widetilde W_t$.
+\begin{enumerate}[label=(\roman*)]
+  \item $P(t,T)=\exp\big(-\int_t^T(T-s)\beta(s)\,\dd s+\frac{\sigma^2}6(T-t)^3-(T-t)\,r_t\big)$, and
+    $f(0,T)=r_0+\int_0^T\beta(s)\,\dd s-\frac{\sigma^2}2T^2$.
+  \item Let $f^M:[0,T^*]\to\R$ be continuously differentiable (a forward curve observed in the
+    market) and $P^M(0,T)=\exp\big(-\int_0^Tf^M(u)\,\dd u\big)$. Then $P(0,T)=P^M(0,T)$ for every
+    $T\in[0,T^*]$ if and only if $r_0=f^M(0)$ and $\beta(t)=(f^M)'(t)+\sigma^2t$ for every
+    $t\in[0,T^*]$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) Apply \cref{thm:ir-affine} with $\beta_0=\beta$, $\beta_1=0$, $\alpha_0=\sigma^2$, $\alpha_1=0$: then
+$\gamma=0$, $B(\tau)=\tau$ and $A(t,T)=\int_t^T\big(-(T-s)\beta(s)+\frac{\sigma^2}2(T-s)^2\big)\dd s$.
+Differentiating $-\log P(0,T)=\int_0^T(T-s)\beta(s)\,\dd s-\frac{\sigma^2}6T^3+Tr_0$ in $T$ gives
+$f(0,T)$. (ii) The functions $\log P(0,\cdot)$ and $\log P^M(0,\cdot)$ are continuously
+differentiable and vanish at $0$, so they agree on $[0,T^*]$ if and only if their derivatives do:
+$f(0,T)=f^M(T)$ for all $T$. By (i), at $T=0$ this says $r_0=f^M(0)$; given this, the two sides
+agree for all $T$ if and only if their derivatives do, $\beta(T)-\sigma^2T=(f^M)'(T)$.
+\end{proof}
+
+Alternatively, as in \cref{exa:itf-product}, $\int_t^Tr_u\,\dd u$ is, given $\F_t$, normal with
+variance $\sigma^2(T-t)^3/3$, and $\EQ[e^{-X}]=e^{-m+v/2}$ for $X\sim\mathcal N(m,v)$. The model of \textcite{ho-lee-1986}, originally a binomial tree, is the
+prototype of the models built to reproduce any initial curve exactly. Its weakness is visible in (i): the rate does not
+revert to a mean, its variance $\sigma^2t$ grows without bound, and for constant $\beta$ the term
+$\frac{\sigma^2}6T^3$ eventually wins, so that $P(0,T)\to\infty$ as $T\to\infty$. \Citet{hull-white-1990}
+add mean reversion, $\dd r_t=(\beta(t)-\kappa r_t)\,\dd t+\sigma\,\dd\widetilde W_t$, and keep the
+exact fit (\exref{ex:ir-hull-white}).
+
+\section{The Vasicek model}\label{sec:ir-vasicek}
+
+\begin{proposition}[The Vasicek model]\label{prop:ir-vasicek}
+Let $\kappa>0$, $\theta\in\R$, $\sigma>0$, $r_0\in\R$, and let $r$ be the Ornstein--Uhlenbeck
+process $\dd r_t=\kappa(\theta-r_t)\,\dd t+\sigma\,\dd\widetilde W_t$ of \cref{prop:sde-ou}. Let
+$\tau=T-t$,
+\[
+  B(\tau)=\frac{1-e^{-\kappa\tau}}{\kappa},\qquad R_\infty=\theta-\frac{\sigma^2}{2\kappa^2},\qquad
+  A(\tau)=R_\infty\big(B(\tau)-\tau\big)-\frac{\sigma^2}{4\kappa}B(\tau)^2 .
+\]
+\begin{enumerate}[label=(\roman*)]
+  \item $P(t,T)=\exp\big(A(\tau)-B(\tau)r_t\big)$ for $0\le t\le T$.
+  \item For $t<T$, the yield and the forward rate are
+    \[
+      Y(t,T)=R_\infty+(r_t-R_\infty)\frac{B(\tau)}\tau+\frac{\sigma^2B(\tau)^2}{4\kappa\tau},\qquad
+      f(t,T)=\EQ[r_T\mid\F_t]-\frac{\sigma^2}2B(\tau)^2 ;
+    \]
+    $Y(t,T)\to r_t$ as $\tau\downarrow0$ and $Y(t,T)\to R_\infty$ as $\tau\to\infty$.
+  \item $\dd P(t,T)=r_tP(t,T)\,\dd t-\sigma B(T-t)P(t,T)\,\dd\widetilde W_t$, and
+    $D_tP(t,T)=P(0,T)\exp\big(-\sigma\int_0^tB(T-u)\,\dd\widetilde W_u-\frac{\sigma^2}2\int_0^tB(T-u)^2\,\dd u\big)$.
+  \item For $t>0$, $r_t$ and all yields $Y(t,T)$ are normal, and
+    $\Q(r_t<0)=N\big(-m(t)/\sqrt{v(t)}\big)>0$ with $m(t)=\theta+(r_0-\theta)e^{-\kappa t}$ and
+    $v(t)=\sigma^2(1-e^{-2\kappa t})/(2\kappa)$; as $t\to\infty$ it tends to
+    $N\big(-\theta\sqrt{2\kappa}/\sigma\big)$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) and (iii) are \cref{thm:ir-affine} with $\beta_0=\kappa\theta$, $\beta_1=-\kappa$, $\alpha_0=\sigma^2$,
+$\alpha_1=0$, in the time-homogeneous form (iii) of that theorem. Here $\gamma=\kappa$ and
+\eqref{eq:ir-riccati-B} gives $B(\tau)=(1-e^{-\kappa\tau})/\kappa$, the solution of $B'=1-\kappa B$.
+Next, $A(\tau)=-\kappa\theta\int_0^\tau B+\frac{\sigma^2}2\int_0^\tau B^2$, with
+$\int_0^\tau B=(\tau-B(\tau))/\kappa$ and, since $1-e^{-2\kappa u}=2\kappa B(u)-\kappa^2B(u)^2$,
+\[
+  \int_0^\tau B(u)^2\,\dd u=\frac1{\kappa^2}\int_0^\tau\big(1-2e^{-\kappa u}+e^{-2\kappa u}\big)\dd u
+  =\frac{\tau-B(\tau)-\frac\kappa2B(\tau)^2}{\kappa^2};
+\]
+collecting terms gives the formula for $A$. (ii) $Y=(B r_t-A)/\tau$ is the displayed
+expression. As $\tau\downarrow0$, $B(\tau)/\tau\to1$ and $B(\tau)^2/\tau\to0$; as $\tau\to\infty$, $B$
+tends to $1/\kappa$, so the last two terms vanish. By (i),
+$f(t,T)=-A'(\tau)+B'(\tau)r_t=\kappa\theta B-\frac{\sigma^2}2B^2+e^{-\kappa\tau}r_t$, and
+$\kappa\theta B+e^{-\kappa\tau}r_t=\theta+(r_t-\theta)e^{-\kappa\tau}=\EQ[r_T\mid\F_t]$ by
+\cref{prop:sde-ou}(i). (iv) $r_t$ is normal with mean $m(t)$ and variance $v(t)$ by
+\cref{prop:sde-ou}(ii), and the yields are affine functions of $r_t$.
+\end{proof}
+
+\paragraph{Reading the formulas.} The forward rate is the expected future short rate minus a
+\emph{convexity correction} $\frac{\sigma^2}2B(\tau)^2$, and the long yield $R_\infty$ lies below the
+long-run mean $\theta$ by $\sigma^2/(2\kappa^2)$: a bond price is the expectation of the convex
+function $e^{-x}$ of the integrated rate, and Jensen's inequality pushes prices up and yields down
+(\exref{ex:ir-vasicek-gaussian}). The yield curve has three possible shapes
+\citep{vasicek}: increasing if $r_t\le R_\infty-\sigma^2/(4\kappa^2)$, decreasing if
+$r_t\ge R_\infty+\sigma^2/(2\kappa^2)=\theta$, and humped in between (\cref{fig:ir-yield-curves};
+checked numerically in \coderef{code/tests/test_rates.py}). With one source of randomness, yields
+of all maturities are affine in $r_t$, hence perfectly correlated, with slope $B(\tau)/\tau$
+decreasing in $\tau$.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch14-yield-curves}
+  \caption{Yield curves $\tau\mapsto Y(t,t+\tau)$ from three values of the short rate. Left: Vasicek,
+    $\kappa=0.15$, $\theta=5\%$, $\sigma=2.5\%$, so $R_\infty=3.61\%$; the curve is increasing for
+    $r_t\le2.92\%$, decreasing for $r_t\ge5\%$, and humped in between. Right: CIR with the same
+    $\kappa$, $\theta$ and the same volatility of rates at $r=\theta$, $\sigma\sqrt\theta=2.5\%$
+    ($\sigma=11.2\%$, $\nu=1.2$), whose long yield is $2\kappa\theta/(\gamma+\kappa)=4.08\%$.}
+  \label{fig:ir-yield-curves}
+\end{figure}
+
+\paragraph{Negative rates.} By \cref{prop:ir-vasicek}(iv), the Vasicek rate is negative with positive probability at
+every time, and the probability is not small when $\theta$ is low relative to the stationary
+standard deviation $\sigma/\sqrt{2\kappa}$ (\cref{fig:ir-negative-rates}). In the 2010s, central bank deposit rates were negative in the euro area, Switzerland, Denmark
+and Japan, so this is not in itself a defect; but the Gaussian tails put no bound on how negative rates can be. A more serious
+consequence concerns long bonds: if $\sigma^2>2\kappa^2\theta$, then $R_\infty<0$ and
+$P(0,T)=e^{-TY(0,T)}\to\infty$ as $T\to\infty$: the price of a promise to pay one dollar at $T$
+grows without bound as $T$ increases.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch14-negative-rates}
+  \caption{Vasicek with $\kappa=0.2$, $\theta=3\%$, $r_0=1\%$ and three volatilities. Left:
+    $\Q(r_t<0)$, with its stationary limits $2.9\%$, $22.4\%$ and $35.2\%$ (thin lines). Right:
+    the yield curve at time $0$; the long yields are $R_\infty=2.875\%$, $2.219\%$ and $-0.125\%$.}
+  \label{fig:ir-negative-rates}
+\end{figure}
+
+\paragraph{Simulation.} Monte Carlo bond prices need $D_T$ along each path; in the Vasicek model
+$\big(r_{t+h},\int_t^{t+h}r_u\,\dd u\big)$ is Gaussian given $r_t$ and can be simulated exactly
+(\exref{ex:ir-vasicek-gaussian}, \cref{fig:ir-monte-carlo}).
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch14-monte-carlo}
+  \caption{Monte Carlo against the closed forms, with $r_0=3\%$ and the parameters of
+    \cref{fig:ir-yield-curves}, from $2\times10^4$ paths on a grid of step $0.05$. Vasicek: exact
+    simulation of $(r,\int r)$; CIR: exact simulation of $r$ (\cref{sec:ir-cir}) and the trapezoidal
+    rule for $\int r$. Left: yields. Right: the errors of the simulated yields in basis points, with
+    $95\%$ confidence intervals.}
+  \label{fig:ir-monte-carlo}
+\end{figure}
+
+\demo{14-rates.ipynb}{Vasicek and CIR yield curves for any parameters, Monte Carlo bond prices
+against the closed forms, and the probability of negative rates.}
+
+\section{The Cox--Ingersoll--Ross model}\label{sec:ir-cir}
+
+\Citet{cox-ingersoll-ross-1985} replace the constant volatility of the Vasicek model by one
+proportional to $\sqrt{r_t}$: rates are less volatile when they are low, and cannot become
+negative. In \cref{ch:09-sde} this \emph{square-root diffusion} appeared as the CEV model with
+$\gamma=\frac12$ (\cref{exa:sde-cev}); here it has a mean-reverting drift.
+
+\begin{proposition}[The CIR model]\label{prop:ir-cir}
+Let $\kappa,\theta,\sigma>0$, $r_0\ge0$, and consider
+\begin{equation}\label{eq:ir-cir}
+  \dd r_t=\kappa(\theta-r_t)\,\dd t+\sigma\sqrt{r_t^+}\,\dd\widetilde W_t .
+\end{equation}
+\begin{enumerate}[label=(\roman*)]
+  \item On every interval $[0,T]$, \eqref{eq:ir-cir} has a unique solution, and almost surely
+    $r_t\ge0$ for all $t$.
+  \item \emph{(Feller condition.)} If $2\kappa\theta\ge\sigma^2$ and $r_0>0$, then almost surely
+    $r_t>0$ for all $t\ge0$.
+  \item Let $\gamma=\sqrt{\kappa^2+2\sigma^2}$. For $0\le t\le T$,
+    $P(t,T)=\exp\big(A(T-t)-B(T-t)r_t\big)$, where
+    \[
+      B(\tau)=\frac{2(e^{\gamma\tau}-1)}{(\gamma+\kappa)(e^{\gamma\tau}-1)+2\gamma},\qquad
+      A(\tau)=\frac{2\kappa\theta}{\sigma^2}\log\frac{2\gamma e^{(\gamma+\kappa)\tau/2}}{(\gamma+\kappa)(e^{\gamma\tau}-1)+2\gamma}.
+    \]
+  \item $Y(t,T)\to r_t$ as $T\downarrow t$ and $Y(t,T)\to2\kappa\theta/(\gamma+\kappa)$ as
+    $T\to\infty$; and $\dd P(t,T)=r_tP(t,T)\,\dd t-\sigma B(T-t)\sqrt{r_t}\,P(t,T)\,\dd\widetilde W_t$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) The drift is Lipschitz, and $|\sqrt{x^+}-\sqrt{y^+}|\le\sqrt{|x-y|}$ (for $x,y\ge0$ because
+$(\sqrt x-\sqrt y)^2\le|\sqrt x-\sqrt y|(\sqrt x+\sqrt y)$; if $y<0\le x$, because $\sqrt x\le\sqrt{x-y}$).
+So pathwise uniqueness holds by the Yamada--Watanabe criterion (\cref{rem:sde-hypotheses}(b)). For
+existence, truncate: for $n\ge1$, $b_n(x)=\kappa\big(\theta-(x\vee-n)\wedge n\big)$ and
+$\sigma_n(x)=\sigma\sqrt{x^+\wedge n}$ are bounded and continuous, equal the coefficients on $[-n,n]$, and
+satisfy the same Lipschitz and square-root bounds. Their equation has a weak solution
+(\textcite{karatzas-shreve}, Theorem~5.4.22) and pathwise uniqueness (their Proposition~5.2.13),
+hence a strong solution $r^n$ (their Corollary~5.3.23). Let $\rho_n=\inf\{t:|r^n_t|\ge n\}$. For $m>n$,
+$r^m$ and $r^n$ solve the $n$-th equation until one of them leaves $(-n,n)$, and the
+Yamada--Watanabe argument, applied to the processes stopped at that time, shows that they agree
+up to it; so $r^m=r^n$ on $[0,\rho_n]$ and $\rho_m\ge\rho_n$. Set $r=r^n$ on $[0,\rho_n]$. By It\^o's
+formula for $x^2$ stopped at $\rho_n$, since $2xb(x)+\sigma^2x^+\le C(1+x^2)$, and Gronwall's lemma,
+$\EQ[(r^n_{t\wedge\rho_n})^2]\le(r_0^2+Ct)e^{Ct}$ for all $n$, so $\Q(\rho_n\le t)\le(r_0^2+Ct)e^{Ct}/n^2\to0$:
+$\rho_n\to\infty$, and $r$ solves \eqref{eq:ir-cir} on every $[0,T]$. For nonnegativity, let $g(x)=(x^-)^3$, a $C^2$ function with $g'(x)=-3(x^-)^2$ and
+$g''(x)=6x^-$. Then $g'(x)\sqrt{x^+}=0$ and $g''(x)x^+=0$ for every $x$, so by It\^o's formula
+(\cref{thm:itf-process}) the stochastic integral and the second-order term vanish, and
+\[
+  g(r_t)=g(r_0)-3\kappa\int_0^t(r_s^-)^2(\theta-r_s)\,\dd s .
+\]
+Here $g(r_0)=0$, and the integrand is zero when $r_s\ge0$ and positive when $r_s<0$. So
+$0\le g(r_t)\le0$, that is $r_t\ge0$, for all $t$, almost surely.
+
+(ii) Fix $t>0$, $0<\varepsilon<\min(r_0,1)$ and $N>r_0$, and let $\tau_\varepsilon=\inf\{s:r_s\le\varepsilon\}$,
+$\sigma_N=\inf\{s:r_s\ge N\}$ (with $\inf\emptyset=\infty$) and $\rho=\tau_\varepsilon\wedge\sigma_N\wedge t$.
+On $[0,\rho]$, $r$ takes values in $[\varepsilon,N]$. Apply It\^o's formula to a $C^2$ function that
+equals $\log$ on $[\varepsilon,\infty)$, stopped at $\rho$; the stopped stochastic integral is
+$\int_0^t\1_{\{s\le\rho\}}\sigma r_s^{-1/2}\,\dd\widetilde W_s$ (\cref{prop:ito-stopping}, as in
+\cref{exa:sde-cev}(b)), whose integrand is bounded by $\sigma/\sqrt\varepsilon$, so it has mean zero.
+Hence, as $2\kappa\theta\ge\sigma^2$,
+\[
+  \EQ[\log r_\rho]=\log r_0+\EQ\int_0^\rho\Big(\frac{\kappa\theta-\sigma^2/2}{r_s}-\kappa\Big)\dd s\ge\log r_0-\kappa t .
+\]
+In the same way, with an integrand bounded by $\sigma\sqrt N$,
+$\EQ[r_\rho]=r_0+\kappa\EQ\int_0^\rho(\theta-r_s)\,\dd s\le r_0+\kappa\theta t$. On the event
+$E=\{\tau_\varepsilon\le t,\ \tau_\varepsilon<\sigma_N\}$, $r_\rho=\varepsilon$; elsewhere
+$\log r_\rho\le r_\rho$. Therefore
+$\log r_0-\kappa t\le\Q(E)\log\varepsilon+\EQ[r_\rho]$, and
+\[
+  \Q(E)\le\frac{r_0+\kappa\theta t+\kappa t-\log r_0}{\log(1/\varepsilon)} .
+\]
+As $N\to\infty$, $\sigma_N>t$ eventually on every path (continuous paths are bounded on $[0,t]$),
+so the bound holds for $\Q(\tau_\varepsilon\le t)$. If $r$ vanishes before $t$, then
+$\tau_\varepsilon\le t$ for every $\varepsilon$; letting $\varepsilon\to0$, $r$ does not vanish on
+$[0,t]$, almost surely. Take $t=1,2,\dots$.
+
+(iii) Apply \cref{thm:ir-affine} with $\beta_0=\kappa\theta$, $\beta_1=-\kappa$, $\alpha_0=0$,
+$\alpha_1=\sigma^2$ and $I=[0,\infty)$: by (i), $r$ takes values in $I$, where
+$\sigma\sqrt{r^+}=\sqrt{\alpha_0+\alpha_1r}$. Then $\gamma=\sqrt{\kappa^2+2\sigma^2}$, $\gamma-\beta_1=\gamma+\kappa$,
+and \eqref{eq:ir-riccati-B} is the formula for $B$. For $A$, it suffices that $A(0)=0$ and
+$A'=-\kappa\theta B$. With $d=(\gamma+\kappa)(e^{\gamma\tau}-1)+2\gamma$,
+\[
+  A'(\tau)=\frac{2\kappa\theta}{\sigma^2}\Big(\frac{\gamma+\kappa}2-\frac{(\gamma+\kappa)\gamma e^{\gamma\tau}}{d}\Big)
+  =\frac{\kappa\theta(\gamma+\kappa)(\kappa-\gamma)(e^{\gamma\tau}-1)}{\sigma^2d}=-\kappa\theta B(\tau),
+\]
+since $d-2\gamma e^{\gamma\tau}=(\kappa-\gamma)(e^{\gamma\tau}-1)$ and $\kappa^2-\gamma^2=-2\sigma^2$.
+
+(iv) As $\tau\downarrow0$, $B(\tau)/\tau\to B'(0)=1$ and $A(\tau)/\tau\to A'(0)=0$. As $\tau\to\infty$,
+$B(\tau)\to2/(\gamma+\kappa)$ and $\log d/\tau\to\gamma$, so
+$A(\tau)/\tau\to\frac{2\kappa\theta}{\sigma^2}\cdot\frac{\kappa-\gamma}2$, and
+$-\frac{\kappa\theta(\kappa-\gamma)}{\sigma^2}=\frac{\kappa\theta(\gamma^2-\kappa^2)}{\sigma^2(\gamma+\kappa)}=\frac{2\kappa\theta}{\gamma+\kappa}$.
+The dynamics are those of \cref{thm:ir-affine}(ii).
+\end{proof}
+
+The number $\nu=2\kappa\theta/\sigma^2$ measures the strength of the pull away from zero against the
+noise. If $\nu<1$ and $r_0>0$, zero is reached with positive probability, by Feller's test
+(\textcite{karatzas-shreve}, Section~5.5.C), and in fact with probability one:
+\exref{ex:ir-feller-fails} derives this from the scale function, granting that the rate leaves
+every bounded interval in finite time; see \textcite{goeing-jaeschke-yor-2003}, who write the CIR
+process as a time-changed squared Bessel process of dimension $2\nu$, and \textcite{feller-1951}
+for the classification of the boundary. At zero the drift $\kappa\theta>0$ pushes the rate
+back up, and by (i) it never goes below. The stationary law is the gamma law with shape $\nu$ and
+scale $\sigma^2/(2\kappa)$ \citep{cox-ingersoll-ross-1985}; for $\nu\ge1$ this is
+\exref{ex:sde-stationary}(d). Its density, proportional to $x^{\nu-1}e^{-2\kappa x/\sigma^2}$, is
+unbounded near $0$ when $\nu<1$ (\cref{fig:ir-feller}). The mean of $r_t$ is that of the Vasicek model with the same $\kappa$ and
+$\theta$ (\exref{ex:ir-cir-moments}).
+
+The Euler scheme of \cref{sec:sde-euler} can make the rate negative, and is usually run with $r^+$
+in both coefficients. But given $r_t$, $r_{t+h}=cX$ with $c=\sigma^2(1-e^{-\kappa h})/(4\kappa)$ and $X$
+noncentral chi-square with $4\kappa\theta/\sigma^2$ degrees of freedom and noncentrality $r_te^{-\kappa h}/c$
+\citep{cox-ingersoll-ross-1985}: \cref{fig:ir-monte-carlo,fig:ir-feller} use this exact transition.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch14-feller}
+  \caption{The Feller condition, with $\kappa=0.5$, $\theta=4\%$, exact simulation. Left: three paths
+    with $\nu=2\kappa\theta/\sigma^2=3$ and three with $\nu=0.5$, from $r_0=4\%$; the latter keep
+    returning to $0$. Right: the stationary gamma densities for four values of $\nu$, all with mean
+    $\theta$; for $\nu<1$ the density is unbounded at $0$.}
+  \label{fig:ir-feller}
+\end{figure}
+
+\demo{14-rates.ipynb}{CIR paths and densities near zero as the Feller ratio $\nu=2\kappa\theta/\sigma^2$
+crosses $1$, and a comparison of the full-truncation Euler scheme with exact simulation.}
+
+\section{The forward measure and bond options}\label{sec:ir-forward}
+
+The price of a claim $V_T$ in a short-rate model is $\EQ[D_TV_T]$: the payoff and the discount
+factor are both random, and correlated. Changing the unit of account from the money market to the
+bond maturing at $T$ removes the discount factor (\cref{prop:rn-numeraire}).
+
+\begin{proposition}[The forward measure]\label{prop:ir-forward-measure}
+Let $r$ be a short-rate model, $T\le T^*$, and let $\Q^T(E)=\EQ[D_T\1_E]/P(0,T)$ for $E\in\F_T$: the
+\emph{$T$-forward measure}.
+\begin{enumerate}[label=(\roman*)]
+  \item $\Q^T$ is a probability measure equivalent to $\Q$ on $\F_T$, with density
+    $D_tP(t,T)/P(0,T)$ on $\F_t$. For every $\F_T$-measurable $V_T$ with $\EQ[D_T|V_T|]<\infty$, its
+    price at time $t\le T$ is
+    \[
+      \frac{\EQ[D_TV_T\mid\F_t]}{D_t}=P(t,T)\,\E^{\Q^T}[V_T\mid\F_t],
+    \]
+    and for $T\le S\le T^*$ the \emph{forward bond price} $P(t,S)/P(t,T)$ is a $\Q^T$-martingale on $[0,T]$.
+  \item In the Vasicek model of \cref{prop:ir-vasicek}, let $T>0$. Then
+    $W^T_t=\widetilde W_t+\sigma\int_0^tB(T-u)\,\dd u$ is a $\Q^T$-Brownian motion on $[0,T]$; under $\Q^T$,
+    $r_T$ is normal with mean $f(0,T)$ and variance $v(T)=\sigma^2(1-e^{-2\kappa T})/(2\kappa)$, and for
+    $T<S\le T^*$, $\log P(T,S)$ is normal with
+    variance $\Sigma^2$ and mean $\log\big(P(0,S)/P(0,T)\big)-\frac12\Sigma^2$, where
+    \[
+      \Sigma=\sigma B(S-T)\sqrt{\frac{1-e^{-2\kappa T}}{2\kappa}} .
+    \]
+  \item \emph{(Bond options in the Vasicek model.)} Let $0<T<S\le T^*$, $K>0$ and
+    $d_\pm=\big(\log\frac{P(0,S)}{KP(0,T)}\pm\frac12\Sigma^2\big)/\Sigma$. The prices at time $0$ of the
+    call and the put with strike $K$ and expiry $T$ on the bond maturing at $S$, with payoffs
+    $(P(T,S)-K)^+$ and $(K-P(T,S))^+$ at $T$, are
+    \begin{align*}
+      \mathrm{ZBC}&=P(0,S)N(d_+)-KP(0,T)N(d_-),\\
+      \mathrm{ZBP}&=KP(0,T)N(-d_-)-P(0,S)N(-d_+).
+    \end{align*}
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) $Z_T=D_T/P(0,T)>0$ has $\EQ[Z_T]=1$, so by \cref{lem:rn-density}, with $(\Q,\Q^T)$ in place of
+$(\Prob,\Q)$, $\Q^T$ is equivalent to $\Q$ with density $\EQ[Z_T\mid\F_t]=D_tP(t,T)/P(0,T)$ on $\F_t$,
+and, as $\E^{\Q^T}|V_T|=\EQ[D_T|V_T|]/P(0,T)<\infty$, Bayes' formula gives
+$\E^{\Q^T}[V_T\mid\F_t]=\EQ[D_TV_T\mid\F_t]/\big(D_tP(t,T)\big)$. For $V_T=P(T,S)$, the tower property gives
+$\EQ[D_TP(T,S)\mid\F_t]=\EQ[D_S\mid\F_t]=D_tP(t,S)$, so $\E^{\Q^T}[P(T,S)\mid\F_t]=P(t,S)/P(t,T)$. This is
+\cref{prop:rn-numeraire}(i)--(ii) for the numeraire $P(\cdot,T)$, without a bound on $r$.
+
+(ii) By \cref{prop:ir-vasicek}(iii), the density process $D_tP(t,T)/P(0,T)$ is the exponential of
+\cref{thm:rn-girsanov} for $\widetilde W$ under $\Q$ with $\Theta_u=\sigma B(T-u)$, deterministic and
+bounded. By that theorem, applied with $(\Q,\Q^T)$ in place of $(\Prob,\Q)$, $W^T$ is a
+$\Q^T$-Brownian motion on $[0,T]$, for which $(\F_t)$ is a filtration. Substituting
+$\sigma\,\dd\widetilde W_t=\sigma\,\dd W^T_t-\sigma^2B(T-t)\,\dd t$,
+\[
+  \dd r_t=\big(\kappa\theta-\sigma^2B(T-t)-\kappa r_t\big)\dd t+\sigma\,\dd W^T_t ,
+\]
+a linear equation with additive noise. By \cref{prop:sde-linear}(b) under $\Q^T$, $r_T$ is normal
+with variance $v(T)$ and mean
+$\theta+(r_0-\theta)e^{-\kappa T}-\sigma^2\int_0^Te^{-\kappa u}B(u)\,\dd u=\EQ[r_T]-\frac{\sigma^2}2B(T)^2=f(0,T)$,
+because $e^{-\kappa u}=B'(u)$, and by \cref{prop:ir-vasicek}(ii). Then
+$\log P(T,S)=A(S-T)-B(S-T)r_T$ is normal with variance $B(S-T)^2v(T)=\Sigma^2$. By (i), at times $0$
+and $T$, $\E^{\Q^T}[P(T,S)]=P(0,S)/P(0,T)$; for a normal variable $X$ with variance $\Sigma^2$,
+$\E[e^X]=e^{\E[X]+\Sigma^2/2}$, which gives the mean.
+
+(iii) The payoffs are bounded by $P(T,S)+K$, and $\EQ[D_T(P(T,S)+K)]=P(0,S)+KP(0,T)<\infty$. By (i)
+at $t=0$, the call is worth $P(0,T)\,\E^{\Q^T}[(P(T,S)-K)^+]$. By (ii),
+$P(T,S)=F_0e^{\Sigma Y-\Sigma^2/2}$ with $F_0=P(0,S)/P(0,T)$ and $Y$ standard normal under $\Q^T$, and
+$P(T,S)>K$ if and only if $Y>-d_-$. By \cref{lem:bs-gaussian} with $a=\Sigma$,
+$\E^{\Q^T}[(P(T,S)-K)^+]=F_0N(d_-+\Sigma)-KN(d_-)$, and $d_-+\Sigma=d_+$. For the put, use
+$(x-K)^+-(K-x)^+=x-K$: $\mathrm{ZBC}-\mathrm{ZBP}=P(0,T)\big(F_0-K\big)=P(0,S)-KP(0,T)$, and
+$1-N(d)=N(-d)$.
+\end{proof}
+
+The formula is due to \textcite{jamshidian-bond-option}. The forward measure was used by him and
+by Geman (1989), and changes of numeraire were formalised by \textcite{geman-elkaroui-rochet-1995}
+(\cref{ch:11-risk-neutral}). It is Black's formula (\exref{ex:rn-dividends}) for the forward bond
+price $P(0,S)/P(0,T)$, whose volatility $\sigma e^{-\kappa(T-t)}B(S-T)$ is deterministic, with $\Sigma^2$
+the integral of its square over $[0,T]$. Caplets are puts on zero-coupon bonds
+(\exref{ex:ir-caplet}), and options on coupon bonds are portfolios of options on zero-coupon bonds
+(\exref{ex:ir-jamshidian}). By (ii), $f(0,T)$ is the expected short rate under $\Q^T$, not under $\Q$;
+and under $\Q^T$ a Monte Carlo price needs $r_T$ only, not the discount factor.
+
+\demo{14-rates.ipynb}{bond options by Jamshidian's formula and by Monte Carlo under $\Q$ and
+$\Q^T$, and $\EQ[r_T]$ against $f(0,T)=\E^{\Q^T}[r_T]$.}
+
+\section{Beyond short-rate models}\label{sec:ir-hjm}
+
+A one-factor model fits today's curve only through a time-dependent drift (\cref{prop:ir-ho-lee}) and
+moves all yields together. \textcite{heath-jarrow-morton-1992} model the whole forward curve instead.
+
+\begin{remark}[The HJM drift condition]\label{rem:ir-hjm}
+Suppose that, for each $T\le T^*$, the forward rate evolves under $\Q$ as
+$f(t,T)=f(0,T)+\int_0^t\alpha(u,T)\,\dd u+\int_0^t\sigma_f(u,T)\,\dd\widetilde W_u$, $t\le T$, with $r_t=f(t,t)$ and $\alpha,\sigma_f$ regular enough to exchange the integrals in $u$ and in $T$
+(a stochastic Fubini theorem). Writing $\log P(t,T)=-\int_t^Tf(t,u)\,\dd u$ and
+$\Sigma(t,T)=\int_t^T\sigma_f(t,u)\,\dd u$, one finds that $\dd(D_tP(t,T))/(D_tP(t,T))$ has drift
+$\frac12\Sigma(t,T)^2-\int_t^T\alpha(t,u)\,\dd u$ and diffusion coefficient $-\Sigma(t,T)$. If the drift vanishes for every $T$, the discounted bonds of all maturities are local martingales;
+and, differentiating in $T$, it vanishes for every $T$ if and only if the \emph{HJM drift condition}
+holds:
+\[
+  \alpha(t,T)=\sigma_f(t,T)\int_t^T\sigma_f(t,u)\,\dd u .
+\]
+Under $\Q$ the drift of the forward curve is thus determined by its volatilities; only these are
+modelled. For example, in the Vasicek model, $f(t,T)=\theta+e^{-\kappa(T-t)}(r_t-\theta)-\frac{\sigma^2}2B(T-t)^2$
+by \cref{prop:ir-vasicek}(ii), so $\sigma_f(t,T)=\sigma e^{-\kappa(T-t)}$ and the condition gives
+$\alpha(t,T)=\sigma^2e^{-\kappa(T-t)}B(T-t)$, which agrees with the drift computed from the dynamics of
+$r$; for Ho--Lee, $\sigma_f=\sigma$ and $\alpha(t,T)=\sigma^2(T-t)$. A deterministic $\sigma_f$ gives a
+Gaussian model; in general the short rate of an HJM model need not be a Markov process.
+See \textcite{shreve2}, Sections~10.3.3--10.3.4, and \textcite{brigo-mercurio-2006}, Chapter~5.
+\end{remark}
+
+\furtherreading
+\textcite{shreve2}, Sections~6.5, 9.4 and 10.2--10.4, and \textcite{brigo-mercurio-2006}, Chapters~3
+and~5, cover this chapter and much more. \textcite{cox-ingersoll-ross-1985} derive their model from a
+general equilibrium.

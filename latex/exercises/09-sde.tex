@@ -1,0 +1,185 @@
+% Exercises for Chapter 9 (stochastic differential equations). Statements only: solutions are kept privately.
+% Throughout, W is a Brownian motion with filtration (F_t), as in the notes.
+
+\begin{exercise}[Checking the hypotheses]\label{ex:sde-check}
+\easy For each equation, decide whether \noteref{thm:sde-existence} applies on every
+interval $[0,T]$, and if not, which hypothesis fails.
+\begin{enumerate}[label=(\alph*)]
+  \item $\dd X_t=\frac12X_t\,\dd t+\sqrt{1+X_t^2}\,\dd W_t$, $X_0=\sinh(a)$ with $a\in\R$.
+    Show that $X_t=\sinh(a+W_t)$ is a solution. Is it the only one?
+  \item $\dd X_t=|X_t|\,\dd W_t$, $X_0=x_0$. Find the solution for $x_0>0$, $x_0=0$ and
+    $x_0<0$. Can a path change sign?
+  \item $\dd X_t=-X_t^3\,\dd t+\dd W_t$. Show that the ordinary differential equation
+    $x'=-x^3$, $x(0)=x_0$, has a solution on $[0,\infty)$ for every $x_0$, while $x'=x^3$ has
+    none when $x_0\neq0$. What does this say about the growth condition of the theorem?
+  \item $\dd X_t=\kappa(\theta-X_t)\,\dd t+\sigma\sqrt{X_t^+}\,\dd W_t$ with
+    $\kappa,\theta,\sigma>0$ (the Cox--Ingersoll--Ross short-rate model). Which result
+    quoted in the notes still gives pathwise uniqueness?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Ornstein--Uhlenbeck correlations]\label{ex:sde-ou-cov}
+\easy Let $X$ be the Ornstein--Uhlenbeck process of \noteref{prop:sde-ou},
+$\dd X_t=\kappa(\theta-X_t)\,\dd t+\sigma\,\dd W_t$ with $\kappa,\sigma>0$. You may use that
+$\E\big[\int_0^tf\,\dd W\int_0^tg\,\dd W\big]=\int_0^tf(s)g(s)\,\dd s$ for deterministic
+$f,g\in L^2[0,t]$ (polarisation of the It\^o isometry).
+\begin{enumerate}[label=(\alph*)]
+  \item For $X_0=x_0$ constant and $0\le s\le t$, show that
+    $\Cov(X_s,X_t)=\frac{\sigma^2}{2\kappa}\big(e^{-\kappa(t-s)}-e^{-\kappa(t+s)}\big)$.
+  \item Now let $X_0\sim\mathcal N(\theta,\sigma^2/(2\kappa))$ be $\F_0$-measurable. Show that
+    $\Cov(X_s,X_t)=\frac{\sigma^2}{2\kappa}e^{-\kappa|t-s|}$ for all $s,t\ge0$. After how long
+    is the correlation between two observations one half?
+  \item With $X_0$ as in (b), fix $\Delta>0$ and let $Y_k=X_{k\Delta}$. Show that
+    $Y_{k+1}=\theta+\phi(Y_k-\theta)+\varepsilon_{k+1}$ with $\phi=e^{-\kappa\Delta}$ and
+    $\varepsilon_1,\varepsilon_2,\dots$ independent $\mathcal N(0,v)$ variables, $\varepsilon_{k+1}$
+    independent of $Y_0,\dots,Y_k$: sampled at regular times, the process is a Gaussian
+    autoregression of order one. Give $v$ in terms of $\kappa,\sigma,\Delta$. How would you
+    estimate $\kappa$ from daily observations of a short rate?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[The Brownian bridge as a diffusion]\label{ex:sde-bridge}
+\medium Let $a,c\in\R$ and consider
+$\dd X_t=\frac{c-X_t}{1-t}\,\dd t+\dd W_t$, $X_0=a$, for $t\in[0,1)$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that \noteref{thm:sde-existence} applies on $[0,T]$ for every $T<1$, but not on
+    $[0,1]$. Explain the drift: where does it push the path, and how hard, as $t\uparrow1$?
+  \item Show that $X_t=a(1-t)+ct+(1-t)\int_0^t\frac{\dd W_s}{1-s}$ for $t<1$.
+  \item Show that $X$ is a Gaussian process with $\E[X_t]=a(1-t)+ct$ and
+    $\Cov(X_s,X_t)=s(1-t)$ for $0\le s\le t<1$. Deduce that $X_t\to c$ in $L^2$ as $t\uparrow1$.
+  \item Take $a=0$ and let $Z_t=W_t-tW_1+tc$ for $t\in[0,1]$. Show that $(Z_t)_{t<1}$ and
+    $(X_t)_{t<1}$ have the same finite-dimensional laws, and that $(W_t-tW_1)_{t\le1}$ is
+    independent of $W_1$. In what sense is $X$ a Brownian motion conditioned to end at $c$?
+    Compare with \exref{ex:bm-bridge}. What is the advantage of $X$ over $Z$ as a description
+    of this process?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Moments of linear equations]\label{ex:sde-moments}
+\medium Let $\mu_0,\mu_1,\sigma_0,\sigma_1$ be constants, $x\in\R$, and let $X$ solve
+$\dd X_t=(\mu_0+\mu_1X_t)\,\dd t+(\sigma_0+\sigma_1X_t)\,\dd W_t$, $X_0=x$. You may use that
+$\E[\sup_{t\le T}X_t^4]<\infty$ for every $T$. Let $m(t)=\E[X_t]$ and $q(t)=\E[X_t^2]$.
+\begin{enumerate}[label=(\alph*)]
+  \item Using \noteref{prop:sde-dynkin}(a) with $f(x)=x$, show that $m'=\mu_0+\mu_1m$, and
+    solve this equation.
+  \item Using $f(x)=x^2$ (justify that $M^f$ is a martingale), show that
+    $q'=(2\mu_1+\sigma_1^2)\,q+2(\mu_0+\sigma_0\sigma_1)\,m+\sigma_0^2$.
+  \item Suppose $\mu_1<0$ and $2\mu_1+\sigma_1^2<0$. Find the limits of $m(t)$, $q(t)$ and
+    $\Var(X_t)$ as $t\to\infty$, and check your answer against \noteref{prop:sde-ou} for the
+    Ornstein--Uhlenbeck process.
+  \item Take $\mu_0=1$, $\mu_1=-1$, $\sigma_0=0$, $\sigma_1=2$ and $x=1$. Show that
+    $\E[X_t]=1$ for all $t$ while $\Var(X_t)\to\infty$. The drift pulls $X$ towards $1$; what
+    goes wrong?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Stationary densities]\label{ex:sde-stationary}
+\medium Let $I=(l,r)$ be an open interval ($l=-\infty$ and $r=\infty$ are allowed), let
+$b\in C^1(I)$ and $\sigma\in C^2(I)$ with $\sigma>0$ on $I$, and consider solutions of
+$\dd X_t=b(X_t)\,\dd t+\sigma(X_t)\,\dd W_t$ that stay in $I$. A probability density $p$ on
+$I$ is \emph{stationary} if, whenever $X_0$ is $\F_0$-measurable with density $p$, $X_t$ has
+density $p$ for every $t\ge0$. Write $\mathcal L$ for the generator.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that if $p$ is stationary, then $\int_I(\mathcal Lf)(x)\,p(x)\,\dd x=0$ for every
+    $f\in C^2(\R)$ whose support is a compact subset of $I$.
+  \item Let $p\in C^2(I)$. Show that the condition in (a) holds if and only if
+    $\frac12(\sigma^2p)''-(bp)'=0$ on $I$. Show that
+    \[
+      p(x)=\frac{C}{\sigma(x)^2}\exp\Big(\int_{x_0}^x\frac{2b(u)}{\sigma(u)^2}\,\dd u\Big),
+    \]
+    with $x_0\in I$ fixed, satisfies this equation, and is a probability density for a suitable
+    constant $C$ whenever the function of $x$ on the right is integrable on $I$. So (a) only
+    singles out a candidate; in (c)--(e) you may take for granted that this candidate is
+    indeed stationary (the converse needs arguments beyond the notes).
+  \item Apply (b) to the Ornstein--Uhlenbeck process and compare with \noteref{prop:sde-ou}.
+  \item Apply (b) to the Cox--Ingersoll--Ross process
+    $\dd X_t=\kappa(\theta-X_t)\,\dd t+\sigma\sqrt{X_t}\,\dd W_t$ on $I=(0,\infty)$, with
+    $\kappa,\theta,\sigma>0$ and $2\kappa\theta\ge\sigma^2$ (under this Feller condition,
+    which you may take for granted, solutions started in $(0,\infty)$ stay there). Identify the
+    law and its mean.
+  \item Apply (b) to $\dd X_t=(1-X_t)\,\dd t+2X_t\,\dd W_t$ on $I=(0,\infty)$, after checking
+    with \noteref{prop:sde-linear} that the solution from $X_0>0$ stays positive. Show that
+    the density has mean $1$ and infinite variance, and compare with \exref{ex:sde-moments}(d).
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Feller's diffusion reaches zero]\label{ex:sde-feller}
+\medium Let $\sigma,s>0$ and let $S$ solve $\dd S_t=\sigma\sqrt{S_t}\,\dd W_t$, $S_0=s$, with
+$S_t\ge0$ for all $t$: the CEV model with $\gamma=\frac12$ and $\mu=0$. You may assume that
+such a solution exists. Fix $T>0$ and $\lambda>0$.
+\begin{enumerate}[label=(\alph*)]
+  \item Look for $M_t=\exp(-\ell(t)S_t)$ with $\ell:[0,T]\to(0,\infty)$ continuously
+    differentiable and $\ell(T)=\lambda$. Show that $M$ has no $\dd t$ term if
+    $\ell'=\frac{\sigma^2}{2}\ell^2$, and solve this equation.
+  \item Show that $M$ is a martingale on $[0,T]$, and deduce that
+    \[
+      \E\big[e^{-\lambda S_T}\big]=\exp\Big(-\frac{\lambda s}{1+\lambda\sigma^2T/2}\Big).
+    \]
+  \item Deduce that $\Prob(S_T=0)=\exp\big(-2s/(\sigma^2T)\big)$. In the setting of
+    \noteref{fig:sde-cev} ($s=1$, $\sigma=0.6$, $\gamma=\frac12$), what fraction of the paths
+    should be at $0$ at time $T=5$? Compare with the right panel of the figure.
+  \item Compute $\E[S_T]$ and $\Var(S_T)$ from (b).
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[A CEV price that is not a martingale]\label{ex:sde-strict}
+\hard Let $B=(B^1,B^2,B^3)$ be three independent Brownian motions, $x=(1,0,0)$,
+$Y_t=x+B_t$, $R_t=|Y_t|$ and $S_t=1/R_t$. You may use without proof:
+(i) almost surely $Y_t\neq0$ for all $t\ge0$, and the multidimensional It\^o formula
+(\noteref{thm:itf-multi}) applies to $f(Y_t)$ for $f\in C^2(\R^3\setminus\{0\})$;
+(ii) if $Z\sim\mathcal N(0,I_3)$, then $|Z|$ and $Z/|Z|$ are independent, $Z/|Z|$ is uniform on
+the unit sphere, and $|Z|$ has density $\sqrt{2/\pi}\,r^2e^{-r^2/2}$ on $(0,\infty)$;
+(iii) Newton's theorem: if $U$ is uniform on the unit sphere and $\rho>0$, then
+$\E\big[1/|x+\rho U|\big]=1/\max(|x|,\rho)$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $S_t=1-\sum_{i=1}^3\int_0^t\frac{Y^i_u}{R_u^3}\,\dd B^i_u$. Deduce that $S$ is
+    a local martingale.
+  \item Show that $\beta_t=-\sum_i\int_0^t\frac{Y^i_u}{R_u}\,\dd B^i_u$ is a Brownian
+    motion. Using that, for $H\in\mathbb H^2_{\mathrm{loc}}$,
+    \[
+      \int_0^tH_u\,\dd\beta_u=-\sum_{i=1}^3\int_0^tH_u\frac{Y^i_u}{R_u}\,\dd B^i_u ,
+    \]
+    show that $\dd S_t=S_t^2\,\dd\beta_t$: $S$ is a CEV
+    price with $\mu=0$, $\sigma=1$ and $\gamma=2$.
+  \item Show that $\E[S_t]=\E\big[1/\max(1,\sqrt t|Z|)\big]$ with $Z\sim\mathcal N(0,I_3)$,
+    and then that $\E[S_t]=2N(1/\sqrt t)-1$. Deduce that $\E[S_t]<S_0$ for every $t>0$ and
+    $\E[S_t]\to0$ as $t\to\infty$.
+  \item Conclude that $S$ is a positive local martingale that is not a martingale. Show that
+    $\E[S_u^4]=\infty$ for every $u>0$, so that the integrand $S^2$ in $\dd S=S^2\,\dd\beta$
+    is not in $\mathbb H^2$, and say which hypothesis of \noteref{thm:sde-existence} fails.
+  \item Suppose that $S$ is the price of a stock in a market with zero interest rate, and that
+    every claim paying $H$ at time $T$ is priced at $\E[H]$. Compare the price of the claim
+    paying $S_T$ at time $T$ with the price $S_0$ of the stock, which delivers the same amount
+    at $T$. Comment.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[The Milstein scheme]\label{ex:sde-milstein}
+\hard This exercise is partly computational. Let $S$ be geometric Brownian motion,
+$\dd S_t=\mu S_t\,\dd t+\sigma S_t\,\dd W_t$, and $S^h$ its Euler--Maruyama approximation with
+step $h=T/n$ (\noteref{exa:sde-euler-gbm}), driven by the same Brownian path.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $\E[(S^h_T)^2]=S_0^2\big((1+\mu h)^2+\sigma^2h\big)^n$ and
+    $\E[S_TS^h_T]=S_0^2\big(e^{\mu h}(1+\mu h+\sigma^2h)\big)^n$. Deduce that
+    \[
+      \E\big[(S_T-S^h_T)^2\big]=\tfrac12\sigma^4S_0^2e^{(2\mu+\sigma^2)T}\,T\,h+O(h^2).
+    \]
+    So the root-mean-square error is of order exactly $h^{1/2}$, as in
+    \noteref{thm:sde-euler}(a).
+  \item On $[t_k,t_{k+1}]$, the Euler scheme freezes the diffusion $\sigma S_u$ at
+    $\sigma S_{t_k}$. Freezing it instead at its first-order expansion
+    $\sigma S_{t_k}\big(1+\sigma(W_u-W_{t_k})\big)$, and using \noteref{prop:ito-wdw} for
+    $\int_{t_k}^{t_{k+1}}(W_u-W_{t_k})\,\dd W_u$, derive the \emph{Milstein scheme}
+    \[
+      S^{\mathrm M}_{k+1}=S^{\mathrm M}_k\Big(1+\mu h+\sigma\Delta W_k
+      +\tfrac12\sigma^2\big((\Delta W_k)^2-h\big)\Big),\qquad
+      \Delta W_k=W_{t_{k+1}}-W_{t_k}.
+    \]
+  \item Take $S_0=1$, $\mu=0.05$, $\sigma=0.4$, $T=1$. Simulate $10^5$ Brownian paths on a
+    grid of $2^{10}$ steps, and use them (summing increments) for $h=2^{-2},\dots,2^{-10}$.
+    Estimate the root-mean-square errors $\E[(S_T-S^h_T)^2]^{1/2}$ and
+    $\E[(S_T-S^{\mathrm M}_T)^2]^{1/2}$ against the exact solution on the same paths, compare
+    the first with (a), and estimate both orders of convergence by a least-squares fit on
+    log--log axes.
+\end{enumerate}
+\end{exercise}

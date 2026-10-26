@@ -1,0 +1,157 @@
+% Exercises for Chapter 10 (the Black--Scholes equation by hedging). Statements only: solutions
+% are kept privately.
+% Throughout, unless stated otherwise, we are in the setting of the notes: S_t = S_0 exp(sigma W_t
+% + (mu - sigma^2/2) t) under P, the money market is e^{rt}, self-financing strategies are those of
+% def:dh-self-financing, c is the call function of thm:bs-formula, tau = T - t.
+
+\begin{exercise}[Constant proportions]\label{ex:dh-proportion}
+\easy An investor keeps a fixed fraction $\pi\in\R$ of her wealth in the stock and the rest in
+the money market. Let $X_0>0$ and
+\[
+  X_t=X_0\exp\Big(\Big(r+\pi(\mu-r)-\frac{\pi^2\sigma^2}{2}\Big)t+\pi\sigma W_t\Big),\qquad
+  \Delta_t=\frac{\pi X_t}{S_t}.
+\]
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $(X_0,\Delta)$ is a self-financing strategy whose value is $X$. \emph{Hint:}
+    \noteref{lem:dh-wealth}.
+  \item Compute $\E[X_T]$, and show that $\frac1t\log X_t\to r+\pi(\mu-r)-\frac{\pi^2\sigma^2}{2}$
+    almost surely as $t\to\infty$ (you may use that $W_t/t\to0$ almost surely).
+  \item Find the fraction $\pi^*$ that maximises this growth rate. With $\mu=8\%$, $r=3\%$ and
+    $\sigma=20\%$, compute $\pi^*$ and the growth rates of $\pi^*$, of $\pi=1$ (all in the stock)
+    and of $\pi=2\pi^*$. Which $\pi$ maximises $\E[X_T]$?
+  \item Is the value of this strategy bounded below? Compare with \noteref{rem:dh-admissible}.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Hedging a book of options]\label{ex:dh-book}
+\easy A desk has sold $10{,}000$ calls with strike $105$ and bought $5{,}000$ puts with strike
+$95$, all expiring in three months, on a stock at $S=100$, with $r=3\%$ and $\sigma=25\%$. You may
+use \texttt{call}, \texttt{put} and \texttt{greeks} from
+\coderef{code/src/ieor222/blackscholes.py}.
+\begin{enumerate}[label=(\alph*)]
+  \item Explain why the delta of the book is the sum of the deltas of its options, and how many
+    shares the desk must hold to be delta-neutral.
+  \item Compute the gamma of the book. Using the gamma--theta decomposition
+    \noteref{eq:dh-gamma-theta}, say whether the delta-hedged book gains or loses, over one
+    day, if the stock moves by more than $\sigma\sqrt h$ in either direction.
+  \item The desk can also trade calls with strike $100$ expiring in six months. How many must it
+    buy to make the book gamma-neutral, and how many shares must it then hold to be
+    delta-neutral?
+  \item The stock jumps instantly to $103$, and then, in another scenario, to $97$. Compute the
+    change in value of the delta-hedged book of (a) and of the delta- and gamma-hedged book of
+    (c), and explain the difference.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Self-financing in terms of holdings]\label{ex:dh-holdings}
+\medium Let $B_t=e^{rt}$, and let $\Delta$ and $\eta$ be It\^o processes: the numbers of shares
+and of units of the money market held at time $t$. The value of the portfolio is
+$X_t=\Delta_tS_t+\eta_tB_t$.
+\begin{enumerate}[label=(\alph*)]
+  \item Using \noteref{cor:itf-product}, show that $X$ satisfies the wealth equation
+    \noteref{eq:dh-wealth} if and only if
+    \[
+      S_t\,\dd\Delta_t+B_t\,\dd\eta_t+\dd[\Delta,S]_t=0 .
+    \]
+  \item In discrete time, with rebalancing at dates $t_k$, self-financing means
+    $S_{t_{k+1}}(\Delta_{t_{k+1}}-\Delta_{t_k})+B_{t_{k+1}}(\eta_{t_{k+1}}-\eta_{t_k})=0$: the new
+    positions are bought at the new prices with the value of the old ones. Explain how the
+    covariation term in (a) arises from this condition.
+  \item For the claim paying $S_T^2$ (\noteref{exa:dh-power}), write $\Delta$ and $\eta$ of the delta
+    hedge explicitly, and check the condition of (a) directly.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Time-dependent rate and volatility]\label{ex:dh-time}
+\medium Let $r(t)$ and $\sigma(t)>0$ be continuous functions on $[0,T]$, let the money market be
+$B_t=\exp(\int_0^tr(s)\,\dd s)$ and the stock
+$S_t=S_0\exp\big(\int_0^t\sigma(s)\,\dd W_s+\int_0^t(\mu-\frac12\sigma(s)^2)\,\dd s\big)$. A
+self-financing strategy is defined as in \noteref{def:dh-self-financing}, with $B_t$ in place of
+$e^{rt}$: $X_t/B_t=X_0+\int_0^t\Delta_u\,\dd(S_u/B_u)$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $\dd S_t=\mu S_t\,\dd t+\sigma(t)S_t\,\dd W_t$, compute $\dd(S_t/B_t)$, and show
+    that $S_u$ has a density that is positive on $(0,\infty)$ for $u>0$.
+  \item Let $g$ be Borel and suppose that a self-financing strategy replicates $g(S_T)$ with
+    value $X_t=v(t,S_t)$, where $v\in C^{1,2}([0,T)\times(0,\infty))$. Show that
+    \[
+      \partial_tv+r(t)\,x\,\partial_xv+\frac{\sigma(t)^2x^2}{2}\,\partial_{xx}v=r(t)\,v
+      \quad\text{on }[0,T)\times(0,\infty),
+    \]
+    and that $\Delta_t=\partial_xv(t,S_t)$. You may follow the proof of \noteref{thm:dh-bs-pde}.
+  \item Let $\rho(t)=\int_t^Tr(s)\,\dd s$ and $\Sigma(t)^2=\int_t^T\sigma(s)^2\,\dd s$. Show that
+    $v(t,x)=xN(d_+)-Ke^{-\rho(t)}N(d_-)$, with
+    $d_\pm=\big(\log(x/K)+\rho(t)\pm\frac12\Sigma(t)^2\big)/\Sigma(t)$, solves the equation of (b).
+    So the call is priced by the Black--Scholes formula with the average rate and the
+    root-mean-square volatility over $[t,T]$. \emph{Hint:} write $v$ as a function of $x$,
+    $\rho$ and $\Sigma^2$ and compute its derivatives from \noteref{prop:bs-greeks}.
+  \item A stock has volatility $10\%$ for six months and $30\%$ for the next six. Compare the
+    one-year at-the-money call priced with the root-mean-square volatility and with the
+    average volatility, for $S_0=K=100$ and $r=0$.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Discrete hedging of a digital option]\label{ex:dh-digital}
+\medium This is a computational exercise. Take $S_0=K=100$, $T=1$, $r=5\%$, $\sigma=20\%$ and
+$\mu=10\%$. The digital call pays $\1_{\{S_T>K\}}$; its price is $D(t,x)=e^{-r\tau}N(d_-)$
+(\noteref{prop:bs-digital}) and its delta $\partial_xD=e^{-r\tau}N'(d_-)/(\sigma x\sqrt\tau)$
+(\exref{ex:bs-digital-greeks}).
+\begin{enumerate}[label=(\alph*)]
+  \item Which hypotheses of \noteref{thm:dh-verification} and of (H) in
+    \noteref{sec:dh-discrete} fail for the digital?
+  \item Simulate the discrete delta hedge of the digital with $n=4,8,\dots,4096$ rebalancing
+    dates and at least $10^4$ paths, and estimate the root-mean-square of the terminal error.
+    Do the same for the call with strike $K$, on the same paths. Estimate the rate $\beta$ in
+    $\text{rms}\approx Cn^{-\beta}$ for both, by regression on a log-log scale.
+  \item Look at the paths with the largest errors for $n=256$. Where does $S$ end, and when is
+    the error made? Explain heuristically why the rate is slower than for the call.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[The squared claim, exactly]\label{ex:dh-squared}
+\medium Let $g(x)=x^2$, let $\mu=r$, and use the notation of \noteref{sec:dh-discrete}. Write
+$U_k=1+R_k$ and $Y_t=e^{-rt}S_t$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that the profit $P_k$ of \noteref{eq:dh-error-sum} equals
+    $c_kY_{t_k}^2D_k$, with $c_k=e^{rT+\sigma^2(T-t_k)}$ and $D_k=e^{-\sigma^2h}U_k^2-2U_k+1$.
+  \item Show that $\E[D_k]=0$ and $\E[D_k^2]=e^{4\sigma^2h}-4e^{2\sigma^2h}+4e^{\sigma^2h}-1$.
+  \item Deduce that
+    \[
+      \E\big[e_n^2\big]=\big(e^{4\sigma^2h}-4e^{2\sigma^2h}+4e^{\sigma^2h}-1\big)\,S_0^4\,e^{2(r+\sigma^2)T}\sum_{k=0}^{n-1}e^{4\sigma^2t_k},
+    \]
+    and check that it agrees with \noteref{eq:dh-error-variance} to first order in $h$.
+  \item For $S_0=100$, $T=1$, $r=5\%$ and $\sigma=40\%$, compare the root-mean-square of $e_n$ with
+    the price of the claim for $n=12$, $52$ and $252$.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Hedging with the wrong volatility]\label{ex:dh-robust}
+\hard A dealer sells a call with strike $K$ and maturity $T$ at the Black--Scholes price
+computed with a volatility $\hat\sigma>0$, and hedges it continuously with
+$\Delta_t=\partial_x\hat c(t,S_t)$, where $\hat c$ is the call function of \noteref{thm:bs-formula}
+with $\hat\sigma$ in place of $\sigma$. The stock, however, satisfies
+\[
+  S_t=S_0\exp\Big(\int_0^t\sigma_u\,\dd W_u+\int_0^t\Big(\mu_u-\frac{\sigma_u^2}{2}\Big)\dd u\Big),
+\]
+where $\mu$ and $\sigma$ are bounded progressively measurable processes. Define the value of the
+strategy by $e^{-rt}X_t=\hat c(0,S_0)+\int_0^t\Delta_u\,\dd(e^{-ru}S_u)$, with
+$\dd(e^{-ru}S_u)=(\mu_u-r)e^{-ru}S_u\,\dd u+\sigma_ue^{-ru}S_u\,\dd W_u$, and write
+$\hat\Gamma=\partial_{xx}\hat c$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that, almost surely, for every $t<T$,
+    \[
+      e^{-rt}\big(X_t-\hat c(t,S_t)\big)=\frac12\int_0^te^{-ru}\,\hat\Gamma(u,S_u)\,S_u^2\,\big(\hat\sigma^2-\sigma_u^2\big)\,\dd u .
+    \]
+    \emph{Hint:} fix $t'<T$ and apply It\^o's formula (\noteref{thm:itf-process}) on $[0,t']$ to
+    $f(t,\log S_t)$ with $f(t,z)=e^{-rt}\hat c(t,e^z)$, extended beyond $t'$ as in the setting of
+    \noteref{ch:10-delta-hedging}; then use the equation solved by $\hat c$.
+  \item Show that $\hat\Gamma(u,x)\,x^2\le x/\big(\hat\sigma\sqrt{2\pi(T-u)}\big)$, and deduce that the
+    identity of (a) holds at $t=T$, with $X_T-(S_T-K)^+$ on the left.
+  \item Conclude that if $\sigma_u^2\le\hat\sigma^2$ for all $u$, the dealer ends with at least the
+    payoff, whatever the path, and that if $\sigma_u^2\ge\hat\sigma^2$ for all $u$ she ends with at
+    most the payoff. Why is the profit weighted by the gamma?
+  \item Let $\sigma_u=\sigma$ be constant and $\mu_u=r$. Show that the expected discounted profit
+    is $\hat c(0,S_0)-c(0,S_0)$, the difference of the Black--Scholes prices with the two
+    volatilities. Evaluate it for $S_0=K=100$, $T=1$, $r=5\%$, $\hat\sigma=20\%$, $\sigma=25\%$, and
+    compare with the vega approximation.
+\end{enumerate}
+\end{exercise}

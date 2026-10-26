@@ -1,5 +1,588 @@
-\begin{planned}
-  \item Monte Carlo: convergence, confidence intervals, variance reduction
-  \item finite differences for pricing PDEs: explicit, implicit and Crank--Nicolson schemes, and stability
-  \item physics-informed neural networks for pricing PDEs
-\end{planned}
+% Chapter 16: Numerical methods.
+
+Closed-form prices are the exception: a local volatility, an arithmetic average or an
+early-exercise right usually destroys them. Two characterizations of the price survive: it is
+an expected discounted payoff under a risk-neutral measure (\cref{thm:rn-pricing}), and it solves
+a partial differential equation (\cref{cor:fk-pricing-pde}). Each leads to a numerical method.
+\emph{Monte Carlo} averages simulated payoffs; \emph{finite differences} replace the derivatives in
+the equation by difference quotients on a grid. Trees, the third classical method, were the subject
+of \cref{ch:04-binomial} and \cref{thm:bs-limit}; the simplest finite-difference scheme is in fact a
+trinomial tree. Two questions organize the chapter: how fast does a method converge, and what makes
+it fail? For Monte Carlo the answers come from the central limit theorem and from the
+discretization of the dynamics; for finite differences, from consistency and stability, whose
+combination is the subject of the Lax equivalence theorem. We end with the American put, which
+requires a complementarity problem at every time step, and with physics-informed neural networks.
+
+\paragraph{Setting.} We work in the Black--Scholes model under $\Q$:
+$S_t=S_0\exp\big(\sigma\widetilde W_t+(r-\frac{\sigma^2}2)t\big)$ with $S_0>0$, $\sigma>0$, $r\in\R$
+(\cref{thm:bs-formula}). Its closed forms make it a test bench: every error below is measured
+against them.
+
+\section{Monte Carlo}\label{sec:num-mc}
+
+Let $Y$ be a random variable on a probability space $(\Omega,\F,\Prob)$, with $\E|Y|<\infty$ and
+$p=\E[Y]$; for a European claim, $\Prob$ is the risk-neutral measure $\Q$, $Y=e^{-rT}g(S_T)$, and $p$ is
+the price at time $0$. Let $Y_1,Y_2,\dots$ be independent
+copies of $Y$, and define the \emph{Monte Carlo estimator} and the \emph{sample variance}
+\[
+  \hat p_M=\frac1M\sum_{i=1}^MY_i,\qquad
+  s_M^2=\frac1{M-1}\sum_{i=1}^M\big(Y_i-\hat p_M\big)^2\quad(M\ge2).
+\]
+In the Black--Scholes model the copies are produced by \emph{exact sampling}:
+$S_T^{(i)}=S_0\exp\big(\sigma\sqrt T\,Z_i+(r-\frac{\sigma^2}{2})T\big)$ with $Z_1,Z_2,\dots$
+independent standard normal variables.
+
+\begin{theorem}[Monte Carlo]\label{thm:num-mc}
+\leavevmode
+\begin{enumerate}[label=(\roman*)]
+  \item \emph{Unbiased and consistent.} $\E[\hat p_M]=p$ for every $M\ge1$, and $\hat p_M\to p$
+    almost surely as $M\to\infty$.
+  \item \emph{Mean square error.} If $\E[Y^2]<\infty$ and $s^2=\Var(Y)$, then
+    $\E\big[(\hat p_M-p)^2\big]=s^2/M$, and $\Prob\big(|\hat p_M-p|\ge\varepsilon\big)\le s^2/(M\varepsilon^2)$
+    for every $\varepsilon>0$ and every $M$.
+  \item \emph{Confidence intervals.} If moreover $s>0$, then
+    $\sqrt M(\hat p_M-p)/s$ converges in distribution to $\mathcal N(0,1)$, $s_M\to s$ almost
+    surely, and for every $\alpha\in(0,1)$, with $z_\alpha=N^{-1}(1-\alpha/2)$,
+    \begin{equation}\label{eq:num-ci}
+      \Prob\Big(\hat p_M-z_\alpha\frac{s_M}{\sqrt M}\le p\le\hat p_M+z_\alpha\frac{s_M}{\sqrt M}\Big)
+      \longrightarrow1-\alpha\qquad(M\to\infty).
+    \end{equation}
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+(i) Linearity of expectation, and the strong law of large numbers (\textcite{durrett},
+Theorem~2.4.1). (ii) By independence, $\Var(\hat p_M)=Ms^2/M^2$; the bound is Chebyshev's inequality.
+
+(iii) The convergence in distribution is the central limit theorem (\textcite{durrett},
+Theorem~3.4.1). Next, $s_M^2=\frac M{M-1}\big(\frac1M\sum_iY_i^2-\hat p_M^2\big)\to\E[Y^2]-p^2=s^2$ almost
+surely, by the strong law for $Y_i^2$ and $Y_i$. Let $Z_M=\sqrt M(\hat p_M-p)/s$. Since $N$ is
+continuous, $\Prob(Z_M\le w)\to N(w)$ for every $w$, and also $\Prob(Z_M<w)\to N(w)$, because
+$\Prob(Z_M\le w-\eta)\le\Prob(Z_M<w)\le\Prob(Z_M\le w)$ for $\eta>0$; hence $\Prob(|Z_M|\le w)\to2N(w)-1$. The
+event in \eqref{eq:num-ci} is $\{|Z_M|\le z_\alpha s_M/s\}$. Fix $\delta\in(0,1)$; the event
+$A_M=\{|s_M/s-1|\le\delta\}$ has $\Prob(A_M)\to1$, and on $A_M$,
+$\{|Z_M|\le z_\alpha(1-\delta)\}\subseteq\{|Z_M|\le z_\alpha s_M/s\}\subseteq\{|Z_M|\le z_\alpha(1+\delta)\}$. So the
+limits inferior and superior of the probability in \eqref{eq:num-ci} lie between
+$2N(z_\alpha(1-\delta))-1$ and $2N(z_\alpha(1+\delta))-1$; let $\delta\downarrow0$.
+\end{proof}
+
+The error is of order $s/\sqrt M$: each additional digit costs a hundred times more paths, but
+the rate does not depend on the dimension. $Y$ may be a function of a whole path or of a hundred
+assets, which is why Monte Carlo is often the method of choice for path-dependent claims and
+models with many factors (\cref{rem:fk-solving}). The interval \eqref{eq:num-ci}, with $z_{0.05}\approx1.96$, is
+asymptotic, and for small $M$ its coverage can be far from nominal (\exref{ex:num-coverage}); part
+(ii) holds for every $M$ but needs $s$, and gives the cruder half-width $s/\sqrt{0.05M}\approx4.47\,s/\sqrt M$.
+For the call with $S_0=K=100$, $r=5\%$, $\sigma=20\%$, $T=1$, $p=10.45$ and the discounted payoff
+has the standard deviation $s=14.72$ (a closed form, in \coderef{code/src/ieor222/numerics.py}): with
+$M=10^4$ paths the half-width is $0.29$, almost $3\%$ of the price (\cref{fig:num-monte-carlo}).
+
+\begin{remark}[Variance reduction]\label{rem:num-variance-reduction}
+Besides $M$, the other lever is $s$: replace $Y$ by a variable with the same mean and a smaller
+variance. The main methods are antithetic variates (use $Z_i$ and $-Z_i$), control variates
+(subtract a correlated variable of known mean, such as the geometric Asian option of
+\cref{prop:exo-asian-geometric} for the arithmetic one), importance sampling (a change of drift by
+\cref{thm:rn-girsanov}; see \exref{ex:pr-importance}), stratification and quasi-Monte Carlo. They are
+the subject of the companion notes for MFE~230D, \emph{Derivatives: Quantitative Methods}
+(\href{https://github.com/GennaroAlberto/mfe230d-derivatives}{\nolinkurl{github.com/GennaroAlberto/mfe230d-derivatives}}).
+\end{remark}
+
+\subsection{Discretized dynamics}\label{sec:num-mc-bias}
+
+In a local volatility model (\cref{def:sde-local-vol}) one simulates a discretization, typically
+the Euler--Maruyama scheme \eqref{eq:sde-euler} with $n$ steps of size $h=T/n$, and averages $M$
+copies of $Y_h=e^{-rT}g(S^h_T)$. The estimator $\hat p_{M,h}$ then has a \emph{bias}
+$\beta(h)=\E[Y_h]-p$, the weak error of \cref{thm:sde-euler}, and since $\E[(X-p)^2]=(\E X-p)^2+\Var(X)$,
+\begin{equation}\label{eq:num-mse}
+  \E\big[(\hat p_{M,h}-p)^2\big]=\beta(h)^2+\frac{\Var(Y_h)}{M}.
+\end{equation}
+A path costs $n$ normal draws, the estimator $nM$, and the budget must be shared between steps and
+paths.
+
+\begin{proposition}[Cost of a biased estimator]\label{prop:num-mc-cost}
+Suppose that there are $h_0\in(0,T]$ and constants $0<c_1\le c_2$ and $0<v_1\le v_2$ such that
+$c_1h\le|\beta(h)|\le c_2h$ and $v_1\le\Var(Y_h)\le v_2$ for every $h=T/n\le h_0$, and let
+$0<\varepsilon\le\min(\sqrt2\,c_2h_0,\sqrt{2v_2})$.
+\begin{enumerate}[label=(\roman*)]
+  \item With $n=\lceil\sqrt2\,c_2T/\varepsilon\rceil$ steps and $M=\lceil2v_2/\varepsilon^2\rceil$ paths,
+    the root mean square error is at most $\varepsilon$, and $nM\le12\,c_2v_2T\,\varepsilon^{-3}$.
+  \item Conversely, if $T/n\le h_0$ and the root mean square error is at most $\varepsilon$, then
+    $n\ge c_1T/\varepsilon$ and $M\ge v_1/\varepsilon^2$, so that $nM\ge c_1v_1T\,\varepsilon^{-3}$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) Here $h=T/n\le\varepsilon/(\sqrt2\,c_2)\le h_0$, so $\beta(h)^2\le\varepsilon^2/2$, and
+$\Var(Y_h)/M\le\varepsilon^2/2$; apply \eqref{eq:num-mse}. Since $\sqrt2\,c_2T/\varepsilon\ge1$ and
+$2v_2/\varepsilon^2\ge1$, rounding up at most doubles each factor, so
+$nM\le(2\sqrt2\,c_2T/\varepsilon)(4v_2/\varepsilon^2)\le12\,c_2v_2T\varepsilon^{-3}$. (ii) By
+\eqref{eq:num-mse}, $\varepsilon^2\ge\beta(h)^2\ge c_1^2T^2/n^2$ and $\varepsilon^2\ge\Var(Y_h)/M\ge v_1/M$.
+\end{proof}
+
+Without bias, accuracy $\varepsilon$ costs of the order of $\varepsilon^{-2}$; a bias of order $h$ raises
+the cost to the order of $\varepsilon^{-3}$, whatever the allocation with $T/n\le h_0$. With a budget $C$, the error
+decreases like $C^{-1/3}$ instead of $C^{-1/2}$, the step shrinking like $C^{-1/3}$
+(\textcite{duffie-glynn-1995}; \textcite{glasserman-monte-carlo}, Section~1.1.3). Schemes of higher
+weak order, Richardson extrapolation (\exref{ex:num-richardson}) and multilevel Monte Carlo
+(\textcite{giles-multilevel}), which brings the cost of the Euler scheme down to the order of
+$\varepsilon^{-2}(\log\varepsilon)^2$, recover most of the loss; see also the MFE~230D notes.
+
+\begin{example}[A power claim]\label{exa:num-power}
+Let $Y=e^{-rT}S_T^2$, with price $p=S_0^2e^{(r+\sigma^2)T}$, and simulate $S$ itself by the Euler
+scheme. As in \cref{exa:sde-euler-gbm}, $S^h_T=S_0\prod_{k<n}(1+rh+\sigma\Delta_k)$ with independent
+$\Delta_k\sim\mathcal N(0,h)$, so $\E[Y_h]=e^{-rT}S_0^2m_2^n$ and $\Var(Y_h)=e^{-2rT}S_0^4(m_4^n-m_2^{2n})$, where
+$m_2=(1+rh)^2+\sigma^2h$ and $m_4=(1+rh)^4+6(1+rh)^2\sigma^2h+3\sigma^4h^2$ are the second and fourth
+moments of one factor. Expanding $n\log m_2$ in $h=T/n$ gives
+$\beta(h)=pT\big(r^2-\frac12(2r+\sigma^2)^2\big)h+O(h^2)$. For $S_0=1$, $r=5\%$, $\sigma=40\%$, $T=1$:
+$p=1.2337$ and $\beta(h)\approx-0.0386\,h$; numerically, $|\beta(h)|/h$ increases with $n$ from $0.033$
+($n=1$) to this limit, and $\Var(Y_h)$ from $0.68$ to $1.36$. So \cref{prop:num-mc-cost} applies with
+$h_0=T$, and \cref{fig:num-monte-carlo} (right) shows the two regimes.
+\end{example}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch16-monte-carlo}
+  \caption{Left: Monte Carlo estimates of the call ($S_0=K=100$, $r=5\%$, $\sigma=20\%$, $T=1$) with
+    $95\%$ confidence intervals \eqref{eq:num-ci}, from independent samples; the band is
+    $p\pm1.96\,s/\sqrt M$. Right: root mean square error of the price of $S_T^2$ (\cref{exa:num-power})
+    against the cost, computed exactly from \eqref{eq:num-mse}: exact sampling (slope $-\frac12$); the
+    Euler scheme with $n=4$ and $n=32$ steps, which stalls at its bias; and with the best $n$ for each
+    budget (slope $-\frac13$).}
+  \label{fig:num-monte-carlo}
+\end{figure}
+
+\demo{16-numerics.ipynb}{Monte Carlo prices with confidence intervals, their coverage over many
+repetitions, and the error against the cost for any number of time steps.}
+
+\section{Finite differences}\label{sec:num-fd}
+
+\paragraph{The equation.} By \cref{cor:fk-pricing-pde}, the price of $g(S_T)$ is $v(t,S_t)$, where
+$\partial_tv+rx\,\partial_xv+\frac12\sigma^2x^2\partial_{xx}v=rv$ and $v(T,\cdot)=g$. In the time to maturity
+$\tau=T-t$ and the log-price $y=\log x$, let $u(\tau,y)=v(T-\tau,e^y)$. As in the proof of
+\cref{prop:fk-heat}, $\partial_tv=-\partial_\tau u$, $x\,\partial_xv=\partial_yu$ and $x^2\partial_{xx}v=\partial_{yy}u-\partial_yu$, so
+\begin{equation}\label{eq:num-pde}
+  \partial_\tau u=a\,\partial_{yy}u+b\,\partial_yu-c\,u,\qquad u(0,y)=g(e^y),\qquad
+  a=\frac{\sigma^2}2,\quad b=r-\frac{\sigma^2}2,\quad c=r .
+\end{equation}
+With $a=\frac12$, $b=c=0$ this is the heat equation. For local volatility $a$ and $b$ depend on
+$(\tau,y)$, and the schemes below apply unchanged. In $x$, by contrast, the diffusion coefficient
+$\frac12\sigma^2x^2$ grows with $x$, which matters for stability (\cref{rem:num-s-grid}).
+
+\paragraph{The grid.} Truncate to $[y_{\min},y_{\max}]$, of length $L$, with $J$ intervals of length
+$h=L/J$ and nodes $y_j=y_{\min}+jh$; take $N$ time steps of size $k=T/N$, $\tau_n=nk$. The unknowns
+are $U^n_j\approx u(\tau_n,y_j)$, with prescribed end values $U^n_0=\ell_n$ and $U^n_J=\rho_n$
+(\cref{sec:num-bs}).
+
+\begin{lemma}[Difference quotients]\label{lem:num-taylor}
+If $f$ is four times continuously differentiable on $[y-h,y+h]$, there are $\xi,\eta\in(y-h,y+h)$ with
+\[
+  \frac{f(y+h)-2f(y)+f(y-h)}{h^2}=f''(y)+\frac{h^2}{12}f''''(\xi),\qquad
+  \frac{f(y+h)-f(y-h)}{2h}=f'(y)+\frac{h^2}{6}f'''(\eta).
+\]
+\end{lemma}
+
+\begin{proof}
+Taylor's formula gives
+$f(y\pm h)=f(y)\pm hf'(y)+\frac{h^2}2f''(y)\pm\frac{h^3}6f'''(y)+\frac{h^4}{24}f''''(\xi_\pm)$; add the two
+expansions, and use the intermediate value theorem to write
+$\frac12(f''''(\xi_+)+f''''(\xi_-))=f''''(\xi)$. For $f'$, expand to third order and subtract.
+\end{proof}
+
+With these quotients, the operator of \eqref{eq:num-pde} becomes, for $1\le j\le J-1$,
+\begin{equation}\label{eq:num-coefficients}
+  (L_hV)_j=p_-V_{j-1}+p_0V_j+p_+V_{j+1},\qquad
+  p_\pm=\frac a{h^2}\pm\frac b{2h},\qquad p_0=-\frac{2a}{h^2}-c .
+\end{equation}
+
+\begin{definition}[The $\theta$-scheme]\label{def:num-theta}
+Let $\theta\in[0,1]$. The $\theta$-scheme for \eqref{eq:num-pde} is
+\begin{equation}\label{eq:num-theta}
+  \frac{U^{n+1}_j-U^n_j}{k}=\theta\,(L_hU^{n+1})_j+(1-\theta)\,(L_hU^n)_j,\qquad1\le j\le J-1,\ 0\le n<N,
+\end{equation}
+with $U^0_j=g(e^{y_j})$ and the boundary values $\ell_n,\rho_n$. It is \emph{explicit} for
+$\theta=0$, \emph{implicit} for $\theta=1$, and the \emph{Crank--Nicolson} scheme
+(\textcite{crank-nicolson-1947}), the trapezoidal rule in time, for $\theta=\frac12$.
+\end{definition}
+
+For $\theta>0$ each step solves a tridiagonal system, in $O(J)$ operations (the Thomas
+algorithm). With $V^n=(U^n_1,\dots,U^n_{J-1})$ and $A$ the tridiagonal matrix with rows $(p_-,p_0,p_+)$,
+\begin{equation}\label{eq:num-matrix}
+  BV^{n+1}=CV^n+kF^n,\qquad B=I-\theta kA,\qquad C=I+(1-\theta)kA,
+\end{equation}
+where $F^n$ vanishes except for its first entry, $p_-(\theta\ell_{n+1}+(1-\theta)\ell_n)$, and its
+last, $p_+(\theta\rho_{n+1}+(1-\theta)\rho_n)$. The \emph{iteration matrix} is $G=B^{-1}C$.
+
+\begin{definition}[Consistency and stability]\label{def:num-stability}
+Let $u$ solve \eqref{eq:num-pde} on $[0,T]\times[y_{\min},y_{\max}]$ and $u^n_j=u(\tau_n,y_j)$. The
+\emph{truncation error} is
+$T^n_j=\frac1k(u^{n+1}_j-u^n_j)-\theta\,(L_hu^{n+1})_j-(1-\theta)\,(L_hu^n)_j$, and the scheme is
+\emph{consistent of order $(p,q)$} if $|T^n_j|\le C(k^p+h^q)$ for all $n,j$. Given a norm on $\R^{J-1}$
+and a family of grids, the scheme is \emph{stable} if there is a constant $C_s$, the same for all
+grids, with $\|G^m\|\le C_s$ and $\|G^mB^{-1}\|\le C_s$ for all $m\le N$, in the operator norm.
+\end{definition}
+
+Stability means that the steps do not amplify errors: an error $\delta$ in $V^n$ becomes $G^m\delta$
+after $m$ further steps, and an error $k\delta$ in the right side of \eqref{eq:num-matrix} becomes
+$kG^mB^{-1}\delta$. We use the norms $\|V\|_\infty=\max_j|V_j|$ and $\|V\|_{2,h}=\big(h\sum_jV_j^2\big)^{1/2}$.
+
+\begin{proposition}[Stability of the explicit scheme]\label{prop:num-explicit-stability}
+Consider the heat equation $\partial_\tau u=a\,\partial_{yy}u$ ($b=c=0$), the explicit scheme, and
+$\lambda=ak/h^2$.
+\begin{enumerate}[label=(\roman*)]
+  \item If $\lambda\le\frac12$, then $U^{n+1}_j=\lambda U^n_{j-1}+(1-2\lambda)U^n_j+\lambda U^n_{j+1}$ is a
+    convex combination. Hence the \emph{discrete maximum principle} holds: every $U^n_j$ lies between
+    the smallest and the largest of the values $U^0_i$, $\ell_m$, $\rho_m$, $m\le n$; and
+    $\|G^m\|_\infty\le1$ for every $m$.
+  \item If $\lambda>\frac12$, the scheme is unstable. $G$ has the eigenvalue
+    $g=1-4\lambda\cos^2\big(\frac\pi{2J}\big)$, which is smaller than $-1$ as soon as
+    $\cos^2(\frac\pi{2J})>\frac1{2\lambda}$, hence for all large $J$, and then $\|G^m\|_\infty\ge|g|^m$; along
+    grids with $h\to0$ and $N=aT/(\lambda h^2)$, $\|G^N\|_\infty\to\infty$. On the infinite grid $h\Z$, the
+    initial values $U^0_j=\varepsilon(-1)^j$ give $U^n_j=\varepsilon(1-4\lambda)^n(-1)^j$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) The weights $\lambda$, $1-2\lambda$, $\lambda$ are nonnegative with sum $1$, and a convex combination lies
+between the smallest and the largest of the combined values; induct on $n$. With zero boundary
+values, the same remark gives $\|GV\|_\infty\le\|V\|_\infty$.
+
+(ii) For $1\le m\le J-1$, $w_j=\sin(m\pi j/J)$ vanishes at $j=0,J$ and $w_{j+1}+w_{j-1}=2\cos(m\pi/J)w_j$, so
+$(Aw)_j=-\frac{4a}{h^2}\sin^2\big(\frac{m\pi}{2J}\big)w_j$ and $Gw=\big(1-4\lambda\sin^2\frac{m\pi}{2J}\big)w$; for
+$m=J-1$ this is $g$. An eigenvalue of $G^m$ is $g^m$, and the modulus of an eigenvalue is at most any
+operator norm. On $h\Z$, $(-1)^{j-1}+(-1)^{j+1}=-2(-1)^j$, so one step multiplies $\varepsilon(-1)^j$ by $1-4\lambda$.
+\end{proof}
+
+The sawtooth $(-1)^j$ is the highest frequency the grid carries. For $\lambda>\frac12$ a rounding error of
+size $10^{-16}$ reaches size $1$ after $16/\log_{10}|1-4\lambda|$ steps, about $200$ for $\lambda=0.55$; for a
+call the growth starts from the kink of the payoff, which contains all frequencies, and is visible
+much sooner (\cref{fig:num-stability}, left).
+
+\begin{remark}[The explicit scheme is a trinomial tree]\label{rem:num-trinomial}
+For \eqref{eq:num-pde} the explicit scheme reads
+$U^{n+1}_j=kp_-U^n_{j-1}+(1+kp_0)U^n_j+kp_+U^n_{j+1}$, with weights adding up to $1-ck$. If they are
+nonnegative ($h|b|\le2a$ and $k(2a/h^2+c)\le1$) and $ck<1$, this is backward induction in a trinomial
+tree for the log-price, with moves $\pm h$ or $0$, probabilities equal to the weights divided by
+$1-ck$, and the discount factor $1-rk\approx e^{-rk}$ per period: trees like those of
+\cref{rem:bin-trinomial-trees}, with $h=\delta x$, whose first two moments agree with the
+Black--Scholes ones up to $O(k^2)$ instead of exactly. For the heat equation, the stability condition
+$\lambda\le\frac12$ of \cref{prop:num-explicit-stability} is exactly the nonnegativity of the middle
+probability (\exref{ex:num-trinomial}).
+\end{remark}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch16-stability}
+  \caption{Left: the explicit scheme for the call of \cref{fig:num-monte-carlo} in log-price ($201$
+    nodes over six standard deviations of $\log S_T$ on each side of $\log K$), $k=\lambda h^2/a$: the
+    largest error over the grid against the step; for $\lambda=0.55$ it grows like $1.2^n$. Right: the
+    amplification factors of the three schemes for the heat equation against the frequency,
+    $1-4\lambda s$, $1/(1+4\lambda s)$ and $(1-2\lambda s)/(1+2\lambda s)$ with $s=\sin^2(\xi h/2)$; $|g|\le1$ is shaded.}
+  \label{fig:num-stability}
+\end{figure}
+
+For the full equation and all three schemes, consistency and stability give convergence.
+
+\begin{theorem}[Consistency, stability and convergence]\label{thm:num-schemes}
+Let $a>0$, $b\in\R$, $c\ge0$ and $\theta\in[0,1]$. Consider grids with $h|b|\le a$ and, if
+$\theta<\frac12$, $(1-2\theta)k(4a/h^2+c)\le2$. Let $u$ solve \eqref{eq:num-pde} on
+$[0,T]\times[y_{\min},y_{\max}]$, with $\partial^i_\tau u$, $i\le3$, and $\partial^j_yu$, $j\le4$, continuous on this
+closed rectangle and bounded by $M_u$. Let $U$ be the $\theta$-scheme with initial values $u(0,y_j)$
+and boundary values $\ell_n=u(\tau_n,y_{\min})$, $\rho_n=u(\tau_n,y_{\max})$.
+\begin{enumerate}[label=(\roman*)]
+  \item \emph{Consistency.} $|T^n_j|\le C_1(k+h^2)$ for every $\theta$, and $|T^n_j|\le C_1(k^2+h^2)$
+    for $\theta=\frac12$, with $C_1=M_u\big(\frac32+\frac a{12}+\frac{|b|}6\big)$.
+  \item \emph{Stability.} $\|G^m\|_{2,h}\le e^{|b|L/a}$ and $\|G^mB^{-1}\|_{2,h}\le e^{|b|L/a}$ for all
+    $m\ge0$.
+  \item \emph{Convergence.} With $u^n=(u^n_1,\dots,u^n_{J-1})$, for every $n\le N$,
+    $\|u^n-V^n\|_{2,h}\le e^{|b|L/a}\,T\sqrt L\,C_1(k+h^2)$, and $k^2+h^2$ for Crank--Nicolson.
+  \item \emph{Maximum norm.} If moreover $(1-\theta)k(2a/h^2+c)\le1$, then $\|G^m\|_\infty\le1$,
+    $\|G^mB^{-1}\|_\infty\le1$, and $|u^n_j-U^n_j|\le T\,C_1(k+h^2)$ (resp.\ $k^2+h^2$) for all $n,j$.
+    Two solutions of the scheme with the same initial values and boundary values $(\ell,\rho)$ and
+    $(\ell',\rho')$ differ at every node by at most $\max_n\max(|\ell_n-\ell'_n|,|\rho_n-\rho'_n|)$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+(i) By \cref{lem:num-taylor}, $(L_hu^m)_j$ differs from $(a\partial_{yy}u+b\partial_yu-cu)(\tau_m,y_j)$, which is
+$\partial_\tau u(\tau_m,y_j)$ (also at $\tau=0$, by continuity), by at most $h^2M_u(\frac a{12}+\frac{|b|}6)$. It
+remains to compare $\frac1k(u^{n+1}_j-u^n_j)$ with $\theta\,\partial_\tau u^{n+1}_j+(1-\theta)\,\partial_\tau u^n_j$. By
+Taylor's formula in $\tau$, $u^{n+1}_j-u^n_j=k\,\partial_\tau u^n_j+\frac{k^2}2\partial_{\tau\tau}u(\zeta,y_j)$ and
+$\partial_\tau u^{n+1}_j=\partial_\tau u^n_j+k\,\partial_{\tau\tau}u(\zeta',y_j)$, so the difference is at most
+$(\frac12+\theta)kM_u$. For $\theta=\frac12$, expand around $\bar\tau=\tau_n+\frac k2$ as in \cref{lem:num-taylor}:
+$\frac1k(u^{n+1}_j-u^n_j)$ and $\frac12(\partial_\tau u^{n+1}_j+\partial_\tau u^n_j)$ differ from $\partial_\tau u(\bar\tau,y_j)$ by
+$\frac{k^2}{24}\partial^3_\tau u$ and $\frac{k^2}8\partial^3_\tau u$ at intermediate points, so by at most $\frac{k^2}6M_u$ in all.
+
+(ii) Since $h|b|\le a$, $p_\pm>0$. Let $D$ be diagonal with entries $d_j=(p_-/p_+)^{j/2}$. Then $S=D^{-1}AD$
+is symmetric tridiagonal, with diagonal $p_0$ and off-diagonal $q=\sqrt{p_-p_+}$, since
+$d_j^{-1}p_+d_{j+1}=d_{j+1}^{-1}p_-d_j=q$. As in the proof of \cref{prop:num-explicit-stability}, its
+eigenvalues are $\mu_m=p_0+2q\cos\frac{m\pi}J$, and $0<q\le\frac12(p_-+p_+)=a/h^2$ puts them in
+$[-4a/h^2-c,\,-c]$. Now $G=DG_SD^{-1}$ and $B^{-1}=D(I-\theta kS)^{-1}D^{-1}$, where
+$G_S=(I-\theta kS)^{-1}(I+(1-\theta)kS)$ is symmetric with eigenvalues $g(\mu)=\frac{1+(1-\theta)k\mu}{1-\theta k\mu}$.
+For $\mu\le0$, $g(\mu)\le1$, and $g(\mu)\ge-1$ if and only if $(1-2\theta)k|\mu|\le2$, which holds by assumption
+when $\theta<\frac12$. The spectral norm of a symmetric matrix is the largest modulus of its eigenvalues,
+so $\|G_S^m\|_2\le1$, $\|(I-\theta kS)^{-1}\|_2\le1$, and
+$\|G^mB^{-1}\|_2=\|DG_S^m(I-\theta kS)^{-1}D^{-1}\|_2\le\|D\|_2\|D^{-1}\|_2$; the same holds for $G^m$, and
+$\|\cdot\|_{2,h}$ has the same operator norms as the Euclidean norm. Finally
+$\|D\|_2\|D^{-1}\|_2=\max_jd_j/\min_jd_j\le\exp\big(\frac J2|\log\frac{p_-}{p_+}|\big)$, and with
+$x=\frac{|b|h}{2a}\le\frac12$, $|\log\frac{p_-}{p_+}|=\log\frac{1+x}{1-x}=2\sum_{i\ge0}\frac{x^{2i+1}}{2i+1}\le\frac{2x}{1-x^2}\le\frac83x$,
+so the exponent is at most $\frac23|b|L/a$.
+
+(iii) The exact solution satisfies $Bu^{n+1}=Cu^n+kF^n+kT^n$, with the same $F^n$ as the scheme.
+Subtracting \eqref{eq:num-matrix}, $e^n=u^n-V^n$ satisfies $e^{n+1}=Ge^n+kB^{-1}T^n$ and $e^0=0$, so
+$e^n=k\sum_{m<n}G^{n-1-m}B^{-1}T^m$ and, by (ii), $\|e^n\|_{2,h}\le nk\,e^{|b|L/a}\max_m\|T^m\|_{2,h}$, with
+$nk\le T$ and $\|T^m\|_{2,h}\le\sqrt L\max_j|T^m_j|$.
+
+(iv) One step maps $W=(\ell_n,V^n,\rho_n)\in\R^{J+1}$ to $Z=(\ell_{n+1},V^{n+1},\rho_{n+1})$ with
+$\max_j|Z_j|\le\max(|\ell_{n+1}|,|\rho_{n+1}|,\max_j|W_j|)$ (discrete maximum principle). Indeed,
+$R_j=W_j+(1-\theta)k(L_hW)_j$ has the weights $(1-\theta)kp_\pm$ and $1-(1-\theta)k(2a/h^2+c)$, nonnegative
+with sum $1-(1-\theta)kc\le1$, so $|R_j|\le\max_i|W_i|$. Next, $Z_j-\theta k(L_hZ)_j=R_j$ for $1\le j\le J-1$; if
+$|Z_j|$ is maximal at an interior node $j^*$, then
+$|R_{j^*}|\ge\big(1+\theta k(\frac{2a}{h^2}+c)\big)|Z_{j^*}|-\theta k(p_-+p_+)|Z_{j^*}|=(1+\theta kc)|Z_{j^*}|\ge|Z_{j^*}|$.
+With zero boundary values this gives $\|G\|_\infty\le1$ and $\|B^{-1}\|_\infty\le1$, and the error bound follows
+as in (iii). The difference of two solutions solves the scheme with zero initial values and boundary
+values $\ell-\ell'$, $\rho-\rho'$; induct on $n$.
+\end{proof}
+
+For $r<0$ the same proofs hold, with the bounds multiplied by a constant depending only on $|r|T$,
+provided $k|r|\le\frac12$. The condition $h|b|\le a$ is mild: $h\le\frac23$ for $\sigma=20\%$, $r=5\%$.
+
+\begin{remark}[The Lax equivalence theorem]\label{rem:num-lax}
+For a consistent linear scheme approximating a well-posed linear initial-value problem, stability
+is necessary and sufficient for convergence (\textcite{lax-richtmyer-1956};
+\textcite{strikwerda-finite-difference}, Theorem~1.5.1, proved in Chapter~10). We proved the
+sufficiency, with a rate; \cref{prop:num-explicit-stability}(ii) shows the necessity at work.
+\Cref{thm:num-schemes} also prices the schemes: for an error $\varepsilon$, the explicit scheme ($k\le h^2/(2a)$) and the
+implicit one (error $k+h^2$) need work $JN$ of the order of $\varepsilon^{-3/2}$, Crank--Nicolson with
+$k\approx h\approx\sqrt\varepsilon$ only $\varepsilon^{-1}$, if its hypotheses hold; the next section is about when they
+do not.
+\end{remark}
+
+\begin{remark}[Grids in the price itself]\label{rem:num-s-grid}
+On the grid $x_j=j\,\delta x$, $0\le j\le M$, the explicit scheme for the equation in $x$ reads
+$U_j\leftarrow a_jU_{j-1}+b_jU_j+c_jU_{j+1}$ with $a_j=\frac12\delta t(\sigma^2j^2-rj)$, $b_j=1-\delta t(\sigma^2j^2+r)$ and
+$c_j=\frac12\delta t(\sigma^2j^2+rj)$. The local ratio $\frac12\sigma^2j^2\delta t$ grows with $j$, and the middle weights
+are nonnegative if and only if $\delta t(\sigma^2(M-1)^2+r)\le1$: the top of the grid sets the time step,
+and refining in $x$ at fixed $\delta t$ eventually breaks the scheme. With $K=100$, $\sigma=20\%$, $r=5\%$,
+$T=1$, $x_M=400$ and $10^4$ time steps, the middle weights are nonnegative for $M\le500$; the
+spectral radius of the iteration matrix stays below $1$ up to $M=509$ and equals $1.0055$ for $M=510$,
+which multiplies errors by about $1.0055^{10^4}\approx10^{24}$: the prices explode near $x_M$. In the
+log-price, $\lambda=ak/h^2$ is the same at every node.
+\end{remark}
+
+\demo{16-numerics.ipynb}{the explicit scheme just below and above its stability limit, in the
+log-price and on a grid in the price itself, where refining the grid makes it explode.}
+
+\section{The Black--Scholes equation on a grid}\label{sec:num-bs}
+
+\paragraph{Domain and boundary values.} For a call or a put we take
+$[y_{\min},y_{\max}]=[\log S_0-m\sigma\sqrt T,\,\log S_0+m\sigma\sqrt T]$ and impose at the ends the
+discounted payoff of zero volatility, the limit of the price far from the strike: for the call
+$\ell_n=0$, $\rho_n=e^{y_{\max}}-Ke^{-r\tau_n}$; for the put $\ell_n=Ke^{-r\tau_n}-e^{y_{\min}}$, $\rho_n=0$. By
+\cref{thm:num-schemes}(iv), for the implicit scheme and for the others under its condition, this
+changes the discrete solution by at most the error in the boundary values: for the call, by put--call
+parity, the larger of the call price at $e^{y_{\min}}$ and the put price at $e^{y_{\max}}$. With the
+parameters of \cref{fig:num-monte-carlo} and $m=6$, both are below $10^{-8}$. The influence of the
+boundary in fact decays fast away from it (\textcite{kangro-nicolaides-2000}).
+
+\paragraph{Non-smooth payoffs.} \Cref{thm:num-schemes} needs bounded derivatives up to maturity, and
+a call does not have them: $\partial_{yy}u=x^2\Gamma+x\Delta$, and $x^2\Gamma=xN'(d_+)/(\sigma\sqrt\tau)$ is of order
+$K/(\sigma\sqrt{2\pi\tau})$ near $(0,\log K)$ (\cref{prop:bs-greeks}). The kink of the payoff feeds every
+frequency, and the amplification factors (\cref{fig:num-stability}, right) tell what happens to them.
+The implicit scheme damps the high ones at each step, and the explicit scheme under $\lambda\le\frac12$ is a
+positive average. The Crank--Nicolson factor $(1-2\lambda s)/(1+2\lambda s)$, however, tends to $-1$ as
+$\lambda\to\infty$: high frequencies survive, changing sign at every step. With $k$ proportional to $h$, the
+natural choice for a second-order scheme, $\lambda$ grows like $1/h$: oscillations appear in the delta
+and the gamma near the strike, and the price loses its second order. With a fixed ratio $k/h$, the
+Crank--Nicolson delta does not converge and its gamma diverges, in the maximum norm
+(\textcite{giles-carter-2006}).
+
+\paragraph{Rannacher's start.} The remedy of \textcite{rannacher-1984} replaces the first
+Crank--Nicolson steps by implicit ones. \textcite{giles-carter-2006} prove that replacing the first two
+steps by four implicit half-steps restores second-order convergence in the maximum norm for the
+value, delta and gamma of calls and puts, and of digitals when the payoff is averaged over each
+cell. The half-steps multiply a high frequency by $(1+2\lambda s)^{-4}$, after which Crank--Nicolson
+proceeds much as if the data were smooth. Treatments of the payoff complement this start (they do
+not remove the oscillation: in \cref{fig:num-convergence} the strike is already a node): place the
+strike on a node or midway between two, or average the payoff over each cell, which digitals need
+(\textcite{pooley-vetzal-forsyth-2003}); compare the smoothing of a tree (\cref{rem:bs-oscillation},
+\exref{ex:bs-rate}).
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch16-convergence}
+  \caption{The call of \cref{fig:num-monte-carlo} on grids in log-price centered at $S_0=K$, $m=6$. Left:
+    error of the price at $S_0$ against $h$, for $J=50,\dots,1600$; explicit scheme with $k=0.4\,h^2/a$,
+    the others with $k=h/\sigma$. Right: the gamma at $t=0$ from Crank--Nicolson with $J=400$ and $N=25$
+    ($\lambda=ak/h^2\approx22$), with and without Rannacher's start, and the Black--Scholes gamma.}
+  \label{fig:num-convergence}
+\end{figure}
+
+On successive grids (\cref{fig:num-convergence}) the error of the explicit scheme decreases by factors
+$4.2$, $3.9$, $4.1$, $4.0$, that of the implicit scheme by factors close to $2$ (with $k=h/\sigma$ the time
+error dominates), and that of Crank--Nicolson with Rannacher's start by factors close to $4$. Plain
+Crank--Nicolson is erratic, and its gamma at the strike is off by $0.30$ on the finest grid, where the
+true gamma is $0.019$.
+
+\demo{16-numerics.ipynb}{convergence orders for any strike and maturity, and the Crank--Nicolson gamma
+with and without Rannacher's start as the ratio $k/h$ grows.}
+
+\section{The American put on a grid}\label{sec:num-american}
+
+As in \cref{thm:bin-american}(ii) and \cref{prop:exo-perpetual-put}, the price of the American put is
+the largest expected discounted payoff over exercise rules: with
+$S^{t,x}_u=x\exp\big(\sigma(\widetilde W_u-\widetilde W_t)+(r-\frac{\sigma^2}2)(u-t)\big)$,
+\begin{equation}\label{eq:num-american}
+  v(t,x)=\sup_\tau\EQ\big[e^{-r(\tau-t)}\big(K-S^{t,x}_\tau\big)^+\big],\qquad t\in[0,T],\ x>0,
+\end{equation}
+over the stopping times $\tau$ of the filtration of $(\widetilde W_u-\widetilde W_t)_{u\ge t}$ with values in
+$[t,T]$. With $g(x)=(K-x)^+$ and $\mathcal Av=\partial_tv+rx\,\partial_xv+\frac12\sigma^2x^2\partial_{xx}v-rv$, $v$ solves the
+\emph{linear complementarity problem}
+\begin{equation}\label{eq:num-lcp-continuous}
+  v\ge g,\qquad\mathcal Av\le0,\qquad(v-g)\,\mathcal Av=0,\qquad v(T,\cdot)=g:
+\end{equation}
+at each point either exercise is optimal and $v=g$, or $v$ solves the Black--Scholes equation
+(stated and discussed in \textcite{shreve2}, Section~8.4;
+\textcite{jaillet-lamberton-lapeyre-1990} give the rigorous form, a variational inequality of which
+$v$ is the unique solution). If $r>0$, the \emph{exercise region} $\{x:v(t,x)=g(x)\}$ at a time $t<T$
+is an interval $(0,b(t)]$, with $b$ nondecreasing and $L^*\le b(t)<K$ for the perpetual level $L^*$ of
+\cref{prop:exo-perpetual-put}; if $r=0$ it is empty (\exref{ex:num-american-region}). The price is
+continuously differentiable in $x$ across $b(t)$ (smooth fit; \textcite{shreve2}, Section~8.4) but in
+general not twice, as for the perpetual put, whose second derivative jumps at $L^*$. Near maturity
+$K-b(t)\sim\sigma K\sqrt{(T-t)|\log(T-t)|}$ when $r>0$ (\textcite{barles-critical-price}). No closed form
+is known.
+
+\paragraph{The projected scheme.} In log-price, each step of the $\theta$-scheme asks for the
+complementarity conditions instead of the equation: given $V^n$, find $V^{n+1}$ with
+\begin{equation}\label{eq:num-lcp}
+  V^{n+1}\ge\mathbf g,\qquad BV^{n+1}-q^n\ge0,\qquad(V^{n+1}-\mathbf g)\cdot(BV^{n+1}-q^n)=0,
+\end{equation}
+where $q^n=CV^n+kF^n$, $\mathbf g_j=(K-e^{y_j})^+$, inequalities hold entry by entry, and the boundary
+values are $\ell_n=K-e^{y_{\min}}$ and $\rho_n=0$. The \emph{projected SOR} method (PSOR) of
+\textcite{cryer-1971} sweeps over the nodes $j=1,\dots,J-1$ with a relaxation parameter $\omega$:
+\begin{equation}\label{eq:num-psor}
+  z^{(i+1)}_j=\max\Big(\mathbf g_j,\ z^{(i)}_j+\omega\Big(\frac{q_j-B_{j,j-1}z^{(i+1)}_{j-1}-B_{j,j+1}z^{(i)}_{j+1}}{B_{jj}}-z^{(i)}_j\Big)\Big),
+\end{equation}
+a Gauss--Seidel step for $Bz=q$ when $\omega=1$, overrelaxed when $\omega>1$, projected on $\{z\ge\mathbf g\}$.
+
+\begin{proposition}[American put on a grid]\label{prop:num-american-grid}
+Let $c\ge0$, $\theta\in(0,1]$, and $h|b|\le a$.
+\begin{enumerate}[label=(\roman*)]
+  \item For all $q,\mathbf g\in\R^{J-1}$, the problem $z\ge\mathbf g$, $Bz-q\ge0$,
+    $(z-\mathbf g)\cdot(Bz-q)=0$ has exactly one solution.
+  \item For every $\omega\in(0,2)$ and every starting point, the iterates \eqref{eq:num-psor}
+    converge to it.
+  \item If moreover $(1-\theta)k(2a/h^2+c)\le1$, and $V_E$ solves \eqref{eq:num-matrix} with
+    $V^0_E\le V^0$ and boundary values not larger than $\ell_n$, $\rho_n$ (a European put), then
+    $V^n_E\le V^n$ for every $n$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+Let $D$, $S$ be as in the proof of \cref{thm:num-schemes}(ii), and $P=I-\theta kS$, symmetric with
+eigenvalues $1-\theta k\mu_m\ge1$, so positive definite; then $B=DPD^{-1}$.
+
+(i) Write $z=Dw$. Then $Bz-q=D(Pw-D^{-1}q)$, and since $D$ is diagonal with positive entries, $z$ solves
+the problem if and only if $w$ solves it with $P$, $D^{-1}q$, $D^{-1}\mathbf g$ in place of $B$, $q$, $\mathbf g$.
+The function $F(w)=\frac12w\cdot Pw-w\cdot D^{-1}q$ is strictly convex and $F(w)\to\infty$ as $|w|\to\infty$,
+since $w\cdot Pw\ge|w|^2$; so it has a minimizer $w^*$ on the closed convex set $\{w\ge D^{-1}\mathbf g\}$.
+For each $j$, $t\mapsto F(w^*+te_j)$ is minimal at $t=0$ over $t\ge(D^{-1}\mathbf g)_j-w^*_j$, so its
+derivative $(Pw^*-D^{-1}q)_j$ at $0$ is nonnegative, and zero if $w^*_j>(D^{-1}\mathbf g)_j$: $w^*$ solves
+the problem. If $w$ and $w'$ both solve it, then
+$(w-w')\cdot(Pw-D^{-1}q)=-(w'-D^{-1}\mathbf g)\cdot(Pw-D^{-1}q)\le0$, and symmetrically; adding,
+$(w-w')\cdot P(w-w')\le0$, so $w=w'$.
+
+(ii) If $z^{(i)}=Dw^{(i)}$, dividing \eqref{eq:num-psor} by $d_j>0$ gives the same iteration for $w$
+with $P$, $D^{-1}q$, $D^{-1}\mathbf g$, because $P_{jl}=d_j^{-1}B_{jl}d_l$. For a symmetric positive definite
+matrix, projected SOR converges for every $\omega\in(0,2)$ (\textcite{cryer-1971}).
+
+(iii) First, $Bx\ge0$ implies $x\ge0$: if the smallest entry $x_{j^*}$ were negative, then, as
+$-\theta kp_\pm\le0$ and $x_{j^*\pm1}\ge x_{j^*}$, $(Bx)_{j^*}\le(1+\theta kc)x_{j^*}<0$ (a missing neighbor at
+$j^*=1$ or $J-1$ only helps). Next, $C$ has nonnegative entries and $F^n$ is nondecreasing in the
+boundary values. If $V^n_E\le V^n$, then $BV^{n+1}_E=CV^n_E+kF^n_E\le q^n\le BV^{n+1}$, so
+$V^{n+1}_E\le V^{n+1}$.
+\end{proof}
+
+The grid's exercise boundary at $\tau_n$ is the largest node where $V^n_j=\mathbf g_j>0$. Our code
+sweeps the nodes in red--black order (odd, then even), which is Gauss--Seidel for a reordering of the
+unknowns, so (ii) still applies. Because the exercise region of the put lies at the bottom of the
+grid, \eqref{eq:num-lcp} can also be solved directly, by one elimination from the top and a projected
+back-substitution from the bottom: the algorithm of M.~Brennan and E.~Schwartz (\emph{Journal of
+Finance}, 1977), justified by \textcite{jaillet-lamberton-lapeyre-1990} for steps whose matrices have
+the sign structure of the implicit scheme. With Crank--Nicolson, Rannacher's start, $J=800$ and
+$N=400$, outside that setting, it agrees with PSOR ($6.089962$ against $6.089961$): the put of
+\cref{fig:num-american} costs $6.0900$ at $S_0=K$, against $6.0902$ from a $5000$-step tree and
+$5.5735$ for the European put; $b(0)\approx80.8$, above $L^*=71.4$. Here $\lambda=ak/h^2\approx5.6$, so
+(iii) does not apply; the computed American prices still dominate the European ones, which is
+observed, not proved (for the implicit scheme (iii) applies, and the tests check it). PSOR with $\omega=1.2$ needs about $11$
+sweeps per step for $J=400$, $N=200$, and about $80$ for $J=3200$, $N=1600$.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch16-american}
+  \caption{The American put with $K=100$, $r=5\%$, $\sigma=20\%$, $T=1$, by projected Crank--Nicolson
+    with PSOR. Left: American and European prices at $t=0$; the dotted line is $b(0)$. Right: the
+    exercise boundary $b(t)$ from the grid and from a binomial tree with $2000$ steps, with $K$ and
+    the perpetual level $L^*=2rK/(2r+\sigma^2)$.}
+  \label{fig:num-american}
+\end{figure}
+
+\demo{16-numerics.ipynb}{the American put and its exercise boundary for any rate, volatility and
+maturity, from the grid and from a tree, and the number of PSOR sweeps against $\omega$.}
+
+\section{Physics-informed neural networks}\label{sec:num-pinn}
+
+A \emph{physics-informed neural network} (PINN) represents the solution by a network $u_w(\tau,y)$
+with parameters $w$, and asks it to satisfy the equation at sampled points
+(\textcite{raissi-pinns}; the closely related deep Galerkin method is due to
+\textcite{sirignano-spiliopoulos-2018}). For \eqref{eq:num-pde}, with points $(\tau_i,y_i)$ in the
+domain, $y'_i$ at $\tau=0$ and $(\tau''_i,y''_i)$ on the lateral boundary, where the values are $\beta_i$,
+the parameters minimize
+\begin{multline*}
+  \frac1{N_r}\sum_{i}\big|\partial_\tau u_w-a\,\partial_{yy}u_w-b\,\partial_yu_w+c\,u_w\big|^2(\tau_i,y_i)\\
+  +\frac1{N_0}\sum_{i}\big|u_w(0,y'_i)-g(e^{y'_i})\big|^2
+  +\frac1{N_b}\sum_{i}\big|u_w(\tau''_i,y''_i)-\beta_i\big|^2,
+\end{multline*}
+by a stochastic gradient method such as Adam, the derivatives in $(\tau,y)$ and in $w$ being computed
+by automatic differentiation.
+
+\begin{remark}[What PINNs solve, and how they fail]\label{rem:num-pinn}
+\leavevmode
+\begin{enumerate}[label=(\alph*),leftmargin=*]
+  \item \emph{What they solve.} The same equation as a grid, over a class of functions instead of a
+    set of nodes. There is no mesh, so the number of state variables enters only through the
+    network and the sampling, which is the attraction where grids are out of reach
+    (\cref{rem:fk-solving}): \textcite{sirignano-spiliopoulos-2018} solve free-boundary problems of
+    the kind American options on many assets lead to, in up to $200$ dimensions. The network is a
+    smooth function, whose derivatives give the Greeks.
+  \item \emph{No a priori control.} A small loss does not by itself mean a small error: turning the
+    residuals at finitely many points into an error bound needs a stability estimate for the
+    equation and a bound on the quadrature error (\textcite{mishra-molinaro-2023}). Nor is a small
+    loss guaranteed: the problem is not convex, and its result depends on the initialization.
+  \item \emph{Optimization.} The loss terms have different scales and badly unbalanced gradients
+    (\textcite{wang-teng-perdikaris-2021}); training fails for strong convection or reaction terms on
+    problems a grid solves easily (A.~S.~Krishnapriyan, A.~Gholami, S.~Zhe, R.~M.~Kirby and
+    M.~W.~Mahoney, \emph{NeurIPS}, 2021); and networks fit smooth components first, so kinks are
+    learned last.
+  \item \emph{Non-smooth payoffs.} The residual involves $\partial_{yy}u$, of order $\tau^{-1/2}$ near the strike
+    at maturity; the network smooths the kink and its error concentrates there, the difficulty that
+    Rannacher's start resolves for Crank--Nicolson.
+  \item \emph{Cost.} In one or two dimensions a grid is faster and more accurate by orders of
+    magnitude. In the notebook a network with one hidden layer of $24$ units, trained with
+    hand-written gradients for $4000$ Adam steps (about three seconds), reaches a loss of
+    $8\times10^{-5}$ on the call with $K=1$, $r=5\%$, $\sigma=20\%$; its largest error is $1.6\times10^{-2}$ near
+    the strike at $\tau=0.05$ and about $2\times10^{-3}$ at $\tau=0.5$ and $1$, while Crank--Nicolson with
+    Rannacher's start on $200$ nodes is accurate to about $10^{-4}$, in about a millisecond.
+\end{enumerate}
+\end{remark}
+
+\demo{16-numerics.ipynb}{a physics-informed network for the Black--Scholes equation in NumPy, with
+hand-written gradients: its loss, its error near the strike and its cost, against a grid.}
+
+\furtherreading
+\textcite{glasserman-monte-carlo} is the reference on Monte Carlo in finance (Chapters~1, 4 and~6
+for the principles, variance reduction and discretization). \textcite{wilmott-howison-dewynne},
+Chapters~8 and~9, present finite differences and projected methods for American options at the
+level of these notes; \textcite{strikwerda-finite-difference}, Chapters~1, 2 and~10, develops
+consistency, stability, von Neumann analysis and the Lax equivalence theorem.
+\textcite{giles-carter-2006} analyze Rannacher's start for option payoffs, and
+\textcite{jaillet-lamberton-lapeyre-1990} the variational inequality of the American put and its
+approximation.

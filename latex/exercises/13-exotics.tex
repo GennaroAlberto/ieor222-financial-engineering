@@ -1,0 +1,146 @@
+% Exercises for Chapter 13 (Exotic options). Statements only: solutions are kept privately.
+
+Unless an exercise says otherwise, we are in the setting of \noteref{sec:exo-setting}: under $\Q$,
+$S_t=S_0e^{\sigma X_t}$ with $X_t=\widetilde W_t+\nu t$, $\nu=r/\sigma-\sigma/2$, prices are given by
+\noteref{eq:exo-price}, and $c(x;k)$, $\delta(x;k)$ are the prices at time $0$ of the call and of
+the digital call with strike $k$ and maturity $T$ when the stock is at $x$, as in
+\noteref{prop:exo-barrier}. $N$ and $N'$ are the standard normal distribution function and
+density.
+
+\begin{exercise}[One-touch options]\label{ex:exo-touch}
+\easy Let $B>S_0$. A \emph{one-touch} option pays $1$ at $T$ if $\overline S_T\ge B$, and nothing
+otherwise; a \emph{no-touch} option pays $1$ if $\overline S_T<B$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that the one-touch option costs
+    \[
+      e^{-rT}N\big(d_-(T,S_0)\big)+\Big(\frac B{S_0}\Big)^{2r/\sigma^2-1}e^{-rT}N\Big(-d_-\Big(T,\frac{B^2}{S_0}\Big)\Big),
+    \]
+    where $d_-$ is computed with the strike $B$. Interpret the two terms as a digital call and
+    the image of a digital put, in the sense of the discussion after \noteref{prop:exo-barrier}.
+    What does the no-touch option cost?
+  \item Show that when $r=\sigma^2/2$ the one-touch option costs exactly twice the digital call
+    paying $1$ if $S_T\ge B$. Explain this with the reflection principle.
+  \item Take $S_0=100$, $B=110$, $r=2\%$, $\sigma=25\%$ and $T=\frac12$. Compute the prices of the
+    one-touch option and of the digital call. Is the rule of thumb ``a one-touch is worth twice the
+    digital'' accurate here?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Hitting times]\label{ex:exo-hitting}
+\medium Let $W$ be a Brownian motion with a filtration, $\nu\in\R$, $X_t=W_t+\nu t$, $m>0$, and
+$\tau_m=\inf\{t\ge0:X_t=m\}$ ($\inf\emptyset=\infty$).
+\begin{enumerate}[label=(\alph*)]
+  \item Let $\nu=0$. Show that $\Prob(\tau_m\le t)=2N(-m/\sqrt t)$ for $t>0$, that $\tau_m$ has the
+    density $\frac{m}{\sqrt{2\pi}\,t^{3/2}}e^{-m^2/(2t)}$, and that $\tau_m$ has the law of $m^2/Z^2$
+    for $Z\sim\mathcal N(0,1)$.
+  \item Show that $\Prob(\tau_m<\infty)=1$ if $\nu\ge0$ and $\Prob(\tau_m<\infty)=e^{2\nu m}$ if $\nu<0$.
+  \item Let $\lambda>0$ and $\alpha=\sqrt{\nu^2+2\lambda}-\nu$. Show that $e^{\alpha X_t-\lambda t}$ is a
+    martingale, and deduce that $\E\big[e^{-\lambda\tau_m}\1_{\{\tau_m<\infty\}}\big]=e^{-\alpha m}$.
+    You may use that a stopped martingale of the form $\exp(\alpha W_t-\frac{\alpha^2}2t)$ is a
+    martingale, as in the proof of \noteref{prop:exo-perpetual-put}.
+  \item A \emph{perpetual one-touch} option pays $1$ at the first time $\tau$ the stock price reaches
+    $B>S_0$, if it ever does; as in \noteref{sec:exo-perpetual}, its price is
+    $\EQ\big[e^{-r\tau}\1_{\{\tau<\infty\}}\big]$. Show that this is $S_0/B$, whatever $r>0$ and $\sigma$. Find a
+    portfolio of shares, bought at time $0$ and sold at the hitting time, that replicates it.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[The delta of an up-and-out call]\label{ex:exo-barrier-bounds}
+\medium Let $K<B$ and $S_0<B$, and let $u$ be the function of \noteref{prop:exo-barrier}(i).
+\begin{enumerate}[label=(\alph*)]
+  \item Consider any arbitrage-free market, not necessarily the Black--Scholes one, in which
+    calls with strikes $K$ and $B$ and a digital call with strike $B$, all with maturity $T$, trade
+    at the prices $C(K)$, $C(B)$ and $D(B)$; the digital pays $1$ if $S_T\ge B$. Show that an up-and-out call with strike $K$ and
+    barrier $B$, if it trades, costs at most $C(K)-C(B)-(B-K)D(B)$. You may use
+    \noteref{prop:arb-dominance}.
+  \item In the Black--Scholes model, let $UO(x)$ be the price of \noteref{prop:exo-barrier}(i) as a
+    function of $x=S_0\in(0,B)$. Show that $UO(x)\to0$ as $x\uparrow B$ and that the left derivative
+    at the barrier is $UO'(B-)=2u'(B)+\theta\,u(B)/B$, with $\theta=2r/\sigma^2-1$.
+  \item Show that, with $K$, $B$, $r$, $\sigma$ fixed, $\sqrt T\,UO'(B-)\to-(B-K)\sqrt{2/\pi}/(\sigma B)$ as
+    $T\downarrow0$.
+  \item Why must the delta be negative close to the barrier? A trader is short this option, with
+    $S_t$ just below $B$, a few days before maturity. Describe her hedge, and what happens to it if
+    the stock price crosses the barrier.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Fixed-strike lookback calls]\label{ex:exo-fixed-lookback}
+\medium A \emph{fixed-strike lookback call} pays $(\overline S_T-K)^+$, with $K>0$. Let $r\ne0$, and
+let $LP_0$ be the price of \noteref{prop:exo-lookback}.
+\begin{enumerate}[label=(\alph*)]
+  \item Let $K\le S_0$. Show that the fixed-strike lookback call costs $LP_0+S_0-Ke^{-rT}$.
+  \item Let $K>S_0$ and $k=\frac1\sigma\log(K/S_0)$. Show that the price is
+    $e^{-rT}S_0\int_k^\infty\sigma e^{\sigma m}\,\Q(\overline X_T\ge m)\,\dd m$, and that it equals
+    \[
+      c(S_0;K)+S_0\,\frac{\sigma^2}{2r}\Big[N(d_+)-e^{-rT}\Big(\frac K{S_0}\Big)^{2r/\sigma^2}N(e_-)\Big],
+    \]
+    where $d_+=d_+(T,S_0)$ is computed with the strike $K$ and
+    $e_-=\big(\log(S_0/K)-(r-\frac{\sigma^2}2)T\big)/(\sigma\sqrt T)$.
+  \item Check that the formulas of (a) and (b) agree at $K=S_0$, and that the price exceeds the
+    price of the call with the same strike, as it must by \exref{ex:arb-payoffs}(d).
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Asian options: parity and bounds]\label{ex:exo-asian-bounds}
+\easy Let $A_T=Y_T/T=\frac1T\int_0^TS_u\,\dd u$, $K>0$, and $\gamma$ as in \noteref{thm:exo-vecer}.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $e^{-rT}\EQ[A_T]=\gamma(0)S_0$, and deduce a put--call parity for Asian options:
+    the Asian call minus the Asian put paying $(K-A_T)^+$ costs $\gamma(0)S_0-Ke^{-rT}$.
+  \item Show that, in any model in which $e^{-rt}S_t$ is a $\Q$-martingale, the Asian call costs at
+    least $\big(\gamma(0)S_0-Ke^{-rT}\big)^+$, with equality when $K\le0$ (allow $K\le0$ here).
+  \item Show that $(A_T-K)^+\le\frac1T\int_0^T(S_t-K)^+\,\dd t$, and deduce that the arithmetic Asian
+    call costs at most $\frac1T\int_0^Te^{-r(T-t)}C(t)\,\dd t$, where $C(t)$ is the price at time $0$ of
+    the call with strike $K$ and maturity $t$. Conclude that, if $r\ge0$, the Asian call is cheaper
+    than the European call with maturity $T$.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[From Ve\v{c}e\v{r}'s equation to the Asian equation]\label{ex:exo-vecer-2d}
+\medium Let $\tilde g$ be as in \noteref{thm:exo-vecer}(iii), let
+$\pi(t,x,y)=e^{-r(T-t)}(y/T-K)+\gamma(t)x$, and $w(t,x,y)=x\,\tilde g\big(t,\pi(t,x,y)/x\big)$ for
+$x>0$, $y\in\R$, $t\in[0,T]$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $w(T,x,y)=(y/T-K)^+$.
+  \item Show that $w$ solves the Asian equation \noteref{eq:exo-asian-pde} on $[0,T)\times(0,\infty)\times\R$.
+  \item Show that $\partial_xw(t,x,y)=\tilde g(t,z)+(\gamma(t)-z)\,\partial_z\tilde g(t,z)$ with
+    $z=\pi(t,x,y)/x$, and compare with the two hedges of \noteref{prop:exo-asian-pde} and
+    \noteref{thm:exo-vecer}.
+  \item Let $y\ge KT$. Without solving any equation, show that the price of the Asian call is
+    $e^{-r(T-t)}(y/T-K)+\gamma(t)x$ at time $t$ when $S_t=x$ and $Y_t=y$, and give the hedge.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Perpetual American calls on a dividend-paying stock]\label{ex:exo-perpetual-call}
+\hard The stock pays a continuous dividend yield $q>0$, and $r>0$. By \noteref{prop:rn-dividends},
+under $\Q$, $S_t=S_0\exp\big(\sigma\widetilde W_t+(r-q-\frac{\sigma^2}2)t\big)$. The perpetual American
+call is worth
+$v(x)=\sup_{\tau}\EQ\big[e^{-r\tau}(S_\tau-K)^+\1_{\{\tau<\infty\}}\big]$, the supremum over stopping
+times with values in $[0,\infty]$, for $S_0=x$.
+\begin{enumerate}[label=(\alph*)]
+  \item Adapting \exref{ex:bs-power}(b) to the dividend yield, show that $e^{-rt}S_t^p$ is a
+    $\Q$-martingale if and only if $\frac{\sigma^2}2p(p-1)+(r-q)p-r=0$, and that this equation has
+    one root $p_+>1$ and one root $p_-<0$.
+  \item For $L\ge x$, let $\tau^L=\inf\{t\ge0:S_t\ge L\}$. Show that
+    $\EQ\big[e^{-r\tau^L}\1_{\{\tau^L<\infty\}}\big]=(x/L)^{p_+}$.
+  \item Let $L^*=\frac{p_+}{p_+-1}K$. Show that $v(x)=(L^*-K)(x/L^*)^{p_+}$ for $x\le L^*$ and
+    $v(x)=x-K$ for $x\ge L^*$.
+  \item Show that, as $q\downarrow0$ with the other parameters fixed, $L^*\to\infty$ and $v(x)\to x$.
+    Interpret with \noteref{thm:bin-american}(iv).
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Discretely monitored lookbacks]\label{ex:exo-lookback-discrete}
+\medium This is a computational exercise. Take $S_0=100$, $r=5\%$, $\sigma=30\%$ and $T=1$, and
+let $V_m$ be the price of the lookback put paying $\max_{0\le i\le m}S_{iT/m}-S_T$, in which the
+maximum is taken over $m+1$ equally spaced dates only.
+\begin{enumerate}[label=(\alph*)]
+  \item Estimate $V_m$ by Monte Carlo for $m=12$, $52$ and $252$, with $95\%$ confidence intervals,
+    and compare with the price $V$ of \noteref{prop:exo-lookback}.
+  \item How does $V-V_m$ appear to depend on $m$?
+  \item M.~Broadie, P.~Glasserman and S.~Kou (\emph{Finance and Stochastics}, 1999) showed that
+    $V_m+S_0=(V+S_0)\big(1-\beta\sigma\sqrt{T/m}\big)+o(1/\sqrt m)$, with $\beta\approx0.5826$ as in
+    \noteref{rem:exo-discrete}. Use this to correct your estimates, and compare with $V$.
+  \item Why is the discretely monitored lookback put cheaper than the continuously monitored one,
+    while the discretely monitored up-and-out call of \noteref{fig:exo-barrier} is more expensive?
+\end{enumerate}
+\end{exercise}

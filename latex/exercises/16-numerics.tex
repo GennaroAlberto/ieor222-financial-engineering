@@ -1,0 +1,149 @@
+% Exercises for Chapter 16 (numerical methods). Statements only: solutions are kept privately.
+% Throughout, the Black--Scholes model is taken under the risk-neutral measure Q, N is the standard
+% normal distribution function, and the finite-difference notation (a, b, c, h, k, lambda = a k / h^2,
+% p_-, p_0, p_+, the theta-scheme) is that of Section 16.2 of the notes.
+
+\begin{exercise}[When confidence intervals lie]\label{ex:num-coverage}
+\easy This is a computational exercise. Take $S_0=100$, $r=5\%$, $\sigma=20\%$, $T=1$, and the digital
+call that pays $\1_{\{S_T>K\}}$ at $T$, whose price is $p=e^{-rT}q$ with $q=\Q(S_T>K)=N(d_-)$
+(\noteref{prop:bs-digital}). Let $Y=e^{-rT}\1_{\{S_T>K\}}$ and use the interval
+\noteref{eq:num-ci} with $z=1.96$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $\Var(Y)=e^{-2rT}q(1-q)$, and that the half-width of the interval divided by $p$ is
+    approximately $1.96\sqrt{(1-q)/(qM)}$. How many paths make it $1\%$ for $K=100$, and for $K=200$?
+  \item Take $K=200$. With probability $(1-q)^M$ all $M$ payoffs vanish. What is the interval then,
+    and does it contain $p$? Deduce an upper bound for the probability that the interval contains $p$,
+    for $M=10^2$, $10^3$ and $10^4$.
+  \item Estimate this probability, the \emph{coverage}, for $K\in\{100,200\}$ and
+    $M\in\{10^2,10^3,10^4,10^5\}$, by repeating the whole experiment many times. \emph{Hint:} the estimator
+    and the sample variance depend on the payoffs only through the number of paths that end above
+    $K$, whose law you know, so there is no need to simulate the paths. Compare with (b) and with
+    $95\%$, and explain why this does not contradict \noteref{thm:num-mc}.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[The explicit scheme as a tree]\label{ex:num-trinomial}
+\easy Let $r\ge0$, and consider the explicit scheme for the Black--Scholes equation in log-price
+\noteref{eq:num-pde}, on a grid with $h|b|\le2a$, $k(2a/h^2+c)\le1$ and $rk<1$.
+\begin{enumerate}[label=(\alph*)]
+  \item Write the scheme as $U^{n+1}_j=(1-rk)\big(\pi_+U^n_{j+1}+\pi_0U^n_j+\pi_-U^n_{j-1}\big)$, with the
+    probabilities of \noteref{rem:num-trinomial} written out in terms of $a$, $b$, $r$, $h$ and $k$.
+  \item Let $\Delta$ be a random variable equal to $h$, $0$, $-h$ with probabilities $\pi_+$, $\pi_0$,
+    $\pi_-$: the move of the log-price in one period of the tree. Compute $\E[\Delta]$ and $\E[\Delta^2]$, and
+    compare them with the mean and the second moment of $\log S_{t+k}-\log S_t$ in the Black--Scholes model.
+    Show that both differences are of order $k^2$, whatever the choice of $h$. Compare also the discount
+    factor $1-rk$ with $e^{-rk}$.
+  \item Matching two moments is not enough. Compare $\E[\Delta^4]$ with the fourth moment of a normal
+    variable with variance $\sigma^2k$, and explain why the scheme converges only if $h$ tends to zero
+    as well as $k$. What does the tree look like when $h$ is fixed and $k\to0$?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[A magic ratio]\label{ex:num-truncation}
+\medium Consider the heat equation $\partial_\tau u=a\,\partial_{yy}u$ and the explicit scheme, with
+$\lambda=ak/h^2$, and let $u$ be a solution whose partial derivatives of order at most $6$ are
+continuous and bounded.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that the truncation error is
+    \[
+      T^n_j=\frac{ah^2}2\Big(\lambda-\frac16\Big)\partial^4_yu(\tau_n,y_j)+O(k^2+h^4).
+    \]
+  \item Deduce that for $\lambda=\frac16$ the error of the scheme is $O(h^4)$, uniformly on the grid,
+    when the boundary values are exact. You may use the argument of \noteref{thm:num-schemes}(iii)--(iv).
+  \item This is a computational part. Take $a=\frac12$ on $[0,\pi]$ with the exact solution
+    $u(\tau,y)=e^{-a\tau}\sin y$ and zero boundary values. For $J=10,20,40,80$ intervals, $h=\pi/J$,
+    $k=\lambda h^2/a$, run $N=\lceil1/k\rceil$ steps and report the largest error at $\tau=Nk$, for
+    $\lambda=0.4$ and $\lambda=\frac16$, with the observed orders of convergence.
+  \item Which of the trinomial trees of \noteref{rem:bin-trinomial-trees} corresponds to
+    $\lambda=\frac16$? (Use \noteref{rem:num-trinomial}.)
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Crank--Nicolson and positivity]\label{ex:num-cn-positivity}
+\medium Consider the heat equation $\partial_\tau u=a\,\partial_{yy}u$ and the Crank--Nicolson scheme
+with $\lambda=ak/h^2$, written as $BU^{n+1}=CU^n$ with $B=I-\frac k2A$ and $C=I+\frac k2A$.
+\begin{enumerate}[label=(\alph*)]
+  \item On an interval with zero boundary values, show that if $\lambda\le1$, then $U^n\ge0$ implies
+    $U^{n+1}\ge0$. \emph{Hint:} look at the weights of $C$, and show that $Bz\ge0$ implies $z\ge0$, as
+    in the proof of \noteref{prop:num-american-grid}(iii).
+  \item Now work on the infinite grid $h\Z$, with bounded sequences. Show that $C=2I-B$, so that one
+    step maps $U$ to $2B^{-1}U-U$. Find $\rho\in(0,1)$ and $C_\lambda>0$ such that $z_j=C_\lambda\rho^{|j|}$
+    solves $Bz=e$, where $e_0=1$ and $e_j=0$ for $j\ne0$ (you may admit that it is the only bounded
+    solution). Deduce that the spike $e$ is mapped to a sequence whose value at $0$ is
+    $2/\sqrt{1+2\lambda}-1$.
+  \item Conclude that, on the infinite grid, the step maps every nonnegative bounded sequence to a
+    nonnegative one if and only if $\lambda\le\frac32$.
+  \item The second differences of the call payoff on a grid whose nodes include $\log K$ vanish
+    except at $\log K$: they form a spike. Since the scheme commutes with differences, use (b) to
+    explain the sign of the Crank--Nicolson gamma at the strike after one step, for
+    $\lambda\approx22$ as in \noteref{fig:num-convergence}, and the oscillations that follow.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Richardson extrapolation of a biased estimator]\label{ex:num-richardson}
+\medium Work in the setting of \noteref{exa:num-power}: $Y_h=e^{-rT}(S^h_T)^2$, with the Euler scheme on
+$S$ and $n=T/h$ steps, and $p=S_0^2e^{(r+\sigma^2)T}$.
+\begin{enumerate}[label=(\alph*)]
+  \item From the closed form of $\E[Y_h]$, show that the bias has an expansion
+    $\beta(h)=\beta_1h+\beta_2h^2+O(h^3)$, and compute $\beta_1$ and $\beta_2$.
+  \item Let $Z=2\hat p_{M_1,h/2}-\hat p_{M_2,h}$, where the two Monte Carlo estimators, with steps $h/2$ and
+    $h$, use independent samples. Show that $\E[Z]-p=-\frac12\beta_2h^2+O(h^3)$, and compute $\Var(Z)$.
+  \item Show that, for small $\varepsilon$, a root mean square error $\varepsilon$ can be reached with $Z$
+    at a cost of order $\varepsilon^{-5/2}$, against $\varepsilon^{-3}$ in \noteref{prop:num-mc-cost}.
+  \item Take $S_0=1$, $r=5\%$, $\sigma=40\%$, $T=1$ and $\varepsilon=10^{-3}$. Using the exact bias and
+    variance (the functions of \coderef{code/src/ieor222/numerics.py} compute them), find the cheapest
+    choice of $n$ and $M$ for the plain estimator, and of $n$, $M_1$ and $M_2$ for $Z$, and compare the
+    costs, counted in normal draws. Compare also with the choice of \noteref{prop:num-mc-cost}(i) with
+    $c_2=0.039$ and $v_2=1.37$.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[An up-and-out call on a grid]\label{ex:num-barrier}
+\medium This is a computational exercise. Take $S_0=K=100$, a barrier $B=120$, $r=5\%$, $\sigma=20\%$ and
+$T=1$; the up-and-out call costs $1.1761$ (\noteref{prop:exo-barrier}). As in
+\noteref{rem:exo-barrier-reading}, accept that while the option is alive its price is $v(t,S_t)$,
+where $v$ solves the Black--Scholes equation on $[0,T)\times(0,B)$ with $v(t,B)=0$ and
+$v(T,x)=(x-K)^+$ for $x<B$.
+\begin{enumerate}[label=(\alph*)]
+  \item Write the problem in log-price on a grid whose top node is $\log B$ and on which $\log S_0$ is a
+    node: $h=\log(B/S_0)/m_0$ for an integer $m_0$, extending at least $6\sigma\sqrt T$ below $\log S_0$.
+    What should the lower boundary value be?
+  \item Solve it by Crank--Nicolson with $k\approx h/\sigma$, with and without Rannacher's start, for
+    $m_0=5,10,\dots,160$, and report the errors at $S_0$ and the observed orders. Where is the payoff
+    not smooth, and why does Rannacher's start matter even though the payoff is continuous at the
+    strike?
+  \item Now let the barrier be monitored only at the dates $iT/m$, $1\le i\le m$. Solve the equation
+    between two dates on a grid that extends above $B$ (with the boundary values of a call at the top),
+    and at each monitoring date set the solution to $0$ above $B$. Compute the price for $m=4,12,52,250$.
+    Compare the convergence in $m_0$ when the value at the node $\log B$ itself is set to $0$, and when
+    it is halved (the average of the solution over the cell around that node). Compare the prices with
+    the continuously monitored price with the barrier shifted to $Be^{\beta\sigma\sqrt{T/m}}$,
+    $\beta\approx0.5826$ (\noteref{rem:exo-discrete}).
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[The exercise region of the American put]\label{ex:num-american-region}
+\hard Let $W$ be a Brownian motion with its natural filtration, $K>0$, $\sigma>0$, $r\ge0$, and
+$R_s=\exp\big(\sigma W_s+(r-\frac{\sigma^2}2)s\big)$. For $\theta>0$, let $\mathcal T_\theta$ be the set of
+stopping times with values in $[0,\theta]$, and
+\[
+  V(\theta,x)=\sup_{\varrho\in\mathcal T_\theta}\E\big[e^{-r\varrho}\big(K-xR_\varrho\big)^+\big],\qquad x>0,
+\]
+so that the price \noteref{eq:num-american} is $v(t,x)=V(T-t,x)$, by the restart property of Brownian
+motion. You may use optional sampling for continuous martingales and bounded stopping times: if
+$\varrho\le\varrho'$ are in $\mathcal T_\theta$, then $\E[e^{-r\varrho'}R_{\varrho'}\mid\F_\varrho]=e^{-r\varrho}R_\varrho$.
+Let $E_\theta=\{x>0:V(\theta,x)=(K-x)^+\}$ be the exercise region with time $\theta$ to maturity.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $x\mapsto V(\theta,x)$ is convex and nonincreasing, and that
+    $V(\theta,y)\le V(\theta,x)+x-y$ for $0<y<x$.
+  \item Show that if $x\in E_\theta$ and $0<y<x$, then $y\in E_\theta$; that $E_\theta$ is closed in
+    $(0,\infty)$; and that $E_\theta\cap[K,\infty)=\emptyset$. Deduce that $E_\theta$ is empty or of the form
+    $(0,b]$ with $b<K$.
+  \item Let $r>0$ and $L^*=2rK/(2r+\sigma^2)$. Using \noteref{prop:exo-perpetual-put}, show that
+    $(0,L^*]\subseteq E_\theta$, so that $E_\theta=(0,b(\theta)]$ with $L^*\le b(\theta)<K$.
+  \item Show that $\theta\mapsto V(\theta,x)$ is nondecreasing, and deduce that $b$ is nonincreasing in
+    $\theta$: in calendar time $t=T-\theta$, the exercise boundary rises towards maturity.
+  \item Let $r=0$. Show that $V(\theta,x)=\E[(K-xR_\theta)^+]>(K-x)^+$ for every $x>0$, so that
+    $E_\theta=\emptyset$: the American put is never exercised early.
+\end{enumerate}
+\end{exercise}

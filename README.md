@@ -27,27 +27,27 @@ Generated from [`latex/toc.tex`](latex/toc.tex). Chapters marked *in preparation
 | | Chapter | Notes | Exercises | Demos |
 |---|---|---|---|---|
 | 5 | Brownian motion | ✓ | ✓ | [05-brownian-motion.ipynb](code/notebooks/05-brownian-motion.ipynb) |
-| 6 | From the binomial model to Black–Scholes | in preparation | – | – |
+| 6 | From the binomial model to Black–Scholes | ✓ | ✓ | [06-black-scholes-formula.ipynb](code/notebooks/06-black-scholes-formula.ipynb) |
 
 **Stochastic calculus**
 
 | | Chapter | Notes | Exercises | Demos |
 |---|---|---|---|---|
-| 7 | The Itô integral | in preparation | – | – |
-| 8 | Itô's formula | in preparation | – | – |
-| 9 | Stochastic differential equations | in preparation | – | – |
+| 7 | The Itô integral | ✓ | ✓ | [07-ito-integral.ipynb](code/notebooks/07-ito-integral.ipynb) |
+| 8 | Itô's formula | ✓ | ✓ | [08-ito-formula.ipynb](code/notebooks/08-ito-formula.ipynb) |
+| 9 | Stochastic differential equations | ✓ | ✓ | [09-sde.ipynb](code/notebooks/09-sde.ipynb) |
 
 **Pricing and hedging**
 
 | | Chapter | Notes | Exercises | Demos |
 |---|---|---|---|---|
-| 10 | The Black–Scholes equation by hedging | in preparation | – | – |
-| 11 | Change of measure and risk-neutral pricing | in preparation | – | – |
-| 12 | The Feynman–Kac formula | in preparation | – | – |
-| 13 | Exotic options | in preparation | – | – |
-| 14 | Short-rate models | in preparation | – | – |
-| 15 | Implied volatility and the smile | in preparation | – | – |
-| 16 | Numerical methods | in preparation | – | – |
+| 10 | The Black–Scholes equation by hedging | ✓ | ✓ | [10-delta-hedging.ipynb](code/notebooks/10-delta-hedging.ipynb) |
+| 11 | Change of measure and risk-neutral pricing | ✓ | ✓ | [11-risk-neutral.ipynb](code/notebooks/11-risk-neutral.ipynb) |
+| 12 | The Feynman–Kac formula | ✓ | ✓ | [12-feynman-kac.ipynb](code/notebooks/12-feynman-kac.ipynb) |
+| 13 | Exotic options | ✓ | ✓ | [13-exotics.ipynb](code/notebooks/13-exotics.ipynb) |
+| 14 | Short-rate models | ✓ | ✓ | [14-rates.ipynb](code/notebooks/14-rates.ipynb) |
+| 15 | Implied volatility and the smile | ✓ | ✓ | [15-volatility.ipynb](code/notebooks/15-volatility.ipynb) |
+| 16 | Numerical methods | ✓ | ✓ | [16-numerics.ipynb](code/notebooks/16-numerics.ipynb) |
 
 **Extras**
 

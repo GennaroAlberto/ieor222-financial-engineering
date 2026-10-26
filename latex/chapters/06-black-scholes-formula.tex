@@ -1,7 +1,611 @@
-\begin{planned}
-  \item convergence of the binomial model to geometric Brownian motion
-  \item the Black--Scholes formula, with proof
-  \item the Greeks; the Brenner--Subrahmanyam approximation
-  \item the independence lemma, the Markov property and prices at intermediate times
-  \item demo: binomial prices converging to Black--Scholes
-\end{planned}
+% Chapter 6: From the binomial model to Black--Scholes.
+
+\Cref{ch:04-binomial} priced every claim in the binomial model by a finite computation,
+and \cref{ch:05-brownian-motion} obtained Brownian motion as the limit of a random walk.
+This chapter puts the two together. Let the number of periods grow while the up and down
+factors shrink to one at the right rate: the log-price becomes a scaled random walk with a
+small drift, its terminal law becomes normal, and the binomial prices of calls and puts
+converge to explicit limits. These limits are the formula of \textcite{black-scholes} and
+\textcite{merton1973}.
+
+The limit also suggests how to price in continuous time: the price of a claim is its
+expected discounted payoff under a measure $\Q$ that makes the discounted stock price a
+martingale. That this is the only price consistent with no arbitrage, because the claim
+can be replicated by trading continuously, needs stochastic integrals; it is the subject of
+\cref{ch:10-delta-hedging,ch:11-risk-neutral}. Here we compute: the formula at every
+date, the prices of digital options, the sensitivities of the price (the Greeks) and the
+approximations that traders use at the money.
+
+\section{Geometric Brownian motion}\label{sec:bs-gbm}
+
+\begin{definition}[Geometric Brownian motion]\label{def:bs-gbm}
+Let $W$ be a Brownian motion with a filtration $(\F_t)$ (\cref{def:bm,def:bm-filtration}),
+and let $S_0>0$, $\mu\in\R$ and $\sigma>0$. The process
+\[
+  S_t=S_0\exp\Big(\sigma W_t+\Big(\mu-\frac{\sigma^2}{2}\Big)t\Big),\qquad t\ge0,
+\]
+is a \emph{geometric Brownian motion} with \emph{drift} $\mu$ and \emph{volatility}
+$\sigma$.
+\end{definition}
+
+The log-price $\log S_t=\log S_0+(\mu-\frac{\sigma^2}2)t+\sigma W_t$ is a Brownian motion
+with drift, so the log-returns over disjoint time intervals are independent and normal:
+the continuous-time counterpart of independent coin tosses. The next proposition shows
+that $\mu$ is the expected rate of return; the correction $-\frac{\sigma^2}{2}$ compensates
+the convexity of the exponential, as in \cref{rem:bm-exp}. In \cref{ch:08-ito-formula} we
+will see that $S$ solves the stochastic differential equation
+$\dd S_t=\mu S_t\,\dd t+\sigma S_t\,\dd W_t$ (\cref{prop:itf-gbm}).
+
+\begin{proposition}\label{prop:bs-gbm-law}
+Let $S$ be a geometric Brownian motion with drift $\mu$ and volatility $\sigma$, and let
+$0\le s<t$.
+\begin{enumerate}[label=(\roman*)]
+  \item The ratio $S_t/S_s$ is independent of $\F_s$, and
+    $\log(S_t/S_s)\sim\mathcal N\big((\mu-\frac{\sigma^2}2)(t-s),\,\sigma^2(t-s)\big)$. In
+    particular $S_t>0$, and for $t>0$ the law of $S_t$ is \emph{lognormal}, with density
+    \[
+      f_t(y)=\frac{1}{y\sigma\sqrt t}\,N'\bigg(\frac{\log(y/S_0)-(\mu-\sigma^2/2)t}{\sigma\sqrt t}\bigg),
+      \qquad y>0 .
+    \]
+  \item For every $p\in\R$, $S_t^p$ is integrable and
+    $\E[S_t^p\mid\F_s]=S_s^p\exp\big(p(\mu-\frac{\sigma^2}2)(t-s)+\frac{p^2\sigma^2}{2}(t-s)\big)$.
+    In particular $\E[S_t\mid\F_s]=e^{\mu(t-s)}S_s$.
+  \item Let $r\in\R$. The discounted price $(e^{-rt}S_t)_{t\ge0}$ is a martingale if and only
+    if $\mu=r$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) $S_t/S_s=\exp\big(\sigma D+(\mu-\frac{\sigma^2}2)(t-s)\big)$ is a function of
+$D=W_t-W_s\sim\mathcal N(0,t-s)$, which is independent of $\F_s$
+(\cref{def:bm-filtration}). With $s=0$, $\log S_t$ is normal with mean
+$m=\log S_0+(\mu-\frac{\sigma^2}2)t$ and variance $\sigma^2t$, so
+$\Prob(S_t\le y)=N\big((\log y-m)/(\sigma\sqrt t)\big)$ for $y>0$; differentiating in $y$
+gives $f_t$.
+
+(ii) By the Gaussian moment generating function, $\E[e^{p\sigma D}]=e^{p^2\sigma^2(t-s)/2}$,
+so $(S_t/S_s)^p$ and $S_t^p$ are integrable. Taking out what is known ($S_s^p$ is
+$\F_s$-measurable and $S_t^p=S_s^p(S_t/S_s)^p$ is integrable) and using independence
+(\cref{prop:pr-condexp-properties}),
+$\E[S_t^p\mid\F_s]=S_s^p\,\E[(S_t/S_s)^p]$, which is the formula.
+
+(iii) $e^{-rt}S_t$ is adapted and integrable, and by (ii)
+$\E[e^{-rt}S_t\mid\F_s]=e^{(\mu-r)(t-s)}\,e^{-rs}S_s$. If $\mu=r$ this is the martingale
+property. If $\mu\ne r$, take $s=0$ and $t>0$: $\E[e^{-rt}S_t]=e^{(\mu-r)t}S_0\ne S_0$.
+\end{proof}
+
+The mean of $S_t$ grows like $e^{\mu t}$, but its median is $S_0e^{(\mu-\sigma^2/2)t}$, and
+if $\mu<\sigma^2/2$ then $\log S_t=t\,\big(\sigma W_t/t+\mu-\frac{\sigma^2}{2}\big)\to-\infty$
+almost surely, because $W_t/t\to0$ (\exref{ex:bm-inversion}): the phenomenon of
+\cref{rem:bm-dies}, for a stock.
+
+\section{The binomial model in the limit}\label{sec:bs-limit}
+
+Fix a maturity $T>0$, an initial price $S_0>0$, a continuously compounded interest rate
+$r\in\R$ and a volatility $\sigma>0$. For $n\ge1$, divide $[0,T]$ into $n$ periods of
+length $\delta_n=T/n$, and consider the $n$-period binomial model of \cref{def:bin-model}
+with
+\begin{equation}\label{eq:bs-crr}
+  u_n=e^{\sigma\sqrt{\delta_n}},\qquad d_n=e^{-\sigma\sqrt{\delta_n}},\qquad
+  1+r_n=e^{r\delta_n},
+\end{equation}
+where $r_n$ is the interest rate per period. Period $k$ ends at time $k\delta_n$, and a
+dollar in the money market grows to $(1+r_n)^n=e^{rT}$ at time $T$, whatever $n$. The
+log-price moves by $\pm\sigma\sqrt{\delta_n}$ in each period: after $k$ periods,
+$\log(S_k/S_0)=\sigma\sqrt{\delta_n}\,M_k=\sigma\sqrt T\,W^{(n)}(k/n)$, where $M_k$ counts
+heads minus tails and $W^{(n)}$ is the scaled random walk of \cref{def:bm-scaled}. The
+condition $d_n<1+r_n<u_n$ of \cref{thm:bin-ftap} reads $|r|\delta_n<\sigma\sqrt{\delta_n}$,
+that is,
+\[
+  n>r^2T/\sigma^2 ;
+\]
+for these $n$ the model has no arbitrage, and its risk-neutral measure $\Q_n$ makes the
+tosses independent with $\Q_n(H)=q_n=(e^{r\delta_n}-d_n)/(u_n-d_n)$
+(\cref{thm:bin-multi-period}). This parametrization is due to \textcite{crr1979}.
+
+Recall that random variables $X_n$, possibly defined on different probability spaces,
+\emph{converge in distribution} to $X$ if $\E[f(X_n)]\to\E[f(X)]$ for every bounded
+continuous $f:\R\to\R$; equivalently, if the distribution functions converge at every
+point where the limit is continuous (\textcite{durrett}, Section~3.2). If $X_n\to X$ in
+distribution and $g$ is continuous, then $g(X_n)\to g(X)$ in distribution, since
+$f\circ g$ is bounded and continuous.
+
+The central limit theorem we need is for a \emph{triangular array}: in the $n$-th tree
+the steps are independent and identically distributed, but their law changes with $n$.
+With bounded steps it has a short proof along the lines of \cref{thm:bm-clt}. When the
+limiting variance is positive it also follows, after centring the steps, from the
+Lindeberg--Feller theorem (\textcite{durrett}, Section~3.4), whose Lindeberg condition holds
+trivially for steps bounded by $\varepsilon_n\to0$; when it is zero, Chebyshev's inequality
+suffices.
+
+\begin{lemma}[Central limit theorem for small bounded steps]\label{lem:bs-clt}
+For each $n\ge1$, let $k_n\ge1$ be an integer and $\xi_{n,1},\dots,\xi_{n,k_n}$ independent
+random variables with a common law, such that $|\xi_{n,j}|\le\varepsilon_n$. Suppose that
+$k_n\to\infty$, $\varepsilon_n\to0$, and
+\[
+  k_n\,\E[\xi_{n,1}]\to m,\qquad k_n\,\E[\xi_{n,1}^2]\to v .
+\]
+Then $X_n=\sum_{j=1}^{k_n}\xi_{n,j}$ converges in distribution to $\mathcal N(m,v)$ (the
+point mass at $m$ if $v=0$).
+\end{lemma}
+
+\begin{proof}
+Fix $u\in\R$ and write $\xi=\xi_{n,1}$, $m_n=k_n\E[\xi]$, $v_n=k_n\E[\xi^2]$ and
+$z_n=ium_n-\frac{u^2}2v_n$, so that $z_n\to z=ium-\frac{u^2}2v$. Taylor's formula with
+integral remainder gives
+$e^{iy}-1-iy+\frac{y^2}2=\frac{-i}{2}\int_0^y(y-s)^2e^{is}\,\dd s$, so
+$|e^{iy}-1-iy+\frac{y^2}{2}|\le|y|^3/6$ for real $y$. Taking expectations, and using
+$\E|\xi|^3\le\varepsilon_n\E[\xi^2]$,
+\[
+  \psi_n:=\E\big[e^{iu\xi}\big]=1+\frac{z_n}{k_n}+\rho_n,\qquad
+  |\rho_n|\le\frac{|u|^3\varepsilon_n\E[\xi^2]}{6}=\frac{|u|^3\varepsilon_nv_n}{6k_n}.
+\]
+By independence, $\E[e^{iuX_n}]=\psi_n^{k_n}$. For complex $a,b$ and $k\ge1$,
+$a^k-b^k=(a-b)\sum_{j<k}a^jb^{k-1-j}$, so $|a^k-b^k|\le k|a-b|\max(|a|,|b|)^{k-1}$. With
+$a=\psi_n$ (so $|a|\le1$) and $b=1+z_n/k_n$ (so $|b|\le e^{|z_n|/k_n}$),
+\[
+  \Big|\psi_n^{k_n}-\Big(1+\frac{z_n}{k_n}\Big)^{k_n}\Big|\le k_n|\rho_n|\,e^{|z_n|}
+  \le\frac{|u|^3\varepsilon_nv_n}{6}\,e^{|z_n|}\longrightarrow0 .
+\]
+With $a=1+z_n/k_n$ and $b=e^{z_n/k_n}$, the bound $|e^y-1-y|\le\frac{|y|^2}2e^{|y|}$
+(from the power series) gives $|a-b|\le\frac{|z_n|^2}{2k_n^2}e^{|z_n|/k_n}$, hence
+$\big|(1+z_n/k_n)^{k_n}-e^{z_n}\big|\le\frac{|z_n|^2}{2k_n}e^{2|z_n|}\to0$. Since
+$e^{z_n}\to e^z$, we get $\E[e^{iuX_n}]\to e^{ium-u^2v/2}$, the characteristic function of
+$\mathcal N(m,v)$. By Lévy's continuity theorem (\textcite{durrett}, Section~3.3), $X_n$
+converges in distribution to $\mathcal N(m,v)$.
+\end{proof}
+
+\begin{theorem}[From the binomial model to Black--Scholes]\label{thm:bs-limit}
+Let $T>0$, $S_0>0$, $r\in\R$ and $\sigma>0$. For $n>r^2T/\sigma^2$, let $S^{(n)}_T$ be the
+stock price after $n$ periods (at time $T$) in the binomial model \eqref{eq:bs-crr}, with
+its risk-neutral measure $\Q_n$.
+\begin{enumerate}[label=(\roman*)]
+  \item $q_n\to\frac12$. Under $\Q_n$, $\log(S^{(n)}_T/S_0)$ converges in distribution to
+    $\mathcal N\big((r-\frac{\sigma^2}2)T,\,\sigma^2T\big)$. Consequently, $S^{(n)}_T$ converges
+    in distribution to
+    \begin{equation}\label{eq:bs-ST}
+      S_T=S_0\exp\Big(\sigma\sqrt T\,Y+\Big(r-\frac{\sigma^2}2\Big)T\Big),\qquad Y\sim\mathcal N(0,1),
+    \end{equation}
+    the value at time $T$ of a geometric Brownian motion with drift $r$.
+  \item For every strike $K\ge0$, the binomial prices \eqref{eq:bin-crr} of the European call
+    and put with strike $K$ and maturity $T$ converge:
+    \[
+      C^{(n)}_0\longrightarrow e^{-rT}\E\big[(S_T-K)^+\big],\qquad
+      P^{(n)}_0\longrightarrow e^{-rT}\E\big[(K-S_T)^+\big].
+    \]
+\end{enumerate}
+\end{theorem}
+
+The limits are computed explicitly in \cref{thm:bs-formula}.
+
+\begin{proof}
+(i) Write $s_n=\sigma\sqrt{\delta_n}$ and $\delta=\delta_n$. Under $\Q_n$ the tosses are
+independent with $\Q_n(H)=q_n$, so $\log(S^{(n)}_T/S_0)=\sum_{j=1}^n\xi_{n,j}$, where
+$\xi_{n,j}=s_n$ if the $j$-th toss is a head and $-s_n$ otherwise. These steps are
+independent, identically distributed and bounded by $\varepsilon_n=s_n\to0$, and
+$n\E[\xi_{n,1}^2]=ns_n^2=\sigma^2T$. For the mean, $q_n(e^{s_n}-e^{-s_n})=e^{r\delta}-e^{-s_n}$
+gives
+\[
+  2q_n-1=\frac{2e^{r\delta}-e^{s_n}-e^{-s_n}}{e^{s_n}-e^{-s_n}}=\frac{e^{r\delta}-\cosh s_n}{\sinh s_n},
+\]
+so that
+\[
+  n\E[\xi_{n,1}]=ns_n(2q_n-1)=\Big(n\big(e^{r\delta}-1\big)-n\big(\cosh s_n-1\big)\Big)\frac{s_n}{\sinh s_n}.
+\]
+As $n\to\infty$: $n(e^{r\delta}-1)=T(e^{r\delta}-1)/\delta\to rT$;
+$n(\cosh s_n-1)=\sigma^2T\,(\cosh s_n-1)/s_n^2\to\sigma^2T/2$; and $s_n/\sinh s_n\to1$. Hence
+$n\E[\xi_{n,1}]\to(r-\frac{\sigma^2}{2})T$, and also $2q_n-1=n\E[\xi_{n,1}]/(ns_n)\to0$,
+because $ns_n=\sigma\sqrt{nT}\to\infty$. \Cref{lem:bs-clt} with $k_n=n$ gives the convergence
+of $\log(S^{(n)}_T/S_0)$, and that of $S^{(n)}_T=S_0\exp\big(\log(S^{(n)}_T/S_0)\big)$
+follows because the exponential is continuous.
+
+(ii) In the $n$-period model the discount factor is $(1+r_n)^{-n}=e^{-rT}$, so by
+\eqref{eq:bin-crr}, $P^{(n)}_0=e^{-rT}\E^{\Q_n}\big[f(S^{(n)}_T)\big]$ with
+$f(x)=\min\big((K-x)^+,K\big)$, a bounded continuous function equal to the put payoff on
+$(0,\infty)$. By (i), $P^{(n)}_0\to e^{-rT}\E[f(S_T)]=e^{-rT}\E[(K-S_T)^+]$. The call payoff is
+unbounded, and convergence in distribution alone does not control the expectation of an
+unbounded function; the martingale property does. Since $(x-K)^+-(K-x)^+=x-K$ and
+$\E^{\Q_n}[S^{(n)}_T]=(1+r_n)^nS_0=e^{rT}S_0$ (\cref{prop:bin-discounted-martingale}), put--call
+parity holds in every tree: $C^{(n)}_0=P^{(n)}_0+S_0-Ke^{-rT}$. The same identity holds for
+the limit, because $\E[S_T]=S_0e^{rT}$ by the Gaussian moment generating function. Hence
+$C^{(n)}_0\to e^{-rT}\E[(K-S_T)^+]+S_0-Ke^{-rT}=e^{-rT}\E[(S_T-K)^+]$.
+\end{proof}
+
+\begin{remark}[The scaling]\label{rem:bs-scaling}
+The proof uses four properties of the trees: steps bounded by $\varepsilon_n\to0$,
+$n\E^{\Q_n}[\xi]\to(r-\frac{\sigma^2}2)T$, $n\E^{\Q_n}[\xi^2]\to\sigma^2T$, and the martingale
+identity $\E^{\Q_n}[S^{(n)}_T]=S_0e^{rT}$. Any family of trees with these properties has the
+same limit; one checks in the same way that $u_n=1+\sigma\sqrt{\delta_n}$,
+$d_n=1-\sigma\sqrt{\delta_n}$ is one. The exponent $\frac12$ in $\sqrt{\delta_n}$ is what keeps
+the limit both random and finite, as in \cref{sec:bm-scaling}: with
+$u_n=1/d_n=e^{\sigma\delta_n^{\alpha}}$ and $0<\alpha<1$, the variance of the log-price under $\Q_n$ is
+$n\sigma^2\delta_n^{2\alpha}\big(1-(2q_n-1)^2\big)$, which for large $n$ is of order
+$n^{1-2\alpha}$: it tends to infinity if $\alpha<\frac12$ and to zero if
+$\frac12<\alpha<1$. In the second case \cref{lem:bs-clt} with $v=0$ gives
+$S^{(n)}_T\to S_0e^{rT}$ in distribution, and the argument of (ii) gives
+$C^{(n)}_0\to(S_0-Ke^{-rT})^+$, the lower bound of \cref{prop:arb-bounds}: without
+randomness in the limit, the option is worth only its discounted intrinsic value.
+\end{remark}
+
+\begin{remark}[The real-world limit]\label{rem:bs-real-world}
+\Cref{thm:bs-limit} is a statement under $\Q_n$. Under $\Prob$, let the tosses have
+probability $p_n=\frac12+\frac{(\mu-\sigma^2/2)\sqrt{\delta_n}}{2\sigma}$ of heads, for some
+$\mu\in\R$ and $n$ large enough that $p_n\in(0,1)$. Then $n\E^{\Prob}[\xi]=ns_n(2p_n-1)=(\mu-\frac{\sigma^2}{2})T$
+exactly, and \cref{lem:bs-clt} shows that under $\Prob$ the terminal price converges to the
+lognormal law of a geometric Brownian motion with drift $\mu$. The prices depend only on
+$\Q_n$, so $\mu$ does not enter their limit: this is \cref{rem:bin-p}, in the limit.
+\end{remark}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch06-binomial-convergence}
+  \caption{Binomial prices of a call converging to the Black--Scholes price. Left: with
+    $K=S_0$, the strike is a node of the terminal lattice when $n$ is even and lies halfway
+    between two nodes when $n$ is odd; the prices approach the limit from below and from
+    above. Right: the error times $n$. For $K=S_0$ it settles near $-2$ ($n$ even) and $1.75$
+    ($n$ odd); for $K=110$ it keeps oscillating as the lattice slides past the strike.}
+  \label{fig:bs-convergence}
+\end{figure}
+
+\begin{remark}[Odd and even]\label{rem:bs-oscillation}
+The convergence is not monotone (\cref{fig:bs-convergence}). The terminal prices
+$S_0u_n^{2j-n}$, $0\le j\le n$, form a lattice whose spacing in $\log$ is $2\sigma\sqrt{\delta_n}$, and
+the call payoff has a kink at $K$; the error depends on where $\log(K/S_0)$ falls in the
+lattice. Numerically, $n$ times the error stays bounded; for $K=S_0$ it settles along the
+even and along the odd $n$, where the strike is a node or a mid-point, while for $K=110$ it
+keeps oscillating. A precise expansion of the error is given by F.~Diener and M.~Diener
+(\emph{Mathematical Finance}, 2004). Remedies, among them the smoothed tree of M.~Broadie and
+J.~Detemple (\emph{Review of Financial Studies}, 1996), are explored in \exref{ex:bs-rate}.
+\end{remark}
+
+\demo{06-black-scholes-formula.ipynb}{watch the law of the log-price in the tree approach
+the normal density, and the binomial prices approach the Black--Scholes price, for any
+strike, rate, volatility and maturity.}
+
+\section{Risk-neutral pricing in continuous time}\label{sec:bs-pricing}
+
+\Cref{thm:bs-limit} suggests a model and a pricing rule. The model: under the real-world
+measure $\Prob$, the stock is a geometric Brownian motion with some drift $\mu$
+(\cref{rem:bs-real-world}). The pricing rule: prices are expected discounted payoffs under
+a measure $\Q$ under which the stock is a geometric Brownian motion with drift $r$, that
+is, by \cref{prop:bs-gbm-law}(iii), under which $e^{-rt}S_t$ is a martingale. We now fix this
+setting for the rest of the chapter.
+
+\paragraph{Setting.} Let $T>0$, $r\in\R$, $\sigma>0$ and $S_0>0$. Let $\Q$ be a probability
+measure on $(\Omega,\F)$ and $\widetilde W$ a Brownian motion under $\Q$, with filtration
+$(\F_t)_{t\ge0}$; only times $t\le T$ will matter. The money market is worth $e^{rt}$ at time $t$ and the stock
+\begin{equation}\label{eq:bs-model}
+  S_t=S_0\exp\Big(\sigma\widetilde W_t+\Big(r-\frac{\sigma^2}2\Big)t\Big),\qquad t\ge0 .
+\end{equation}
+By \cref{prop:bs-gbm-law}(iii), applied under $\Q$, $(e^{-rt}S_t)$ is a $\Q$-martingale. We
+\emph{define} the \emph{price} at time $t\in[0,T]$ of a claim paying $g(S_T)$ at time $T$ as
+\begin{equation}\label{eq:bs-price}
+  V_t=e^{-r(T-t)}\,\EQ\big[g(S_T)\,\big|\,\F_t\big],
+\end{equation}
+for every Borel $g:(0,\infty)\to\R$ such that $g\ge0$ or $g(S_T)$ is $\Q$-integrable. In this
+chapter \eqref{eq:bs-price} is a definition; \cref{ch:10-delta-hedging,ch:11-risk-neutral}
+justify it by replication and no arbitrage.
+
+\begin{remark}[Why this price]\label{rem:bs-justification}
+Three facts support \eqref{eq:bs-price}.
+(a) For calls and puts at time $0$, $V_0$ is the limit of the unique arbitrage-free prices of
+the binomial trees (\cref{thm:bs-limit}). (b) The discounted price $e^{-rt}V_t$ is a
+$\Q$-martingale (\cref{prop:bs-markov}). In the binomial model this is what rules out
+arbitrage (\cref{thm:bin-ftap,rem:bin-extended}); the continuous-time version needs
+stochastic integrals. (c) In \cref{ch:10-delta-hedging} the claim is
+replicated by a self-financing portfolio in the stock and the money market, and in
+\cref{ch:11-risk-neutral} the measure $\Q$ is built from $\Prob$: if $S$ is a geometric
+Brownian motion with drift $\mu$ driven by a $\Prob$-Brownian motion $W$, then
+$\widetilde W_t=W_t+\frac{\mu-r}{\sigma}t$, $t\le T$, is a Brownian motion on $[0,T]$ under the measure $\Q$ with
+$\dd\Q/\dd\Prob=\exp\big(\theta W_T-\frac{\theta^2}2T\big)$, $\theta=-\frac{\mu-r}{\sigma}$
+(Girsanov's theorem; for the single time $T$ this is \cref{rem:pr-girsanov}). The number
+$(\mu-r)/\sigma$ is the \emph{market price of risk}. In this chapter neither $\mu$ nor
+$\Prob$ plays any role.
+\end{remark}
+
+To compute \eqref{eq:bs-price} at $t>0$ we condition on $\F_t$. The tool is the independence
+lemma of \cref{ch:01-probability}: the stock price at $T$ is the price at $t$ times a factor
+that is independent of $\F_t$.
+
+\begin{proposition}[Markov property and prices at intermediate times]\label{prop:bs-markov}
+In the setting \eqref{eq:bs-model}, let $0\le t\le T$, $\tau=T-t$, and let
+$g:(0,\infty)\to\R$ be Borel with $|g(y)|\le a(y^p+y^{-p})$ for all $y>0$, for some constants
+$a,p\ge0$. Then, almost surely,
+\[
+  \EQ\big[g(S_T)\,\big|\,\F_t\big]=v(t,S_t),\qquad
+  v(t,x)=\E\Big[g\Big(x\exp\Big(\sigma\sqrt\tau\,Y+\Big(r-\frac{\sigma^2}{2}\Big)\tau\Big)\Big)\Big],
+\]
+where $Y\sim\mathcal N(0,1)$. So the price $V_t=e^{-r\tau}v(t,S_t)$ depends on the past only
+through the current stock price, and $(e^{-rt}V_t)_{0\le t\le T}$ is a $\Q$-martingale.
+\end{proposition}
+
+\begin{proof}
+For $t=T$ both sides equal $g(S_T)$. Let $t<T$ and $Y=(\widetilde W_T-\widetilde W_t)/\sqrt\tau$, which
+under $\Q$ is $\mathcal N(0,1)$ and independent of $\F_t$ (\cref{def:bm-filtration}). Then
+\[
+  S_T=S_t\exp\Big(\sigma\sqrt\tau\,Y+\Big(r-\frac{\sigma^2}2\Big)\tau\Big),\qquad\text{so}\qquad g(S_T)=f(S_t,Y),
+\]
+with $f(x,y)=g\big(x\exp(\sigma\sqrt\tau\,y+(r-\sigma^2/2)\tau)\big)$ Borel, and $S_t$ is
+$\F_t$-measurable. Write $Z=\sigma\sqrt\tau\,Y+(r-\frac{\sigma^2}2)\tau$. The growth condition gives
+$|f(x,Y)|\le a(x^p+x^{-p})\,e^{p|Z|}\le a(x^p+x^{-p})(e^{pZ}+e^{-pZ})$, which is integrable for
+every $x>0$ by the Gaussian moment generating function; and $g(S_T)$ is integrable by
+\cref{prop:bs-gbm-law}(ii). The independence lemma, \cref{lem:pr-independence} under $\Q$,
+gives $\EQ[g(S_T)\mid\F_t]=v(t,S_t)$. Finally
+$e^{-rt}V_t=e^{-rT}\EQ[g(S_T)\mid\F_t]$ is a martingale by the tower property.
+\end{proof}
+
+In the binomial model the same fact appeared as the recombining-tree recursion
+$V_n=v_n(S_n)$ of \cref{sec:bin-multi-period}. Conditional expectations of functions of
+$S_T$ given $\F_t$ depend on $\F_t$ only through $S_t$: this is the \emph{Markov property}, which
+\cref{ch:09-sde} extends to solutions of stochastic differential equations
+(\cref{prop:sde-markov}).
+
+\section{The Black--Scholes formula}\label{sec:bs-formula}
+
+For $\tau>0$, $x>0$ and a strike $K>0$, set
+\begin{equation}\label{eq:bs-dpm}
+  d_\pm(\tau,x)=\frac{\log(x/K)+(r\pm\frac{\sigma^2}{2})\tau}{\sigma\sqrt\tau},\qquad
+  d_-(\tau,x)=d_+(\tau,x)-\sigma\sqrt\tau .
+\end{equation}
+The whole computation rests on one Gaussian identity, which is the Gaussian shift of
+\cref{prop:pr-gaussian-shift} in disguise.
+
+\begin{lemma}\label{lem:bs-gaussian}
+Let $Y\sim\mathcal N(0,1)$ and $a,d\in\R$. Then $\Prob(Y>-d)=N(d)$ and
+\[
+  \E\big[e^{aY-a^2/2}\,\1_{\{Y>-d\}}\big]=N(d+a) .
+\]
+\end{lemma}
+
+\begin{proof}
+By symmetry of the normal law, $\Prob(Y>-d)=\Prob(-Y<d)=N(d)$. The left
+side is $\E[Z\,h(Y)]$ with $Z=e^{aY-a^2/2}$ and $h=\1_{(-d,\infty)}$; by
+\cref{prop:pr-gaussian-shift} with $\theta=a$, it equals $\E[h(Y+a)]=\Prob(Y>-d-a)=N(d+a)$.
+\end{proof}
+
+\begin{theorem}[The Black--Scholes formula]\label{thm:bs-formula}
+In the setting \eqref{eq:bs-model}, let $K>0$, $0\le t<T$ and $\tau=T-t$. The prices at time
+$t$ of the European call and put with strike $K$ and maturity $T$ are
+\[
+  C_t=e^{-r\tau}\EQ\big[(S_T-K)^+\,\big|\,\F_t\big]=c(t,S_t),\qquad
+  P_t=e^{-r\tau}\EQ\big[(K-S_T)^+\,\big|\,\F_t\big]=p(t,S_t),
+\]
+where, for $x>0$ and with $d_\pm=d_\pm(\tau,x)$ as in \eqref{eq:bs-dpm},
+\[
+  c(t,x)=x\,N(d_+)-Ke^{-r\tau}N(d_-),\qquad
+  p(t,x)=Ke^{-r\tau}N(-d_-)-x\,N(-d_+).
+\]
+In particular $C_0=S_0N(d_+)-Ke^{-rT}N(d_-)$ with
+$d_\pm=\big(\log(S_0/K)+(r\pm\frac{\sigma^2}{2})T\big)/(\sigma\sqrt T)$, and
+$c(t,x)-p(t,x)=x-Ke^{-r\tau}$ for all $t<T$ and $x>0$.
+\end{theorem}
+
+\begin{proof}
+The payoff $g(y)=(y-K)^+\le y$ satisfies the hypothesis of \cref{prop:bs-markov}, so
+$C_t=e^{-r\tau}v(t,S_t)$ with
+$v(t,x)=\E\big[(xe^{\sigma\sqrt\tau Y+(r-\sigma^2/2)\tau}-K)^+\big]$. Fix $x>0$. The payoff
+is positive exactly when $\sigma\sqrt\tau\,Y+(r-\frac{\sigma^2}2)\tau>\log(K/x)$, that is,
+when $Y>-d_-$. Hence
+\[
+  e^{-r\tau}v(t,x)=x\,\E\big[e^{\sigma\sqrt\tau\,Y-\sigma^2\tau/2}\1_{\{Y>-d_-\}}\big]
+  -Ke^{-r\tau}\,\Prob(Y>-d_-)=x\,N(d_-+\sigma\sqrt\tau)-Ke^{-r\tau}N(d_-),
+\]
+by \cref{lem:bs-gaussian} with $a=\sigma\sqrt\tau$ and $d=d_-$; and
+$d_-+\sigma\sqrt\tau=d_+$. For the put, $(y-K)^+-(K-y)^+=y-K$ and
+$\E\big[xe^{\sigma\sqrt\tau Y+(r-\sigma^2/2)\tau}\big]=xe^{r\tau}$, so the put function is
+$c(t,x)-x+Ke^{-r\tau}=-x\big(1-N(d_+)\big)+Ke^{-r\tau}\big(1-N(d_-)\big)$, which is $p(t,x)$
+because $1-N(y)=N(-y)$.
+\end{proof}
+
+\begin{remark}[Reading the formula]\label{rem:bs-reading}
+\begin{enumerate}[label=(\alph*),leftmargin=*]
+  \item The term $Ke^{-r\tau}N(d_-)$ is the discounted strike times the risk-neutral
+    probability that the call is exercised, and $xN(d_+)$ is the value of receiving the
+    stock in that event (\cref{prop:bs-digital}). Neither is a real-world quantity: $\mu$
+    does not appear.
+  \item The price is a function of $x$, the discounted strike $Ke^{-r\tau}$ and the
+    \emph{total volatility} $\sigma\sqrt\tau$ only: writing $m=\log\big(x/(Ke^{-r\tau})\big)$
+    and $w=\sigma\sqrt\tau$, we have $d_\pm=m/w\pm w/2$.
+  \item The prices satisfy the parity of \cref{prop:arb-parity} and the bounds of
+    \cref{prop:arb-bounds}, with $B=e^{-r\tau}$, as they must, being expectations under a
+    pricing measure.
+  \item Boundary cases. As $\tau\downarrow0$, $c(t,x)\to(x-K)^+$ for every $x>0$ (at $x=K$,
+    $d_\pm\to0$ and both terms tend to $K/2$). For $K=0$ the call pays $S_T$ and
+    $C_t=e^{-r\tau}\EQ[S_T\mid\F_t]=S_t$ by the martingale property; the formula gives the
+    same value with the convention $d_\pm=+\infty$, $N(+\infty)=1$.
+\end{enumerate}
+\end{remark}
+
+\begin{proposition}[Digital options]\label{prop:bs-digital}
+In the setting of \cref{thm:bs-formula}, with $d_\pm=d_\pm(\tau,S_t)$, the prices at time $t$
+of the \emph{digital call} paying $\1_{\{S_T>K\}}$, the \emph{digital put} paying
+$\1_{\{S_T\le K\}}$, and the \emph{asset-or-nothing call} paying $S_T\1_{\{S_T>K\}}$ are
+\[
+  e^{-r\tau}N(d_-),\qquad e^{-r\tau}N(-d_-),\qquad S_t\,N(d_+) .
+\]
+In particular $\Q(S_T>K\mid\F_t)=N\big(d_-(\tau,S_t)\big)$ and $\Q(S_T>K)=N\big(d_-(T,S_0)\big)$,
+and the call is one asset-or-nothing call minus $K$ digital calls.
+\end{proposition}
+
+\begin{proof}
+Apply \cref{prop:bs-markov} to the payoffs $\1_{(K,\infty)}(y)\le1$ and
+$y\1_{(K,\infty)}(y)\le y$. As in the proof of \cref{thm:bs-formula}, $S_T>K$ corresponds to
+$Y>-d_-$, so $v(t,x)=\Prob(Y>-d_-)=N(d_-)$ for the first and $v(t,x)=xe^{r\tau}N(d_+)$ for the
+second, by \cref{lem:bs-gaussian}. The two digital payoffs add up to $1$, whose price is
+$e^{-r\tau}$, and $1-N(d_-)=N(-d_-)$. The conditional probability is
+$\EQ[\1_{\{S_T>K\}}\mid\F_t]$, and $(y-K)^+=y\1_{\{y>K\}}-K\1_{\{y>K\}}$.
+\end{proof}
+
+Since $S_T$ has a density, $\Q(S_T=K)=0$, and it does not matter whether the digitals pay at
+$S_T=K$ or not. For the same reason the digital prices of the trees converge too, although
+the payoff is discontinuous: by \cref{thm:bs-limit}(i), $\Q_n(S^{(n)}_T>K)\to\Q(S_T>K)$,
+because the limit distribution function is continuous at $K$.
+
+\section{The Greeks}\label{sec:bs-greeks}
+
+The \emph{Greeks} are the partial derivatives of a price with respect to the stock price,
+time and the parameters. They measure how a position reacts when the market moves, and in
+\cref{ch:10-delta-hedging} the delta becomes the number of shares held in the replicating
+portfolio, as the discrete derivative \eqref{eq:bin-delta} was in the binomial model.
+
+\begin{proposition}[The Greeks of calls and puts]\label{prop:bs-greeks}
+Let $K>0$, $0\le t<T$, $\tau=T-t$ and $x>0$, write $d_\pm=d_\pm(\tau,x)$, and regard $c$, $p$
+and $d_\pm$ as functions of $(t,x)$ and of the parameters $\sigma$, $r$ and $K$. Then
+\begin{equation}\label{eq:bs-identity}
+  Ke^{-r\tau}N'(d_-)=x\,N'(d_+),
+\end{equation}
+and the derivatives of the call and put prices are as follows.
+\begin{enumerate}[label=(\roman*)]
+  \item Delta: $\partial_xc=N(d_+)$ and $\partial_xp=N(d_+)-1=-N(-d_+)$.
+  \item Gamma: $\displaystyle\partial_{xx}c=\partial_{xx}p=\frac{N'(d_+)}{x\sigma\sqrt\tau}$.
+  \item Vega: $\partial_\sigma c=\partial_\sigma p=x\,N'(d_+)\sqrt\tau$.
+  \item Theta: $\displaystyle\partial_tc=-\frac{x\sigma N'(d_+)}{2\sqrt\tau}-rKe^{-r\tau}N(d_-)$ and
+    $\displaystyle\partial_tp=-\frac{x\sigma N'(d_+)}{2\sqrt\tau}+rKe^{-r\tau}N(-d_-)$.
+  \item Rho: $\partial_rc=K\tau e^{-r\tau}N(d_-)$ and $\partial_rp=-K\tau e^{-r\tau}N(-d_-)$.
+  \item Strike: $\partial_Kc=-e^{-r\tau}N(d_-)$ and $\partial_Kp=e^{-r\tau}N(-d_-)$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+Since $d_+-d_-=\sigma\sqrt\tau$ and $d_++d_-=2\big(\log(x/K)+r\tau\big)/(\sigma\sqrt\tau)$,
+\[
+  \frac{N'(d_-)}{N'(d_+)}=\exp\Big(\frac{d_+^2-d_-^2}{2}\Big)
+  =\exp\Big(\frac{(d_+-d_-)(d_++d_-)}{2}\Big)=\frac{x}{K}\,e^{r\tau},
+\]
+which is \eqref{eq:bs-identity}. Now let $\theta$ be any of the variables $x,t,\sigma,r,K$.
+By the chain rule,
+\[
+  \partial_\theta c=(\partial_\theta x)\,N(d_+)-\partial_\theta\big(Ke^{-r\tau}\big)N(d_-)
+  +x\,N'(d_+)\,\partial_\theta d_+-Ke^{-r\tau}N'(d_-)\,\partial_\theta d_-,
+\]
+and by \eqref{eq:bs-identity} the last two terms add up to
+$xN'(d_+)\,\partial_\theta(d_+-d_-)=xN'(d_+)\,\partial_\theta(\sigma\sqrt\tau)$. Only this
+combination of $\sigma$ and $\tau$ survives. For $\theta=x$, neither $Ke^{-r\tau}$ nor
+$\sigma\sqrt\tau$ depends on $x$, which gives $N(d_+)$; $\theta=\sigma$ gives $xN'(d_+)\sqrt\tau$; $\theta=r$ gives
+$K\tau e^{-r\tau}N(d_-)$; $\theta=K$ gives $-e^{-r\tau}N(d_-)$; and $\theta=t$, with
+$\partial_t\tau=-1$, gives $-rKe^{-r\tau}N(d_-)-xN'(d_+)\sigma/(2\sqrt\tau)$. The gamma is
+$\partial_xN(d_+)=N'(d_+)\,\partial_xd_+=N'(d_+)/(x\sigma\sqrt\tau)$. For the put, differentiate
+the parity $p=c-x+Ke^{-r\tau}$ of \cref{thm:bs-formula}: the delta loses $1$, gamma and vega
+are unchanged, theta gains $rKe^{-r\tau}$, rho loses $\tau Ke^{-r\tau}$, $\partial_K$ gains
+$e^{-r\tau}$, and $1-N(y)=N(-y)$ gives the put formulas.
+\end{proof}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.85\textwidth]{ch06-greeks}
+  \caption{Greeks of a call with $K=100$, $r=5\%$, $\sigma=20\%$, against the spot $x$, for three
+    times to maturity. Near maturity the delta approaches the step $\1_{\{x>K\}}$, and the
+    gamma and the theta concentrate around the strike.}
+  \label{fig:bs-greeks}
+\end{figure}
+
+\begin{remark}[Reading the Greeks]\label{rem:bs-greeks-reading}
+\begin{enumerate}[label=(\alph*),leftmargin=*]
+  \item For every $r\in\R$: $0<\partial_xc<1$, the gamma is positive (the price is strictly
+    convex in $x$), the vega is positive (the price strictly increases with $\sigma$), the
+    call rho is positive and the put rho negative. If $r\ge0$, the call theta is negative:
+    with $x$ fixed, the call loses value as time passes. If $r\le0$ the put theta is negative;
+    if $r>0$ it takes both signs: it tends to $rKe^{-r\tau}>0$ as $x\downarrow0$, and it is
+    negative for $x$ large, since by \eqref{eq:bs-identity} it equals
+    $Ke^{-r\tau}\big(rN(-d_-)-\sigma N'(d_-)/(2\sqrt\tau)\big)$ and $N(-y)\le N'(y)/y$ for $y>0$
+    (because $\int_y^\infty N'(u)\,\dd u\le\int_y^\infty\frac uyN'(u)\,\dd u$).
+  \item At time $0$, \cref{prop:arb-breeden-litzenberger} says that in any model with a
+    pricing measure the right derivative of the call price in the strike is $-B\,\Q(S_T>K)$,
+    and the left one $-B\,\Q(S_T\ge K)$; here they agree because $\Q(S_T=K)=0$. With
+    $B=e^{-rT}$, $\partial_Kc(0,S_0)=-e^{-rT}N(d_-)$ is indeed minus the digital price of
+    \cref{prop:bs-digital}. Differentiating once more,
+    $\partial_{KK}c(0,S_0)=e^{-rT}N'(d_-)/(K\sigma\sqrt T)$, which is $e^{-rT}$ times the
+    lognormal density of $S_T$ at $K$ (\cref{prop:bs-gbm-law}(i) with $\mu=r$), as in
+    \cref{prop:arb-breeden-litzenberger}(ii).
+  \item Two identities link the Greeks: $\partial_\sigma c=\sigma\tau x^2\,\partial_{xx}c$, and
+    \begin{equation}\label{eq:bs-pde-identity}
+      \partial_tc+rx\,\partial_xc+\frac{\sigma^2x^2}{2}\,\partial_{xx}c=r\,c ,
+    \end{equation}
+    both checked by substituting \cref{prop:bs-greeks} (in the second, the terms in $N'(d_+)$ cancel and
+    $rxN(d_+)-rKe^{-r\tau}N(d_-)=rc$ remains). The same holds for $p$, since $x-Ke^{-r\tau}$
+    satisfies \eqref{eq:bs-pde-identity}. This is the Black--Scholes equation; in
+    \cref{ch:10-delta-hedging} it is derived from hedging, without knowing the formula.
+  \item Near maturity (\cref{fig:bs-greeks}), for $x\ne K$ the delta tends to $\1_{\{x>K\}}$
+    and the gamma to $0$ as $\tau\downarrow0$, while at $x=K$ the gamma behaves like
+    $1/(K\sigma\sqrt{2\pi\tau})$ and blows up: close to maturity and near the strike, small
+    moves of the stock change the hedge a lot.
+  \item Units: $t$ and $\tau$ are in years, so theta is a loss per year (divide by about
+    $365$ for a calendar day), and vega is per unit of $\sigma$ (divide by $100$ for one
+    volatility point, from $20\%$ to $21\%$).
+\end{enumerate}
+\end{remark}
+
+\demo{06-black-scholes-formula.ipynb}{the Greeks as surfaces over spot and maturity, for any
+rate and volatility; and the time-$t$ price $c(t,S_t)$ along simulated paths, with the
+discounted price keeping a constant mean.}
+
+\section{At the money}\label{sec:bs-atm}
+
+Options with strikes near the current price are among the most liquid, and there the
+formula can be done in one's head. The convenient reference is the \emph{at-the-money-forward} strike
+$K=S_0e^{rT}$, the forward price of \cref{prop:arb-forward}. At this strike the call and the
+put have the same price, by parity: $C_0-P_0=S_0-Ke^{-rT}=0$.
+
+\begin{proposition}[At-the-money approximations]\label{prop:bs-atm}
+Let $K=S_0e^{rT}$ and write $v=\sigma\sqrt T$ for the total volatility. Then $d_\pm=\pm v/2$
+and $C_0=P_0=S_0\big(2N(v/2)-1\big)$. Moreover, with $1/\sqrt{2\pi}=0.3989\ldots$,
+\begin{enumerate}[label=(\roman*)]
+  \item price: $\displaystyle 0\le\frac{S_0v}{\sqrt{2\pi}}-C_0\le\frac{S_0v^3}{24\sqrt{2\pi}}$;
+  \item delta: $\displaystyle 0\le\frac12+\frac{v}{2\sqrt{2\pi}}-\partial_xc(0,S_0)\le\frac{v^3}{48\sqrt{2\pi}}$,
+    and the put delta is $\partial_xc(0,S_0)-1$;
+  \item vega: $\displaystyle 0\le\frac{S_0\sqrt T}{\sqrt{2\pi}}-\partial_\sigma c(0,S_0)\le\frac{S_0\sqrt T}{\sqrt{2\pi}}\,\frac{v^2}{8}$.
+\end{enumerate}
+Hence $C_0=P_0\approx0.4\,S_0\sigma\sqrt T$, the call delta is about $0.5+0.2\,\sigma\sqrt T$
+and the vega about $0.4\,S_0\sqrt T$, with relative errors of order $v^2$ in the price and
+the vega and an absolute error of order $v^3$ in the delta. Rounding $1/\sqrt{2\pi}$ to $0.4$
+adds a relative error of $0.27\%$ to the terms in $v$.
+\end{proposition}
+
+\begin{proof}
+With $\log(S_0/K)=-rT$, \eqref{eq:bs-dpm} gives $d_\pm=\pm\frac{\sigma^2T/2}{\sigma\sqrt T}=\pm v/2$,
+and \cref{thm:bs-formula} gives $C_0=S_0\big(N(v/2)-N(-v/2)\big)=S_0\big(2N(v/2)-1\big)$; the
+put has the same price by parity. All three bounds come from $1-y^2/2\le e^{-y^2/2}\le1$,
+that is, $\frac{1}{\sqrt{2\pi}}(1-\frac{y^2}2)\le N'(y)\le\frac1{\sqrt{2\pi}}$. For (i),
+$C_0/S_0=\int_{-v/2}^{v/2}N'(y)\,\dd y$ and $\int_{-v/2}^{v/2}\frac{y^2}{2}\,\dd y=\frac{v^3}{24}$. For
+(ii), the delta is $N(v/2)=\frac12+\int_0^{v/2}N'(y)\,\dd y$ by \cref{prop:bs-greeks}, and
+$\int_0^{v/2}\frac{y^2}2\,\dd y=\frac{v^3}{48}$. For (iii), the vega is
+$S_0N'(v/2)\sqrt T=\frac{S_0\sqrt T}{\sqrt{2\pi}}e^{-v^2/8}$, and $0\le1-e^{-v^2/8}\le v^2/8$.
+\end{proof}
+
+The approximation is due to \textcite{brenner-subrahmanyam}. For a three-month option on a
+stock at $S_0=50$ with $\sigma=30\%$, $v=0.15$: the exact price is $2.9893$, $S_0v/\sqrt{2\pi}$ gives
+$2.9921$ and the rule of thumb $0.4\,S_0v$ gives $3.00$; the delta is $0.52989$ against
+$0.52992$. The order $v^3$ in (i) cannot be improved: since $1-e^{-a}\ge a-a^2/2$, the same
+computation bounds the error from below by $S_0(v^3/24-v^5/640)/\sqrt{2\pi}$, and
+\cref{fig:bs-atm} shows the error following the bound. For $v$ below about $0.25$ the
+rounding to $0.4$ is the larger error.
+
+Read backwards, (i) gives a volatility from a price: $\sigma\approx C_0/(0.4\,S_0\sqrt T)$.
+This is a first approximation to the \emph{implied volatility} of \cref{ch:15-volatility},
+which is what \textcite{brenner-subrahmanyam} proposed it for. The forward strike matters:
+at the spot strike $K=S_0$, parity gives $C_0-P_0=S_0(1-e^{-rT})\approx S_0rT$, so the rule
+$0.4\,S_0\sigma\sqrt T$ misses at least one of the two prices by at least
+$\frac12S_0|1-e^{-rT}|$ (\exref{ex:bs-thumb}).
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.86\textwidth]{ch06-atm}
+  \caption{The call with strike $S_0e^{rT}$. Left: exact price and the approximation
+    $S_0v/\sqrt{2\pi}$ against the total volatility $v=\sigma\sqrt T$. Right, on logarithmic
+    scales: the error of $S_0v/\sqrt{2\pi}$, the bound of \cref{prop:bs-atm}(i), and the
+    error of the rounded rule $0.4\,S_0v$.}
+  \label{fig:bs-atm}
+\end{figure}
+
+\demo{06-black-scholes-formula.ipynb}{compare the exact at-the-money price, delta and vega
+with the rules of thumb as the volatility and the maturity grow.}
+
+\furtherreading
+The formula is due to \textcite{black-scholes} and \textcite{merton1973}; the binomial
+parametrization and its limit to \textcite{crr1979}. \textcite{shreve2} proves the
+lognormal limit for $r=0$ in Section~3.2.7, with the trees $u_n=1+\sigma/\sqrt n$,
+$d_n=1-\sigma/\sqrt n$ of \cref{rem:bs-scaling} (Exercise~3.8 adds a rate), derives the formula
+by the independence lemma in Section~5.2.5, and lists the Greeks in Section~4.5.5.
+\textcite{hull} discusses the Greeks and their use on a trading desk. The rate of convergence
+of binomial prices, with its oscillations, is analysed by J.~B.~Walsh (\emph{Finance and
+Stochastics}, 2003) and by F.~Diener and M.~Diener (\emph{Mathematical Finance}, 2004).

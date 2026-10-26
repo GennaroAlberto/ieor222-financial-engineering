@@ -1,0 +1,147 @@
+% Exercises for Chapter 12 (the Feynman--Kac formula). Statements only: solutions are kept
+% privately.
+% Throughout, W is a Brownian motion with filtration (F_t), T > 0, tau = T - t, N is the standard
+% normal distribution function and N' its density. In the Black--Scholes model, Q is the
+% risk-neutral measure, under which dS = r S dt + sigma S dW~, and d_pm are as in thm:bs-formula.
+
+\begin{exercise}[Running payoffs]\label{ex:fk-running}
+\easy Work in the setting of \noteref{thm:fk-feynman-kac}, and let $f:[0,T]\times I\to\R$ be
+continuous. Suppose that $v\in C^{1,2}([0,T)\times I)$ solves
+\[
+  \partial_tv+\mathcal L_tv-kv+f=0\qquad\text{on }[0,T)\times I,
+\]
+with the terminal condition of the theorem (\noteref{eq:fk-terminal}), and that the solution $X$
+on $[t,T]$ satisfies $\Prob(X_T\in E)=0$, the integrability condition (\noteref{eq:fk-integrability}),
+and
+$\E\int_t^T|f(u,X_u)|\,\dd u<\infty$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that, almost surely,
+    \[
+      v(t,X_t)=\E\Big[\int_t^Te^{-\int_t^uk(s,X_s)\,\dd s}f(u,X_u)\,\dd u
+      +e^{-\int_t^Tk(s,X_s)\,\dd s}h(X_T)\,\Big|\,\F_t\Big].
+    \]
+    \emph{Hint:} which process has no drift now?
+  \item In the Black--Scholes model, a contract pays its holder money continuously, at the rate
+    $\delta S_u$ per unit of time over $[0,T]$, with $\delta>0$, and nothing at $T$. Show that
+    $v(t,x)=\delta x(T-t)$ satisfies the hypotheses of (a) with $k\equiv r$, $f(t,x)=\delta x$ and
+    $h=0$, and deduce the price of the contract at time $t$. Check the answer by computing the
+    expectation directly.
+  \item Find the price at time $t$ of a contract that pays at the constant rate $c>0$ over
+    $[t,T]$, by solving the equation of (a).
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Parity from uniqueness]\label{ex:fk-parity}
+\easy Work in the local volatility model of \noteref{cor:fk-pricing-pde}, with a volatility
+function $\sigma$ satisfying the conditions (\noteref{eq:fk-lv}).
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $w(t,x)=x-Ke^{-r(T-t)}$ solves the pricing equation (\noteref{eq:fk-pricing-pde})
+    with $w(T,x)=x-K$, whatever $\sigma$ is.
+  \item Let $c$ and $p$ be solutions of the pricing equation in $C^{1,2}([0,T)\times(0,\infty))$,
+    continuous on $[0,T]\times(0,\infty)$, with $|c(t,x)|+|p(t,x)|\le C(1+x^2)$ and terminal values
+    $(x-K)^+$ and $(K-x)^+$. Without computing $c$ or $p$, show that $c-p=w$. Deduce that the deltas
+    of the call and the put differ by $1$ and that their gammas are equal.
+  \item Let $v$ be a solution as in (b), with terminal value a payoff $g$, and let $a,b\in\R$.
+    Show that $v+ae^{-r(T-t)}+bx$ is the only solution with quadratic growth and terminal value
+    $g(x)+a+bx$, in every such model. Which static portfolio replicates $a+bS_T$?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[A quadratic potential]\label{ex:fk-quadratic}
+\medium Let $\lambda>0$, $c=\sqrt{2\lambda}$, and for $(t,x)\in[0,T]\times\R$ let
+\[
+  u(t,x)=\E\Big[\exp\Big(-\lambda\int_t^T(x+W_s-W_t)^2\,\dd s\Big)\Big].
+\]
+\begin{enumerate}[label=(\alph*)]
+  \item Look for a solution of $\partial_tv+\frac12\partial_{xx}v-\lambda x^2v=0$ with $v(T,x)=1$ of
+    the form $v(t,x)=\exp\big(-\frac12A(t)x^2-B(t)\big)$. Show that $A'=A^2-2\lambda$ and $B'=-\frac12A$
+    with $A(T)=B(T)=0$, and that $A(t)=c\tanh(c(T-t))$, $B(t)=\frac12\log\cosh(c(T-t))$.
+  \item Use \noteref{thm:fk-feynman-kac} to show that $u=v$. In particular,
+    \[
+      \E\Big[\exp\Big(-\lambda\int_0^TW_s^2\,\dd s\Big)\Big]=\cosh\big(\sqrt{2\lambda}\,T\big)^{-1/2}.
+    \]
+  \item Let $R=\int_0^TW_s^2\,\dd s$ and $\phi(\lambda)=\E[e^{-\lambda R}]$ for $\lambda\ge0$. You may
+    use that $\E[R]=-\phi'(0+)$ and $\E[R^2]=\phi''(0+)$, the one-sided derivatives at $0$ of the
+    formula of (b). Compute $\E[R]$ and $\Var(R)$, and check both directly, using
+    $\Cov(W_s^2,W_u^2)=2\min(s,u)^2$ (\exref{ex:bm-moments}).
+  \item Now let $\mu>0$: the discount rate $k(x)=-\mu x^2$ is not bounded below. Show that
+    $\E\big[\exp(\mu\int_0^TW_s^2\,\dd s)\big]=\infty$ for $T\ge\sqrt{3/(2\mu)}$. \emph{Hint:} use the
+    Cauchy--Schwarz inequality $\big(\int_0^TW_s\,\dd s\big)^2\le T\int_0^TW_s^2\,\dd s$, and the fact that
+    $\int_0^TW_s\,\dd s$ is normal with mean $0$ and variance $T^3/3$. What happens to the function
+    $v$ of (a) if $c$ is replaced by $i\sqrt{2\mu}$, and why can \noteref{thm:fk-feynman-kac} not be
+    applied to it?
+  \item Estimate $\E\big[\exp(-\int_0^1W_s^2\,\dd s)\big]$ by Monte Carlo, discretising the integral on
+    a grid, with a $95\%$ confidence interval, and compare with (b).
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Pay-later options: value and hedge]\label{ex:fk-pay-later}
+\medium In the Black--Scholes model, let $P$ be the fee of the pay-later call of
+\noteref{prop:fk-pay-later}, $c$ the call function of \noteref{thm:bs-formula}, and
+$D(t,x)=e^{-r\tau}N(d_-)$ the digital function. The value of the holder's position at time $t<T$ is
+$V(t,S_t)$ with $V=c-PD$. Take $S_0=K=100$, $r=5\%$, $\sigma=20\%$ and $T=1$ for the numbers.
+\begin{enumerate}[label=(\alph*)]
+  \item On which event does the holder end up paying more than she receives? Compute its
+    probability under $\Q$.
+  \item Fix $t<T$. Show that $V(t,x)<0$ for all small enough $x>0$ and $V(t,x)>0$ for all large
+    enough $x$. \emph{Hint:} write $V/D=c/D-P$, and use the identity $Ke^{-r\tau}N'(d_-)=xN'(d_+)$ of
+    \noteref{prop:bs-greeks} and the fact that $|y|N(y)/N'(y)\to1$ as $y\to-\infty$. Interpret the sign of $V$ after a fall of the stock.
+  \item Write the delta of $V$ and show that, at $x=K$, it tends to $-\infty$ as $\tau\downarrow0$.
+    Compute it one week ($\tau=1/52$) and one day ($\tau=1/365$) before maturity, and explain what a
+    seller who delta-hedges the contract must do near maturity when the stock is close to the
+    strike.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[The hedge of a digital option]\label{ex:fk-digital-hedge}
+\hard In the Black--Scholes model under $\Q$, let $D(t,x)=e^{-r\tau}N(d_-)$ be the price function of
+the digital call with strike $K$, $\Delta_t=\partial_xD(t,S_t)$ for $t<T$, and $p=\Q(S_T>K)=N(d_-(T,S_0))$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $e^{-ru}\sigma S_u\Delta_u=e^{-rT}N'(d_-(T-u,S_u))/\sqrt{T-u}$, and that
+    $M_t=e^{-rt}D(t,S_t)$ satisfies $M_t=D(0,S_0)+\int_0^te^{-ru}\sigma S_u\Delta_u\,\dd\widetilde W_u$ for
+    $t<T$ and $M_t\to e^{-rT}\1_{\{S_T>K\}}$ as $t\uparrow T$, almost surely.
+  \item Show that
+    \[
+      \EQ\int_0^T\big(e^{-ru}\sigma S_u\Delta_u\big)^2\,\dd u=e^{-2rT}p(1-p).
+    \]
+    \emph{Hint:} the It\^o isometry on $[0,T']$, then $T'\uparrow T$. Deduce that
+    $\int_0^T\Delta_u^2\,\dd u<\infty$ almost surely, although $\partial_xD(t,K)\to\infty$ as $t\uparrow T$
+    (\noteref{prop:fk-digital-delta}).
+  \item Show that (b) is the identity
+    \[
+      N(d)\big(1-N(d)\big)=\frac1{2\pi}\int_0^{\pi/2}\exp\Big(-\frac{d^2}{1+\sin\theta}\Big)\,\dd\theta,
+      \qquad d=d_-(T,S_0),
+    \]
+    by computing the expectation of the integrand at each time $u$, and check it for $d=0$.
+    \emph{Hint:} if $Y\sim\mathcal N(m,v)$, then $\E[e^{-Y^2}]=(1+2v)^{-1/2}e^{-m^2/(1+2v)}$; then
+    substitute $u=T\sin\theta$.
+  \item The gamma does not share this property. Using
+    $\partial_{xx}D(t,x)=-e^{-r\tau}N'(d_-)\,d_+/(x^2\sigma^2\tau)$, show that
+    $\EQ\int_0^TS_u^4\big(\partial_{xx}D(u,S_u)\big)^2\,\dd u=\infty$. \emph{Hint:} for $u$ close to $T$,
+    bound the integrand from below on the event $\{\frac12\le d_-(T-u,S_u)\le1\}$, and show that this
+    event has probability at least a constant times $\sqrt{T-u}$. Compare with the expression for the
+    variance of the error of a discretely rebalanced hedge in \noteref{prop:dh-hedging-error}.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[All strikes from one forward equation]\label{ex:fk-forward-pde}
+\hard This is a computational exercise. Take the local volatility model of
+\noteref{fig:fk-mc-pde}: $\sigma(t,x)=0.25-0.12\tanh(2\log(x/100))$, $r=3\%$, $S_0=100$, $T=1$.
+\begin{enumerate}[label=(\alph*)]
+  \item Write Kolmogorov's forward equation (\noteref{thm:fk-kolmogorov}) for the density
+    $q(s,\eta)$ of $\log S_s$ under $\Q$.
+  \item Solve it numerically for $\eta\in[\log5,\log2000]$ and $s\in[s_0,T]$, starting at $s_0=0.005$
+    from the normal density of $\log S_{s_0}$ in the Black--Scholes model with volatility
+    $\sigma(0,S_0)$, with any stable scheme (for instance Crank--Nicolson in $s$ and central
+    differences in $\eta$, with $q=0$ at both ends). Check numerically that $\int q(T,\eta)\,\dd\eta=1$
+    and $\int e^\eta q(T,\eta)\,\dd\eta=S_0e^{rT}$, and explain why both identities should hold.
+  \item From $q(T,\cdot)$, compute the call prices $e^{-rT}\int(e^\eta-K)^+q(T,\eta)\,\dd\eta$ for
+    $K=70,80,\dots,140$. Compare them with solutions of the pricing equation
+    (\noteref{eq:fk-pricing-pde}), one for each strike, and with the Black--Scholes prices at
+    $\sigma=25\%$. For the pricing equation you may use the function
+    \texttt{solve\_pricing\_pde} of the course code (\coderef{code/src/ieor222/feynmankac.py}). How many equations does each route solve for $8$ strikes?
+    For $8$ strikes and $12$ maturities?
+  \item Plot the density of $S_T$ against the lognormal density of the Black--Scholes model with
+    $\sigma=25\%$, and relate the differences to the comparison of prices in (c).
+\end{enumerate}
+\end{exercise}

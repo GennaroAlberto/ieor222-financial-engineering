@@ -1,6 +1,695 @@
-\begin{planned}
-  \item why we integrate against Brownian motion: the gains of a trading strategy
-  \item deterministic integrands; simple integrands; the space $\mathbb H^2$
-  \item the It\^o isometry, the martingale property, quadratic variation of an integral
-  \item $\int_0^t W\,\dd W$, and It\^o versus Stratonovich sums
-\end{planned}
+% Chapter 7: The Ito integral.
+
+In discrete time, the gains of a trading strategy are a martingale transform
+(\cref{ch:02-martingales}): a sum of positions times price changes, each position chosen
+before the price moves. This chapter takes the limit of such sums when the strategy is
+rebalanced continuously and the price is driven by a Brownian motion. The limit is the
+\emph{It\^o integral} $\int_0^TH_t\,\dd W_t$. Brownian paths have infinite first variation
+(\cref{cor:bm-fv}), so the integral cannot be defined path by path as a Riemann--Stieltjes
+integral. It\^o's construction evaluates the integrand at the left end of each interval, as
+a trader must, and takes limits in mean square, where an identity between second moments,
+the \emph{It\^o isometry}, controls everything. We build the integral for simple integrands,
+then for square-integrable ones by approximation, and finally, by localization, for locally
+square-integrable ones.
+
+\paragraph{Standing assumptions.} $W$ is a Brownian motion on $(\Omega,\F,\Prob)$,
+$(\F_t)_{t\ge0}$ is a filtration for $W$ (\cref{def:bm-filtration}), and $T>0$ is a fixed
+horizon. We also assume that every event of probability zero belongs to $\F_0$.\footnote{This
+costs nothing: the events that differ from an event of $\F_t$ by a null event form a
+$\sigma$-algebra, and replacing $\F_t$ by it changes no probability. It lets us change a
+process on a null event without losing adaptedness.} For a partition
+$\Pi=\{0=t_0<t_1<\dots<t_n=t\}$ of $[0,t]$ we write $\|\Pi\|=\max_j(t_{j+1}-t_j)$ and
+$V_2(X;\Pi)=\sum_j(X_{t_{j+1}}-X_{t_j})^2$, as in \cref{sec:bm-qv}.
+
+\section{Gains from trading}\label{sec:ito-gains}
+
+Consider a stock with price $S_t$ and a money market that pays no interest; with a constant
+rate $r$, everything below applies to the discounted price $e^{-rt}S_t$, as in
+\eqref{eq:bin-discounted-wealth}. A trader rebalances at the dates $0=t_0<t_1<\dots<t_n=T$.
+At $t_j$ she trades so as to hold $H_{t_j}$ shares until $t_{j+1}$, using the information
+available at $t_j$: $H_{t_j}$ is $\F_{t_j}$-measurable. If no money is added or withdrawn
+after time $0$, her wealth at the trading dates is
+\[
+  V_{t_k}=V_0+\sum_{j=0}^{k-1}H_{t_j}\big(S_{t_{j+1}}-S_{t_j}\big),
+\]
+the initial capital plus the martingale transform (\cref{def:mg-transform}) of the sequence
+$(S_{t_k})_k$ by the predictable sequence of positions. When $(S_{t_k})_k$ is a martingale
+and the positions are bounded, the gains form a martingale (\cref{thm:mg-transform}): no
+strategy beats a fair game.
+
+As the trader rebalances more and more often, the gains should converge to an integral
+$\int_0^TH_t\,\dd S_t$. In the Bachelier model $S_t=S_0+\sigma W_t$ the gains are
+$\sigma\sum_jH_{t_j}(W_{t_{j+1}}-W_{t_j})$; for geometric Brownian motion (\cref{def:bs-gbm}),
+$\dd S_t=\mu S_t\,\dd t+\sigma S_t\,\dd W_t$ (\cref{prop:itf-gbm}). Either way the new object
+is the limit of the \emph{It\^o sums}
+\begin{equation}\label{eq:ito-sums}
+  \sum_{j=0}^{n-1}H_{t_j}\big(W_{t_{j+1}}-W_{t_j}\big),\qquad H_{t_j}\ \text{known at time }t_j,
+\end{equation}
+as the mesh of the partition goes to zero.
+
+Two features of Brownian motion stand in the way of an ordinary integral: its paths have
+infinite first variation, so the sums need not converge path by path; and the evaluation
+point matters, since replacing $H_{t_j}$ by $H_{t_{j+1}}$ changes the limit already for $H=W$
+(\cref{rem:mg-ito}, \cref{prop:ito-wdw}). Both come from the quadratic variation
+$[W,W]_t=t$. It\^o's way around them is probabilistic. When $H_{t_j}$ is known at time $t_j$
+and square integrable, the terms of \eqref{eq:ito-sums} are orthogonal in $L^2$, and
+\begin{equation}\label{eq:ito-isometry-sums}
+  \E\Big[\Big(\sum_jH_{t_j}\big(W_{t_{j+1}}-W_{t_j}\big)\Big)^2\Big]
+  =\E\Big[\sum_jH_{t_j}^2\,(t_{j+1}-t_j)\Big],
+\end{equation}
+as in the discrete isometry of \exref{ex:mg-isometry}. The right side is a Riemann sum of
+$\E\int_0^TH_t^2\,\dd t$, which does not see the roughness of the paths, and this identity
+lets us pass to the limit in mean square.
+
+\section{Simple integrands}\label{sec:ito-simple}
+
+\begin{definition}[Simple integrands and their integral]\label{def:ito-simple}
+A process $H=(H_t)_{0\le t\le T}$ is \emph{simple} if there are a partition
+$0=t_0<t_1<\dots<t_n=T$ and random variables $\xi_0,\dots,\xi_{n-1}$ such that each $\xi_j$
+is $\F_{t_j}$-measurable with $\E[\xi_j^2]<\infty$, and
+\[
+  H_t=\xi_j\quad\text{for }t_j\le t<t_{j+1},\ 0\le j\le n-1,\qquad H_T=\xi_{n-1}.
+\]
+The \emph{It\^o integral} of $H$ is the process
+\begin{equation}\label{eq:ito-simple}
+  I_t=\int_0^tH_s\,\dd W_s:=\sum_{j=0}^{n-1}\xi_j\big(W_{t_{j+1}\wedge t}-W_{t_j\wedge t}\big),
+  \qquad0\le t\le T .
+\end{equation}
+\end{definition}
+
+For $t_k\le t\le t_{k+1}$ the sum reads
+$I_t=\sum_{j<k}\xi_j(W_{t_{j+1}}-W_{t_j})+\xi_k(W_t-W_{t_k})$: the gains of a trader who
+holds $\xi_j$ units of an asset with price $W$ from $t_j$ to $t_{j+1}$, with the open
+position marked to market at time $t$. At the dates $t_k$, $I$ is the martingale transform
+of $(W_{t_k})_k$ by the predictable sequence of positions.
+
+A simple process has many representations. Inserting a point $s$ into $(t_j,t_{j+1})$, with
+the same $\xi_j$ on both sides, does not change \eqref{eq:ito-simple}, because
+$W_{t_{j+1}\wedge t}-W_{t_j\wedge t}=(W_{s\wedge t}-W_{t_j\wedge t})+(W_{t_{j+1}\wedge
+t}-W_{s\wedge t})$. Any two representations have a common refinement, so the integral does
+not depend on the representation. In the same way two simple processes $H$ and $K$ can be
+written on a common partition, so $aH+bK$ is simple for $a,b\in\R$, and
+$\int_0^t(aH_s+bK_s)\,\dd W_s=a\int_0^tH_s\,\dd W_s+b\int_0^tK_s\,\dd W_s$.
+
+\begin{proposition}[Integrals of simple processes]\label{prop:ito-simple}
+Let $H$ be simple and $I_t=\int_0^tH_s\,\dd W_s$.
+\begin{enumerate}[label=(\roman*)]
+  \item $I_0=0$, the paths of $I$ are continuous, and $I$ is adapted with $\E[I_t^2]<\infty$
+    for every $t$.
+  \item $I$ is a martingale. In particular $\E[I_t]=0$.
+  \item \emph{(It\^o isometry)} For $0\le s\le t\le T$,
+    \begin{equation}\label{eq:ito-conditional-isometry}
+      \E\big[(I_t-I_s)^2\,\big|\,\F_s\big]=\E\Big[\int_s^tH_u^2\,\dd u\,\Big|\,\F_s\Big].
+    \end{equation}
+    In particular $\E[I_t^2]=\E\int_0^tH_u^2\,\dd u$, and $I_t^2-\int_0^tH_u^2\,\dd u$ is a
+    martingale.
+  \item \emph{(Quadratic variation)} Let $0<t\le T$, and let $\Pi_m$ be partitions of $[0,t]$
+    with $\|\Pi_m\|\to0$. Then $V_2(I;\Pi_m)\to\int_0^tH_u^2\,\dd u$ in probability.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) Each term of \eqref{eq:ito-simple} is continuous in $t$ and vanishes at $t=0$. Fix $t$
+and let $k$ be the largest index with $t_k\le t$. The terms with $j>k$ vanish, and the
+others involve only $\xi_0,\dots,\xi_k$ and values of $W$ at times at most $t$, all
+$\F_t$-measurable. For $j\le k$ the increment $D=W_{t_{j+1}\wedge t}-W_{t_j}$ is independent of
+$\F_{t_j}$, so $\E[\xi_j^2D^2]=\E[\xi_j^2]\,\E[D^2]<\infty$, and $I_t$ is square integrable.
+
+(ii) and (iii). Fix $s\le t$. After refining the partition we may assume that $s=t_k$ and
+$t=t_m$ with $k\le m$, so that $I_t-I_s=\sum_{j=k}^{m-1}\xi_jD_j$ with
+$D_j=W_{t_{j+1}}-W_{t_j}$. Here $\xi_j$ is $\F_{t_j}$-measurable, and $D_j$ is independent of
+$\F_{t_j}$ with mean $0$ and variance $h_j=t_{j+1}-t_j$. Taking out what is known and using
+independence (\cref{prop:pr-condexp-properties}),
+\[
+  \E[\xi_jD_j\mid\F_{t_j}]=\xi_j\,\E[D_j]=0,\qquad
+  \E[\xi_j^2D_j^2\mid\F_{t_j}]=\xi_j^2\,h_j ,
+\]
+and for $j<l$, since $\xi_jD_j\xi_l$ is $\F_{t_l}$-measurable,
+$\E[\xi_jD_j\,\xi_lD_l\mid\F_{t_l}]=\xi_jD_j\xi_l\,\E[D_l]=0$. All these products are
+integrable: $\xi_jD_j\xi_l$ is a product of two square-integrable variables, and $|D_l|$ is
+independent of it. Conditioning further on $\F_s\subseteq\F_{t_j}$ (tower property), we get
+$\E[I_t-I_s\mid\F_s]=0$, which is (ii), and
+\[
+  \E\big[(I_t-I_s)^2\,\big|\,\F_s\big]=\E\Big[\sum_{j=k}^{m-1}\xi_j^2h_j\,\Big|\,\F_s\Big]
+  =\E\Big[\int_s^tH_u^2\,\dd u\,\Big|\,\F_s\Big],
+\]
+which is \eqref{eq:ito-conditional-isometry}. With $s=0$, taking expectations gives
+$\E[I_t^2]=\E\int_0^tH_u^2\,\dd u$. Finally, since $I$ is a martingale,
+$\E[(I_t-I_s)^2\mid\F_s]=\E[I_t^2\mid\F_s]-2I_s\E[I_t\mid\F_s]+I_s^2=\E[I_t^2\mid\F_s]-I_s^2$,
+and $\int_0^sH_u^2\,\dd u=\sum_j\xi_j^2(t_{j+1}\wedge s-t_j\wedge s)$ is $\F_s$-measurable,
+so \eqref{eq:ito-conditional-isometry} rearranges to
+$\E\big[I_t^2-\int_0^tH_u^2\,\dd u\,\big|\,\F_s\big]=I_s^2-\int_0^sH_u^2\,\dd u$.
+
+(iv) Let $\Pi=\{0=s_0<\dots<s_K=t\}$ be a partition of $[0,t]$ with mesh smaller than every
+$t_{j+1}-t_j$, and let $\Pi'$ be $\Pi$ together with the points $t_j<t$. An interval of $\Pi$
+then contains at most one $t_j$ in its interior; if it does, splitting it at $t_j$ changes
+the sum of squares by $2(I_{t_j}-I_{s_i})(I_{s_{i+1}}-I_{t_j})$. There are at most $n$ such
+intervals, so
+\[
+  \big|V_2(I;\Pi)-V_2(I;\Pi')\big|\le2n\,\omega(\|\Pi\|)^2,\qquad
+  \omega(\delta)=\max\big\{|I_u-I_v|:u,v\in[0,t],\ |u-v|\le\delta\big\},
+\]
+which tends to $0$ with $\|\Pi\|$ for every outcome, because the paths of $I$ are uniformly
+continuous on $[0,t]$. On an interval of $\Pi'$ inside $[t_j,t_{j+1}]$ the increment of $I$
+is $\xi_j$ times the increment of $W$, so
+\[
+  V_2(I;\Pi')=\sum_{j:\,t_j<t}\xi_j^2\;V_2\big(W;\Pi'\cap[t_j,t_{j+1}\wedge t]\big).
+\]
+By \cref{thm:bm-qv}, applied to the Brownian motion $(W_{t_j+u}-W_{t_j})_{u\ge0}$
+(\cref{prop:bm-invariance}), each $V_2(W;\Pi'\cap[t_j,t_{j+1}\wedge t])$ converges in $L^2$,
+hence in probability, to $t_{j+1}\wedge t-t_j$. Multiplying by the finite random variable
+$\xi_j^2$ preserves convergence in probability,\footnote{If $X_m\to c$ in probability and
+$\xi$ is a finite random variable, then
+$\Prob(|\xi X_m-\xi c|>\varepsilon)\le\Prob(|\xi|>K)+\Prob(|X_m-c|>\varepsilon/K)$ for all
+$K,\varepsilon>0$; let $m\to\infty$, then $K\to\infty$.} and so does adding finitely many
+terms. Hence $V_2(I;\Pi_m)\to\sum_j\xi_j^2(t_{j+1}\wedge t-t_j\wedge t)=\int_0^tH_u^2\,\dd u$
+in probability.
+\end{proof}
+
+\section{Square-integrable integrands}\label{sec:ito-h2}
+
+\begin{definition}[The spaces $\mathbb H^2$ and $\mathbb H^2_{\mathrm{loc}}$]\label{def:ito-h2}
+A process $H=(H_t)_{0\le t\le T}$ is \emph{progressively measurable} if, for every
+$t\in[0,T]$, the map $(s,\omega)\mapsto H_s(\omega)$ on $[0,t]\times\Omega$ is measurable with
+respect to $\mathcal B([0,t])\otimes\F_t$. We write $\mathbb H^2=\mathbb H^2[0,T]$ for the set
+of progressively measurable processes $H$ with
+\[
+  \|H\|_{\mathbb H^2}^2:=\E\Big[\int_0^TH_t^2\,\dd t\Big]<\infty ,
+\]
+and $\mathbb H^2_{\mathrm{loc}}=\mathbb H^2_{\mathrm{loc}}[0,T]$ for the set of progressively
+measurable processes with $\int_0^TH_t^2\,\dd t<\infty$ almost surely.
+\end{definition}
+
+Progressive measurability implies adaptedness (take $s=t$) and adds just enough joint
+measurability for integrals in time to be adapted: by Tonelli's theorem, $\int_0^tH_s^2\,\dd s$ is then
+$\F_t$-measurable for every $t$, and so is $\int_0^tH_s\,\dd s$ when $\int_0^t|H_s|\,\dd s<\infty$.
+Every adapted process whose paths are all right-continuous, or all left-continuous, is
+progressively measurable (\textcite{karatzas-shreve}, Proposition~1.1.13). So are simple
+processes, and $f(t,X_t)$ for a Borel function $f$ and a progressively measurable $X$.
+$\|\cdot\|_{\mathbb H^2}$ is the norm of $L^2(\dd t\otimes\dd\Prob)$ on $[0,T]\times\Omega$;
+processes $H$ and $K$ with $\|H-K\|_{\mathbb H^2}=0$ are identified, and they will have the
+same integral. A simple process has $\|H\|_{\mathbb H^2}^2=\sum_j\E[\xi_j^2](t_{j+1}-t_j)$, so
+it is in $\mathbb H^2$, and $\|W\|_{\mathbb H^2}^2=\int_0^Tt\,\dd t=T^2/2$. Since
+$\E[e^{2W_t^2}]=(1-4t)^{-1/2}$ for $t<\frac14$ and $=\infty$ for $t\ge\frac14$, $e^{W_t^2}$ is in
+$\mathbb H^2[0,T]$ exactly when $T\le\frac14$, but in $\mathbb H^2_{\mathrm{loc}}[0,T]$ for
+every $T$ (its paths are continuous).
+
+\begin{lemma}[Left-point approximation]\label{lem:ito-riemann}
+Let $H$ be progressively measurable, with $\E[H_t^2]<\infty$ for every $t\in[0,T]$ and
+continuous in mean square: $\E[(H_u-H_t)^2]\to0$ as $u\to t$, for every $t\in[0,T]$. For a
+partition $\Pi=\{t_j\}$ of $[0,T]$, let $H^\Pi$ be the simple process equal to $H_{t_j}$ on
+$[t_j,t_{j+1})$, with $H^\Pi_T=H_{t_{n-1}}$. Then $H\in\mathbb H^2$, and
+$\|H^\Pi-H\|_{\mathbb H^2}\to0$ as $\|\Pi\|\to0$.
+\end{lemma}
+
+\begin{proof}
+The map $t\mapsto H_t$ from $[0,T]$ to $L^2$ is continuous on a compact interval, hence
+bounded, $c=\sup_t\E[H_t^2]<\infty$, and uniformly continuous:
+$\rho(\delta)=\sup\{\E[(H_u-H_v)^2]:|u-v|\le\delta\}\to0$ as $\delta\to0$. By Tonelli's
+theorem $\|H\|_{\mathbb H^2}^2=\int_0^T\E[H_t^2]\,\dd t\le cT$. Each $H_{t_j}$ is
+$\F_{t_j}$-measurable and square integrable, so $H^\Pi$ is simple, and by Tonelli again
+\[
+  \|H^\Pi-H\|_{\mathbb H^2}^2=\sum_j\int_{t_j}^{t_{j+1}}\E\big[(H_{t_j}-H_t)^2\big]\,\dd t\le
+  T\rho(\|\Pi\|)\longrightarrow0 .\qedhere
+\]
+\end{proof}
+
+The lemma applies to $W$, with $\E[(W_u-W_t)^2]=|u-t|$ and
+$\|W^\Pi-W\|_{\mathbb H^2}^2=\sum_j\int_{t_j}^{t_{j+1}}(t-t_j)\,\dd t=\frac12\sum_j(t_{j+1}-t_j)^2$;
+to deterministic continuous functions; and, by dominated convergence, to adapted processes
+with continuous paths and $\E[\sup_{t\le T}H_t^2]<\infty$.
+
+\begin{lemma}[Simple processes are dense]\label{lem:ito-density}
+For every $H\in\mathbb H^2$ there are simple processes $H^n$ with
+$\|H^n-H\|_{\mathbb H^2}\to0$.
+\end{lemma}
+
+This is \textcite{oksendal}, Section~3.1, Steps~1--3, for integrands that are adapted and
+jointly measurable, as progressively measurable ones are. The proof truncates $H$, replaces
+it by its averages $n\int_{(t-1/n)\vee0}^tH_s\,\dd s$ over the recent past, which are
+continuous and adapted (by progressive measurability), and applies \cref{lem:ito-riemann};
+\exref{ex:ito-density} gives the details.
+
+\begin{lemma}[Doob's maximal inequality]\label{lem:ito-doob}
+If $M$ is a martingale with continuous paths on $[0,T]$ and $\E[M_T^2]<\infty$, then
+$\E\big[\sup_{0\le t\le T}M_t^2\big]\le4\,\E[M_T^2]$.
+\end{lemma}
+
+This is \textcite{karatzas-shreve}, Theorem~1.3.8(iv), applied to the nonnegative submartingale
+$|M|$ (a submartingale by conditional Jensen, \cref{prop:pr-condexp-properties}). Processes
+$X$ and $Y$ are \emph{indistinguishable} if $\Prob(X_t=Y_t\text{ for all }t)=1$; for
+continuous processes it suffices that $\Prob(X_t=Y_t)=1$ for every rational $t$.
+
+\begin{theorem}[The It\^o integral]\label{thm:ito-integral}
+Let $H\in\mathbb H^2$. There is a process $I=(I_t)_{0\le t\le T}$ with continuous paths such
+that, for every simple process $G$,
+\begin{equation}\label{eq:ito-uniform}
+  \E\Big[\sup_{0\le t\le T}\Big(I_t-\int_0^tG_s\,\dd W_s\Big)^2\Big]\le4\,\|H-G\|_{\mathbb H^2}^2 .
+\end{equation}
+It is unique up to indistinguishability, and for simple $H$ it is the integral of
+\cref{def:ito-simple}. It is called the \emph{It\^o integral} of $H$ and written
+$I_t=\int_0^tH_s\,\dd W_s$. In particular, if simple processes $H^n$ converge to $H$ in
+$\mathbb H^2$ (\cref{lem:ito-density}), their integrals converge to $I$ in mean square,
+uniformly in $t$. Moreover, for $H,K\in\mathbb H^2$, $a,b\in\R$ and $0\le s\le t\le T$:
+\begin{enumerate}[label=(\roman*)]
+  \item \emph{(continuity)} $I_0=0$ and the paths of $I$ are continuous;
+  \item \emph{(adaptedness)} $I_t$ is $\F_t$-measurable;
+  \item \emph{(linearity)}
+    $\int_0^t(aH_u+bK_u)\,\dd W_u=a\int_0^tH_u\,\dd W_u+b\int_0^tK_u\,\dd W_u$;
+  \item \emph{(martingale)} $I$ is a martingale, so is $I_t^2-\int_0^tH_u^2\,\dd u$, and the
+    conditional isometry \eqref{eq:ito-conditional-isometry} holds;
+  \item \emph{(It\^o isometry)} $\E[I_t^2]=\E\int_0^tH_u^2\,\dd u$, and
+    $\E\big[\int_0^tH_u\,\dd W_u\,\int_0^tK_u\,\dd W_u\big]=\E\int_0^tH_uK_u\,\dd u$;
+  \item \emph{(quadratic variation)} if $t>0$ and $\Pi_m$ are partitions of $[0,t]$ with
+    $\|\Pi_m\|\to0$, then $V_2(I;\Pi_m)\to\int_0^tH_u^2\,\dd u$ in probability. In the notation
+    of \cref{def:ito-covariation}, $[I,I]_t=\int_0^tH_u^2\,\dd u$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+\emph{Construction.} By \cref{lem:ito-density} there are simple $H^n$ with
+$\|H^n-H\|_{\mathbb H^2}\to0$; let $I^n_t=\int_0^tH^n_u\,\dd W_u$. For simple $G$ and $G'$,
+the difference of their integrals is the integral of $G-G'$, a martingale with continuous
+paths, so \cref{lem:ito-doob} and the isometry of \cref{prop:ito-simple} give
+\begin{equation}\label{eq:ito-cauchy}
+  \E\Big[\sup_{t\le T}\Big(\int_0^tG_u\,\dd W_u-\int_0^tG'_u\,\dd W_u\Big)^2\Big]
+  \le4\,\|G-G'\|_{\mathbb H^2}^2 .
+\end{equation}
+The sequence $(H^n)$ is Cauchy in $\mathbb H^2$, so there are $n_1<n_2<\cdots$ with
+$\|H^n-H^m\|\le4^{-k}$ for $n,m\ge n_k$. By \eqref{eq:ito-cauchy} and Chebyshev's
+inequality,
+$\Prob\big(\sup_t|I^{n_{k+1}}_t-I^{n_k}_t|>2^{-k}\big)\le4\cdot16^{-k}\cdot4^{k}=4^{1-k}$,
+which is summable. By the Borel--Cantelli lemma, almost surely
+$\sup_t|I^{n_{k+1}}_t-I^{n_k}_t|\le2^{-k}$ for all large $k$, and then $I^{n_k}$ converges
+uniformly on $[0,T]$. Let $\Omega_0$ be the event where it does, and set
+$I=\lim_kI^{n_k}$ on $\Omega_0$ and $I=0$ off $\Omega_0$. Uniform limits of continuous
+functions are continuous, so $I$ has continuous paths and $I_0=0$: this is (i). Since
+$\Omega_0^c$ is a null event, it is in $\F_0$, and $I_t=\1_{\Omega_0}\limsup_kI^{n_k}_t$ is
+$\F_t$-measurable: this is (ii).
+
+\emph{The bound \eqref{eq:ito-uniform}, uniqueness.} Fix $n$. On $\Omega_0$,
+$\sup_t(I_t-I^n_t)^2=\lim_k\sup_t(I^{n_k}_t-I^n_t)^2$, so Fatou's lemma and
+\eqref{eq:ito-cauchy} give
+$\E[\sup_t(I_t-I^n_t)^2]\le4\liminf_k\|H^{n_k}-H^n\|^2=4\|H-H^n\|^2$. For a simple $G$, the
+triangle inequality in $L^2$ and \eqref{eq:ito-cauchy} give
+\[
+  \E\Big[\sup_t\Big(I_t-\int_0^tG_u\,\dd W_u\Big)^2\Big]^{1/2}
+  \le2\|H-H^n\|+2\|H^n-G\|\xrightarrow[n\to\infty]{}2\|H-G\|,
+\]
+which is \eqref{eq:ito-uniform}. If $\tilde I$ also satisfies \eqref{eq:ito-uniform}, the
+same argument gives $\E[\sup_t(I_t-\tilde I_t)^2]^{1/2}\le4\|H-H^n\|\to0$, so $I$ and $\tilde
+I$ are indistinguishable. For simple $H$, \eqref{eq:ito-cauchy} shows that the integral of
+\cref{def:ito-simple} satisfies \eqref{eq:ito-uniform}.
+
+(iii) Let $K^n$ be simple with $K^n\to K$, and $J$ the integral of $K$. The integrals of the
+simple processes $aH^n+bK^n$ are $aI^n+bJ^n$. They converge to the integral of $aH+bK$ in
+the sense of \eqref{eq:ito-uniform}, and to $aI+bJ$; the two limits are indistinguishable.
+
+(iv) By \eqref{eq:ito-uniform}, $I^n_t\to I_t$ in $L^2$ for every $t$. Conditional
+expectation does not increase the $L^2$ norm (\cref{prop:pr-projection}), so
+$I^n_s=\E[I^n_t\mid\F_s]\to\E[I_t\mid\F_s]$ in $L^2$, while $I^n_s\to I_s$. Hence
+$\E[I_t\mid\F_s]=I_s$, and $I_t$ is square integrable. Next, by the Cauchy--Schwarz
+inequality,
+\begin{gather*}
+  \E\big|(I^n_t)^2-I_t^2\big|\le\|I^n_t-I_t\|_{L^2}\,\|I^n_t+I_t\|_{L^2}\to0,\\
+  \E\Big|\int_0^t\big((H^n_u)^2-H_u^2\big)\,\dd u\Big|\le\|H^n-H\|_{\mathbb H^2}\,
+  \|H^n+H\|_{\mathbb H^2}\to0 .
+\end{gather*}
+Conditional expectation does not increase the $L^1$ norm (\cref{thm:pr-condexp-exists}), and
+$\int_0^tH_u^2\,\dd u$ is $\F_t$-measurable, so the martingale property of
+$(I^n_t)^2-\int_0^t(H^n_u)^2\,\dd u$ (\cref{prop:ito-simple}) passes to the limit. Expanding
+$(I_t-I_s)^2$ as in the proof of \cref{prop:ito-simple} gives
+\eqref{eq:ito-conditional-isometry}.
+
+(v) The martingale $I_t^2-\int_0^tH_u^2\,\dd u$ starts at $0$, so its mean is $0$. For the
+second identity, write $4IJ=(I+J)^2-(I-J)^2$, where $I\pm J$ is the integral of $H\pm K$
+by (iii), and apply the first one.
+
+(vi) Write $Q_m(X)=V_2(X;\Pi_m)$. If $M$ is a martingale with $M_0=0$ and $\E[M_t^2]<\infty$,
+its increments over disjoint intervals are orthogonal: for $a<b\le c<d$,
+$\E[(M_b-M_a)(M_d-M_c)]=\E\big[(M_b-M_a)\,\E[M_d-M_c\mid\F_c]\big]=0$. Hence
+$\E[Q_m(M)]=\E[M_t^2]$ for every partition. Apply this to $M=I-I^n$, the integral of $H-H^n$,
+and to $I^n$: with $\varepsilon_n=\|H-H^n\|$,
+$\E[Q_m(I-I^n)]\le\varepsilon_n^2$ and $\E[Q_m(I^n)]\le\|H^n\|^2$. If $a_i$ and $b_i$ denote
+the increments of $I$ and $I^n$ over the intervals of $\Pi_m$, the Cauchy--Schwarz and
+triangle inequalities in $\R^K$ give
+\[
+  \big|Q_m(I)-Q_m(I^n)\big|=\Big|\sum_i(a_i-b_i)(a_i+b_i)\Big|
+  \le Q_m(I-I^n)^{1/2}\big(Q_m(I-I^n)^{1/2}+2Q_m(I^n)^{1/2}\big),
+\]
+and taking expectations, with Cauchy--Schwarz once more,
+$\E|Q_m(I)-Q_m(I^n)|\le\varepsilon_n^2+2\varepsilon_n\|H^n\|$, for every $m$. Also
+$\E\big|\int_0^t(H^n_u)^2\,\dd u-\int_0^tH_u^2\,\dd u\big|\le\varepsilon_n\|H^n+H\|$. For
+$\delta>0$, Markov's inequality gives
+\[
+  \Prob\Big(\Big|Q_m(I)-\int_0^tH_u^2\,\dd u\Big|>3\delta\Big)\le
+  \frac{\varepsilon_n^2+2\varepsilon_n\|H^n\|+\varepsilon_n\|H^n+H\|}{\delta}
+  +\Prob\Big(\Big|Q_m(I^n)-\int_0^t(H^n_u)^2\,\dd u\Big|>\delta\Big).
+\]
+As $m\to\infty$ the last term tends to $0$ by \cref{prop:ito-simple}(iv). Then let
+$n\to\infty$.
+\end{proof}
+
+\begin{remark}[Notation]\label{rem:ito-notation}
+For $0\le s\le t\le T$ we write $\int_s^tH_u\,\dd W_u=I_t-I_s$. This is also the integral over
+$[0,T]$ of $H\1_{[s,t)}$: the identity holds for simple $H$, after adding $s$ and $t$ to the
+partition, and passes to the limit by \eqref{eq:ito-uniform}, since
+$\|H^n\1_{[s,t)}-H\1_{[s,t)}\|\le\|H^n-H\|$. In the same way the horizon does not matter: for
+$t'\le T$, the integral of $H$ restricted to $[0,t']$, constructed on the horizon $t'$, is
+indistinguishable from $(I_s)_{s\le t'}$. The \emph{differential notation}
+$\dd I_t=H_t\,\dd W_t$ is shorthand for $I_t=I_0+\int_0^tH_u\,\dd W_u$: over a short
+interval, $I$ moves by $H$, taken at the start, times the move of $W$.
+\end{remark}
+
+For integrands that are continuous in mean square, the integral is the limit of the It\^o
+sums \eqref{eq:ito-sums}, as the trading story suggests.
+
+\begin{corollary}[It\^o sums converge]\label{cor:ito-riemann}
+Let $H$ be as in \cref{lem:ito-riemann}. Along partitions $\Pi=\{t_j\}$ of $[0,T]$ with
+$\|\Pi\|\to0$,
+\[
+  \E\Big[\sup_{0\le t\le T}\Big(\sum_jH_{t_j}\big(W_{t_{j+1}\wedge t}-W_{t_j\wedge t}\big)
+  -\int_0^tH_u\,\dd W_u\Big)^2\Big]\le4\,\|H^\Pi-H\|_{\mathbb H^2}^2\longrightarrow0 .
+\]
+\end{corollary}
+
+\begin{proof}
+The sum is $\int_0^tH^\Pi_u\,\dd W_u$; apply \eqref{eq:ito-uniform} with $G=H^\Pi$, and
+\cref{lem:ito-riemann}.
+\end{proof}
+
+Some regularity is needed: $H_t=\1_{\mathbb Q}(t)$ has $\|H\|_{\mathbb H^2}=0$ and integral
+$0$, yet its It\^o sums along partitions with rational points equal $W_T$.
+
+\section{Deterministic integrands}\label{sec:ito-deterministic}
+
+When the integrand is a deterministic function of time, the integral inherits the Gaussian
+structure of $W$. Such integrals are sometimes called \emph{Wiener integrals}.
+
+\begin{proposition}[Deterministic integrands]\label{prop:ito-deterministic}
+Let $h:[0,T]\to\R$ be Borel measurable with $\int_0^Th(u)^2\,\dd u<\infty$, and
+$I_t=\int_0^th(u)\,\dd W_u$.
+\begin{enumerate}[label=(\roman*)]
+  \item For $0\le s<t\le T$, the increment $I_t-I_s$ is independent of $\F_s$ and has law
+    $\mathcal N\big(0,\int_s^th(u)^2\,\dd u\big)$. In particular, $I$ has independent
+    increments.
+  \item For $0\le t_1<\dots<t_m\le T$, the vector $(I_{t_1},\dots,I_{t_m})$ is centred
+    Gaussian, with $\Cov(I_s,I_t)=\int_0^{s\wedge t}h(u)^2\,\dd u$.
+  \item $[I,I]_t=\int_0^th(u)^2\,\dd u=\Var(I_t)$: the quadratic variation is deterministic and
+    equal to the variance.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+As a process, $h$ does not depend on $\omega$, so it is progressively measurable, and it is
+in $\mathbb H^2$.
+
+\emph{Step functions.} By \cref{lem:ito-density} there are simple $K^n$ with $K^n\to h$ in
+$\mathbb H^2$. Then $h^n(t)=\E[K^n_t]$ is a deterministic step function, and by Jensen's
+inequality $\int_0^T(h^n-h)^2\,\dd t\le\|K^n-h\|_{\mathbb H^2}^2\to0$. Let
+$I^n=\int h^n\,\dd W$. Fix $s<t$, refine the partition of $h^n$ to contain $s$ and $t$, and
+write $I^n_t-I^n_s=\sum_{j=1}^kc_jD_j$, with $D_j=W_{u_j}-W_{u_{j-1}}$ for
+$s=u_0<u_1<\dots<u_k=t$. Let $A\in\F_s$ and $\theta\in\R$. Conditioning on $\F_{u_{k-1}}$, of
+which $\1_A$ and $D_1,\dots,D_{k-1}$ are measurable while $D_k$ is independent of it, gives
+$\E\big[\1_Ae^{i\theta\sum_{j\le k}c_jD_j}\big]=\E\big[\1_Ae^{i\theta\sum_{j<k}c_jD_j}\big]\,
+e^{-\theta^2c_k^2(u_k-u_{k-1})/2}$, and repeating,
+\begin{equation}\label{eq:ito-wiener-cf}
+  \E\big[\1_Ae^{i\theta(I^n_t-I^n_s)}\big]=\Prob(A)\,e^{-\theta^2v_n/2},\qquad
+  v_n=\int_s^th^n(u)^2\,\dd u .
+\end{equation}
+
+\emph{The limit.} By \eqref{eq:ito-uniform}, $I^n_t-I^n_s\to I_t-I_s$ in $L^2$, and since
+$|e^{ix}-e^{iy}|\le|x-y|$ the left side of \eqref{eq:ito-wiener-cf} converges to
+$\E[\1_Ae^{i\theta(I_t-I_s)}]$; on the right, $v_n\to v=\int_s^th^2\,\dd u$. With $A=\Omega$,
+this shows that $I_t-I_s$ has the characteristic function of $\mathcal N(0,v)$. For $A$ with
+$\Prob(A)>0$, it shows that $I_t-I_s$ has the same characteristic function, hence the same
+law, under $\Prob(\,\cdot\mid A)$ as under $\Prob$: $I_t-I_s$ is independent of $\F_s$.
+Given $0=t_0<t_1<\dots<t_m$, each increment $I_{t_k}-I_{t_{k-1}}$ is independent of
+$\F_{t_{k-1}}$, which contains the earlier increments, so the increments are independent.
+This proves (i). Independent Gaussian variables form a Gaussian vector, and
+$(I_{t_1},\dots,I_{t_m})$ is a linear transformation of the vector of increments, hence
+centred Gaussian. For $s\le t$, by (i), $\Cov(I_s,I_t)=\Var(I_s)+\Cov(I_s,I_t-I_s)=\int_0^sh^2\,\dd u$.
+This proves (ii), and (iii) is \cref{thm:ito-integral}(vi) with (i) for $s=0$.
+\end{proof}
+
+In the Bachelier model with zero interest rate and volatility $\sigma(t)$, the price under the
+pricing measure is $S_T=S_0+\int_0^T\sigma(u)\,\dd W_u$, normal with variance
+$\int_0^T\sigma(u)^2\,\dd u$: European prices depend on $\sigma(\cdot)$ only through this total
+variance. Vasicek's short-rate model is built from integrals $\int_0^te^{-a(t-u)}\,\dd W_u$
+(\cref{ch:09-sde}). A random integrand need not give a Gaussian integral
+(\cref{prop:ito-wdw}), although it may (\exref{ex:ito-sign}).
+
+\section{The integral of \texorpdfstring{$W$}{W} against itself}\label{sec:ito-wdw}
+
+For a continuously differentiable $g$ with $g(0)=0$, ordinary calculus gives
+$\int_0^Tg(t)\,\dd g(t)=\int_0^Tg(t)g'(t)\,\dd t=\frac12g(T)^2$. For Brownian motion the answer
+depends on where the integrand is evaluated, and the It\^o integral picks up a correction.
+
+\begin{proposition}[$\int_0^TW\,\dd W$]\label{prop:ito-wdw}
+\leavevmode
+\begin{enumerate}[label=(\roman*)]
+  \item $W\in\mathbb H^2$ and, almost surely,
+    $\displaystyle\int_0^tW_s\,\dd W_s=\frac12\big(W_t^2-t\big)$ for every $t\in[0,T]$.
+  \item Let $\lambda\in[0,1]$. For a partition $\Pi=\{t_j\}$ of $[0,T]$, let
+    $S_\lambda(\Pi)=\sum_j\big((1-\lambda)W_{t_j}+\lambda W_{t_{j+1}}\big)\big(W_{t_{j+1}}-W_{t_j}\big)$.
+    Then, for every partition,
+    \begin{equation}\label{eq:ito-lambda}
+      S_\lambda(\Pi)=\frac12W_T^2+\Big(\lambda-\frac12\Big)V_2(W;\Pi),
+    \end{equation}
+    and as $\|\Pi\|\to0$, $S_\lambda(\Pi)\to\frac12W_T^2+(\lambda-\frac12)T$ in $L^2$, with
+    $\E\big[\big(S_\lambda(\Pi)-\frac12W_T^2-(\lambda-\frac12)T\big)^2\big]
+    =2(\lambda-\frac12)^2\sum_j(t_{j+1}-t_j)^2$.
+  \item The midpoint sums
+    $M(\Pi)=\sum_jW_{(t_j+t_{j+1})/2}\big(W_{t_{j+1}}-W_{t_j}\big)$ converge in $L^2$ to
+    $\frac12W_T^2$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(ii) For real numbers $a$ and $b$,
+$\big((1-\lambda)a+\lambda b\big)(b-a)=\frac12(b^2-a^2)+(\lambda-\frac12)(b-a)^2$. Summing over
+the intervals of $\Pi$, the first terms telescope to $\frac12(W_T^2-W_0^2)=\frac12W_T^2$, which
+gives \eqref{eq:ito-lambda}. The error is $(\lambda-\frac12)(V_2(W;\Pi)-T)$, and
+\eqref{eq:bm-qv-l2} computes its second moment.
+
+(i) $W\in\mathbb H^2$ by \cref{lem:ito-riemann}. Fix $t\in(0,T]$ and apply (ii) on $[0,t]$:
+along partitions of $[0,t]$, the left-point sums $S_0$ converge in $L^2$ to
+$\frac12(W_t^2-t)$. Extend each partition of $[0,t]$ to one of $[0,T]$ by points of $[t,T]$
+with gaps at most its mesh; at time $t$ the same sums are the It\^o sums of
+\cref{cor:ito-riemann}, which converge in $L^2$ to $\int_0^tW_s\,\dd W_s$. Hence $\int_0^tW_s\,\dd W_s=\frac12(W_t^2-t)$ almost surely, for each $t$. Both sides
+are continuous in $t$, so they are indistinguishable.
+
+(iii) Let $m_j=(t_j+t_{j+1})/2$, $A_j=W_{m_j}-W_{t_j}$ and $B_j=W_{t_{j+1}}-W_{m_j}$, so that
+$W_{m_j}(W_{t_{j+1}}-W_{t_j})=W_{t_j}(W_{t_{j+1}}-W_{t_j})+A_j^2+A_jB_j$ and
+$M(\Pi)=S_0(\Pi)+\sum_jA_j^2+\sum_jA_jB_j$. The variables $A_j,B_j$ are independent
+$\mathcal N(0,h_j/2)$, with $h_j=t_{j+1}-t_j$. The sum $\sum_jA_j^2$ has mean $T/2$ and
+variance $\sum_j2(h_j/2)^2$, and the terms $A_jB_j$ are orthogonal with mean $0$ and variance
+$h_j^2/4$, so in $L^2$, $\sum_jA_j^2\to T/2$ and $\sum_jA_jB_j\to0$. With (ii) for $\lambda=0$,
+$M(\Pi)\to\frac12W_T^2-\frac T2+\frac T2=\frac12W_T^2$.
+\end{proof}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch07-riemann-sums}
+  \caption{Riemann sums for $\int_0^1W\,\dd W$ on uniform partitions with $n$ intervals.
+    Left: one path; the left-point, midpoint and right-point sums settle at
+    $\frac12(W_1^2-1)$, $\frac12W_1^2$ and $\frac12(W_1^2+1)$ (\cref{prop:ito-wdw}). Right: the
+    root-mean-square errors of the left-point and midpoint sums over 2000 paths, against the
+    exact values $1/\sqrt{2n}$ and $1/(2\sqrt n)$ from the proof. Computed with
+    \coderef{code/src/ieor222/itointegral.py}.}
+  \label{fig:ito-riemann}
+\end{figure}
+
+Three limits from the same path (\cref{fig:ito-riemann}). The It\^o integral ($\lambda=0$),
+$\frac12(W_T^2-T)$, is a martingale with mean $0$, in line with \cref{thm:bm-martingales}. It
+is the gain of the strategy that holds $W_t$ units of an asset with price $W_t$, and it is not
+Gaussian: it is bounded below by $-T/2$. The right-point limit $\frac12(W_T^2+T)$ has mean
+$T>0$: it is the gain of a trader who knows the price at the end of each period, the
+clairvoyance that \cref{thm:mg-transform} excludes. The trapezoid sums equal $\frac12W_T^2$
+exactly, and the midpoint sums have the same limit, the answer of ordinary calculus: the
+\emph{Stratonovich integral} $\int_0^TW\circ\dd W$, with mean $T/2$, not a martingale. The left point
+is the one that matches trading, and the one used throughout these notes.
+
+The gap between the right-point and left-point limits is $[W,W]_T=T$, as for the random walk
+in \cref{rem:mg-ito}. Rearranged, (i) reads $W_T^2=2\int_0^TW_t\,\dd W_t+[W,W]_T$, while for a
+continuously differentiable $g$ with $g(0)=0$, $g(T)^2=2\int_0^Tg\,\dd g$ because $[g,g]_T=0$
+(\cref{lem:bm-smooth}). The extra term is the first instance of It\^o's formula
+(\cref{ch:08-ito-formula}).
+
+\demo{07-ito-integral.ipynb}{left-point, midpoint and right-point sums for $\int W\,\dd W$,
+for any evaluation point $\lambda$, on one path and on average; only the left point gives a
+martingale.}
+
+\section{Quadratic variation and covariation}\label{sec:ito-qv}
+
+\Cref{thm:bm-qv} computed the quadratic variation of $W$, and \cref{thm:ito-integral} that of
+an It\^o integral. We now fix the general definition, which also covers pairs of processes.
+
+\begin{definition}[Quadratic variation and covariation]\label{def:ito-covariation}
+Let $X$ and $Y$ be processes with continuous paths and $t>0$. For a partition
+$\Pi=\{0=s_0<\dots<s_K=t\}$ of $[0,t]$, let
+\[
+  C(X,Y;\Pi)=\sum_{i=0}^{K-1}\big(X_{s_{i+1}}-X_{s_i}\big)\big(Y_{s_{i+1}}-Y_{s_i}\big).
+\]
+If $C(X,Y;\Pi_m)$ converges in probability for every sequence of partitions $\Pi_m$ of
+$[0,t]$ with $\|\Pi_m\|\to0$, the limit is the \emph{covariation} $[X,Y]_t$ of $X$ and $Y$ on
+$[0,t]$. (It does not depend on the sequence: two sequences can be merged into one by
+alternating between them.) The \emph{quadratic variation} is $[X,X]_t$, the limit of
+$C(X,X;\Pi_m)=V_2(X;\Pi_m)$. We set $[X,Y]_0=0$.
+\end{definition}
+
+By \cref{thm:bm-qv}, $[W,W]_t=t$, and by \cref{thm:ito-integral}(vi),
+$[I,I]_t=\int_0^tH_u^2\,\dd u$ for $I=\int H\,\dd W$ with $H\in\mathbb H^2$. The sums
+$C(X,Y;\Pi)$ are symmetric and bilinear in $(X,Y)$, and limits in probability are linear, so
+the covariation is symmetric and bilinear wherever it exists. In particular, polarization
+gives
+\[
+  [X,Y]_t=\tfrac14\big([X+Y,X+Y]_t-[X-Y,X-Y]_t\big)
+\]
+whenever the two quadratic variations on the right exist.
+
+\begin{lemma}[Finite variation]\label{lem:ito-fv}
+Let $A$ be a process with continuous paths of finite total variation on $[0,t]$ (for
+instance $A_s=\int_0^s\Theta_u\,\dd u$ with $\int_0^t|\Theta_u|\,\dd u<\infty$), and $X$ a
+process with continuous paths. Then $[X,A]_t=0$, with almost sure convergence; in particular
+$[A,A]_t=0$. Consequently, if $[X,X]_t$ exists, then $[X+A,X+A]_t=[X,X]_t$.
+\end{lemma}
+
+\begin{proof}
+For every outcome,
+$|C(X,A;\Pi)|\le\max_i|X_{s_{i+1}}-X_{s_i}|\sum_i|A_{s_{i+1}}-A_{s_i}|$. The sum is at most the
+total variation of the path of $A$ (at most $\int_0^t|\Theta_u|\,\dd u$ in the example), and the
+maximum tends to $0$ with $\|\Pi\|$ by uniform continuity. The last claim follows from
+$V_2(X+A;\Pi)=V_2(X;\Pi)+2C(X,A;\Pi)+V_2(A;\Pi)$.
+\end{proof}
+
+With $X=W$ and $A_s=s$, this gives the rules $\dd W\,\dd t=\dd t\,\dd t=0$ of \cref{sec:bm-qv}.
+
+\begin{proposition}[Covariations of It\^o integrals]\label{prop:ito-covariation}
+\leavevmode
+\begin{enumerate}[label=(\roman*)]
+  \item If $H,K\in\mathbb H^2$, $I=\int H\,\dd W$ and $J=\int K\,\dd W$, then
+    $[I,J]_t=\int_0^tH_uK_u\,\dd u$ for $t\in[0,T]$.
+  \item If $W$ and $B$ are independent Brownian motions, then $[W,B]_t=0$ for every $t$, and
+    $\E\big[C(W,B;\Pi)^2\big]=\sum_i(s_{i+1}-s_i)^2\le t\|\Pi\|$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) By linearity, $I\pm J=\int(H\pm K)\,\dd W$, whose quadratic variations are
+$\int_0^t(H\pm K)^2\,\dd u$ by \cref{thm:ito-integral}(vi). Polarize:
+$\frac14\big((H+K)^2-(H-K)^2\big)=HK$.
+
+(ii) The increments $(W_{s_{i+1}}-W_{s_i})_i$ are independent of each other and of the
+increments $(B_{s_{i+1}}-B_{s_i})_i$ (\cref{rem:bm-independence}), so the products
+$(W_{s_{i+1}}-W_{s_i})(B_{s_{i+1}}-B_{s_i})$ are independent, with mean $0$ and variance
+$(s_{i+1}-s_i)^2$. The variance of their sum is the sum of the variances.
+\end{proof}
+
+In differential notation, $\dd I_t\,\dd J_t=H_tK_t\,\dd t$ and $\dd W_t\,\dd B_t=0$.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch07-qv}
+  \caption{Left: a path of $W$ and of $I_t=\int_0^tW_s\,\dd W_s=\frac12(W_t^2-t)$. Right:
+    for three paths, the quadratic variation $[I,I]_t=\int_0^tW_s^2\,\dd s$ (lines), its
+    estimate from $1000$ increments (dots), and the variance $\E[I_t^2]=t^2/2$ (dashed): the
+    mean of $[I,I]_t$, not the quadratic variation of a path.}
+  \label{fig:ito-qv}
+\end{figure}
+
+\paragraph{Quadratic variation is not variance.} The isometry says
+$\E[I_t^2]=\E\big[[I,I]_t\big]$. For a deterministic integrand the two coincide
+(\cref{prop:ito-deterministic}); for $H=W$, $[I,I]_t=\int_0^tW_s^2\,\dd s$ varies from path to
+path around its mean $t^2/2$ (\cref{fig:ito-qv}, \exref{ex:ito-isometry}). The quadratic
+variation can be estimated from a single price history (the realized variance of variance
+swaps, \cref{ch:15-volatility}); the variance is a property of the law.
+
+\demo{07-ito-integral.ipynb}{the It\^o isometry checked by simulation for several integrands,
+with the histograms of $\int_0^TH\,\dd W$ (Gaussian or not); and the realized quadratic
+variation of one integral path converging to $\int_0^tH_s^2\,\dd s$ as the grid is refined.}
+
+\section{Stopping and localization}\label{sec:ito-local}
+
+A \emph{stopping time} is a random time $\tau$ with values in $[0,T]$ such that
+$\{\tau\le t\}\in\F_t$ for every $t$. The process $\1_{[0,\tau]}(s)=\1_{\{s\le\tau\}}$ is adapted
+with left-continuous paths, so $H\1_{[0,\tau]}\in\mathbb H^2$ whenever $H\in\mathbb H^2$.
+
+\begin{proposition}[Stopped integrals]\label{prop:ito-stopping}
+Let $H\in\mathbb H^2$, $I=\int H\,\dd W$, and $\tau$ a stopping time. Almost surely,
+$\int_0^uH_s\1_{[0,\tau]}(s)\,\dd W_s=I_{u\wedge\tau}$ for every $u\in[0,T]$.
+\end{proposition}
+
+\begin{proof}
+Both sides are continuous in $u$, so it suffices to prove the identity almost surely for each
+$u$. For $H,H'\in\mathbb H^2$, $\int H\,\dd W-\int H'\,\dd W=\int(H-H')\,\dd W$ is a continuous
+martingale, so by \cref{lem:ito-doob} and the isometry,
+$\E\big[\sup_u\big(\int_0^uH\,\dd W-\int_0^uH'\,\dd W\big)^2\big]\le4\|H-H'\|^2$; we use this
+bound twice. \emph{Simple $H$, $\tau$ with finitely many values.} Add the values of $\tau$ to the
+partition of $H$. Then $\1_{[0,\tau]}$ and $\1_{[0,\tau)}$ differ only at $s=\tau$, and for
+$s\in[t_j,t_{j+1})$, $s<\tau$ if and only if $\tau>t_j$. So $H\1_{[0,\tau)}$ is simple, with
+$\F_{t_j}$-measurable values $\xi_j\1_{\{\tau>t_j\}}$, and its integral at time $u$ is
+$\sum_{j:\,t_j<\tau}\xi_j(W_{t_{j+1}\wedge u}-W_{t_j\wedge u})=I_{u\wedge\tau}$, since $t_j<\tau$
+implies $t_{j+1}\le\tau$. \emph{General $H$.} For simple $H^n\to H$,
+$\|H^n\1_{[0,\tau]}-H\1_{[0,\tau]}\|\le\|H^n-H\|$ and
+$\sup_u|I^n_{u\wedge\tau}-I_{u\wedge\tau}|\le\sup_u|I^n_u-I_u|$, so both sides of the identity
+for $H^n$ converge in $L^2$ to those for $H$. \emph{General $\tau$.} Let $\tau_n$ be the smallest
+point of $\{kT2^{-n}:0\le k\le2^n\}$ that is at least $\tau$. Then $\{\tau_n\le t\}=\{\tau\le
+d\}\in\F_t$, with $d$ the largest grid point not after $t$, so $\tau_n$ is a stopping time with
+finitely many values, and $\tau_n\downarrow\tau$. By dominated convergence,
+$\|H\1_{[0,\tau_n]}-H\1_{[0,\tau]}\|^2=\E\int_0^TH_s^2\1_{\{\tau<s\le\tau_n\}}\,\dd s\to0$, so the
+left sides for $\tau_n$ converge in $L^2$ to that for $\tau$, while
+$I_{u\wedge\tau_n}\to I_{u\wedge\tau}$ by continuity of the paths. Limits in $L^2$ and almost
+sure limits agree almost surely (along a subsequence), which concludes.
+\end{proof}
+
+\begin{remark}[Integrands in $\mathbb H^2_{\mathrm{loc}}$ and local martingales]\label{rem:ito-local}
+The condition $\E\int_0^TH_t^2\,\dd t<\infty$ is not always available; $e^{W_t^2}$ fails it
+for $T>\frac14$ (\cref{sec:ito-h2}). The integral extends to every $H\in\mathbb
+H^2_{\mathrm{loc}}$ by \emph{localization}. Since $t\mapsto\int_0^tH_s^2\,\dd s$ is continuous,
+nondecreasing and adapted, the times $\tau_n=\inf\{t:\int_0^tH_s^2\,\dd s\ge n\}$
+($\inf\emptyset=T$) are stopping times; they increase with $n$, and almost surely $\tau_n=T$ for
+all large $n$. The process $H\1_{[0,\tau_n]}$ is in $\mathbb H^2$, with norm at most $\sqrt n$;
+let $I^{(n)}$ be its integral. By \cref{prop:ito-stopping}, applied to $H\1_{[0,\tau_{n+1}]}$ and
+$\tau_n$, $I^{(n+1)}_{t\wedge\tau_n}=I^{(n)}_t$. Hence $I_t=I^{(n)}_t$ on $\{t\le\tau_n\}$ defines a
+continuous adapted process with $I_{t\wedge\tau_n}=I^{(n)}_t$: the It\^o integral of $H$ (for
+$H\in\mathbb H^2$, the old one, by \cref{prop:ito-stopping}). It is linear in $H$, and
+$[I,I]_t=\int_0^tH_s^2\,\dd s$ still holds, because $I=I^{(n)}$ on the event $\{\tau_n=T\}$,
+whose probability tends to one. It is a \emph{local martingale}: each stopped process
+$(I_{t\wedge\tau_n})_{t\le T}$ is a martingale. But $I$ itself need not be a martingale, and the
+isometry need not hold (\cref{exa:ito-doubling}). A sufficient condition for an integral to be a
+martingale is that its integrand be in $\mathbb H^2$ (more in \textcite{karatzas-shreve},
+Section~3.2.D).
+\end{remark}
+
+\begin{example}[A doubling strategy in continuous time]\label{exa:ito-doubling}
+Take $T=1$ and $u_k=1-1/k$. By \cref{prop:ito-deterministic} on each $[0,u_k]$, glued along
+$k$ (\cref{rem:ito-notation}), $X_u=\int_0^u(1-s)^{-1/2}\,\dd W_s$, $0\le u<1$, is a centred
+Gaussian process with continuous paths, independent increments and
+$\Var(X_u)=\int_0^u\frac{\dd s}{1-s}=-\log(1-u)$. In the clock $v=-\log(1-u)$, the process
+$B_v=X_{1-e^{-v}}$, $v\ge0$, has continuous paths and $\Cov(B_v,B_w)=\min(v,w)$: it is a
+Brownian motion (\cref{prop:bm-gaussian}). Brownian motion reaches every level almost surely
+(let $a\to-\infty$ in \exref{ex:bm-exit}(b)), so the stopping time $\tau=\inf\{u\in[0,1):X_u=1\}$
+is less than $1$ almost surely (set $\tau=1$ on the null event where $X$ never reaches $1$). Let
+$H_s=(1-s)^{-1/2}\1_{\{s\le\tau\}}\1_{\{\tau<1\}}$, progressively measurable because
+$\{\tau<1\}$ has probability one and so belongs to $\F_0$. Then $\int_0^1H_s^2\,\dd
+s=-\log(1-\tau)<\infty$ almost surely, so $H\in\mathbb H^2_{\mathrm{loc}}[0,1]$. By
+\cref{prop:ito-stopping} on each $[0,u_k]$, its gains process is $I_u=X_{u\wedge\tau}$ for
+$u<1$, and since $H$ vanishes after $\tau<1$, $I_1=X_\tau=1$.
+
+Starting with no capital, this strategy ends with one dollar for sure: an arbitrage. Its gains
+process is a local martingale but not a martingale ($\E[I_1]=1$), and $H\notin\mathbb H^2$:
+$\int_0^1H_s^2\,\dd s$ is the time $B$ needs to reach $1$, of infinite mean
+(\exref{ex:ito-stopping}). As for the doubling strategy of \cref{exa:mg-doubling}, the catch is
+unlimited credit: for every $a<0$, the gains reach $a$ before $1$ with probability $1/(1-a)$
+(\exref{ex:bm-exit}(b) for $B$ on $(a,1)$). Continuous-time models exclude such strategies by
+restricting the admissible ones, for instance to those whose wealth is bounded below
+(\textcite{harrison-pliska}; \textcite{karatzas-shreve}, Section~5.8, where such strategies are
+called \emph{tame}).
+\end{example}
+
+\furtherreading
+\textcite{shreve2}, Sections~4.2 and~4.3, follows the same order, with integrands written
+$\Delta$. \textcite{oksendal}, Chapter~3, and \textcite{steele}, Chapters~6 and~7, give more
+detail, including Stratonovich integrals and localization; \textcite{karatzas-shreve},
+Chapter~3, and \textcite{revuz-yor}, Chapter~IV, integrate against continuous martingales.

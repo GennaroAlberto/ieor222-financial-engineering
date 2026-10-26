@@ -1,5 +1,653 @@
-\begin{planned}
-  \item chooser, forward-start and power options
-  \item Asian options: change of num\'eraire and Ve\v{c}e\v{r}'s one-dimensional PDE
-  \item barrier options: the reflection principle, the joint law of the maximum and the endpoint, in--out parity
-\end{planned}
+% Chapter 13: Exotic options.
+
+A call or a put pays a function of the price of the stock at maturity. Many contracts pay a
+function of the whole path instead: a \emph{barrier option} is cancelled, or activated, when
+the price crosses a level; a \emph{lookback option} pays the best price reached; an
+\emph{Asian option} pays an average. Such contracts are called \emph{exotic}, by contrast
+with the \emph{vanilla} calls and puts. Risk-neutral pricing covers them without change
+(\cref{thm:rn-pricing}); what changes is the computation. Barriers and lookbacks need the joint law of a Brownian motion with drift
+and its running maximum, which the \emph{reflection principle} gives in closed form. Asian
+options have no closed form, but their prices, if smooth, solve a partial differential equation
+with one more state variable, which a change of numeraire reduces to a single space dimension. The
+chapter ends with an American option whose price is explicit, the perpetual put.
+
+\section{Path-dependent claims}\label{sec:exo-setting}
+
+We work in the Black--Scholes setting of \cref{sec:bs-pricing}: under $\Q$, $\widetilde W$ is a
+Brownian motion with filtration $(\F_t)_{t\ge0}$, $r\in\R$, $\sigma>0$, and
+\begin{equation}\label{eq:exo-X}
+  S_t=S_0\exp\Big(\sigma\widetilde W_t+\Big(r-\frac{\sigma^2}2\Big)t\Big)=S_0e^{\sigma X_t},\qquad
+  X_t=\widetilde W_t+\nu t,\quad \nu=\frac r\sigma-\frac\sigma2 .
+\end{equation}
+So $\frac1\sigma\log(S_t/S_0)$ is a Brownian motion with drift $\nu$. The running maximum and
+minimum are written $\overline S_t=\max_{u\le t}S_u=S_0e^{\sigma\overline X_t}$ and
+$\underline S_t=\min_{u\le t}S_u=S_0e^{\sigma\underline X_t}$, with $\overline X_t$, $\underline X_t$
+the maximum and minimum of $X$ on $[0,t]$. A \emph{claim} with maturity $T$ is an
+$\F_T$-measurable random variable $V_T$, which may depend on the whole path $(S_u)_{u\le T}$.
+As in \cref{ch:06-black-scholes-formula}, its price at time $t\le T$ is defined as
+\begin{equation}\label{eq:exo-price}
+  V_t=e^{-r(T-t)}\,\EQ\big[V_T\,\big|\,\F_t\big],
+\end{equation}
+for $V_T\ge0$ or $\EQ|V_T|<\infty$. This is the replication cost of the claim when it can be
+replicated (\cref{thm:rn-pricing}), and if $(\F_t)$ is the augmented filtration of the Brownian
+motion, every claim with $\EQ|V_T|<\infty$ can be (\cref{thm:rn-ftap}).
+
+Conditioning on $\F_t$ uses one fact again and again: the Brownian motion starts afresh after $t$,
+independently of $\F_t$. \Cref{prop:bm-invariance}(c) says so for the filtration of $W$ only.
+
+\begin{lemma}[Restarting at a fixed time]\label{lem:exo-restart}
+Let $T\in(0,\infty]$, let $W$ be a Brownian motion on $[0,T]$ (on $[0,\infty)$ if $T=\infty$)
+with a filtration $(\F_t)_{t\le T}$, and let $0\le s<T$. Then $W'_u=W_{s+u}-W_s$,
+$0\le u\le T-s$, is a Brownian motion independent of $\F_s$, and $(\F_{s+u})_u$ is a
+filtration for it.
+\end{lemma}
+
+\begin{proof}
+$W'$ is a Brownian motion (\cref{prop:bm-invariance}(c)), and $(\F_{s+u})$ is a filtration for it by
+\cref{def:bm-filtration}. Let
+$0=u_0<u_1<\dots<u_k\le T-s$, $D_j=W'_{u_j}-W'_{u_{j-1}}$, $A\in\F_s$ and $E_1,\dots,E_k$ Borel
+sets. The event $A\cap\bigcap_{j<k}\{D_j\in E_j\}$ is in $\F_{s+u_{k-1}}$, of which $D_k$ is
+independent, so
+$\Prob\big(A\cap\bigcap_{j\le k}\{D_j\in E_j\}\big)=\Prob\big(A\cap\bigcap_{j<k}\{D_j\in E_j\}\big)\Prob(D_k\in E_k)$,
+and by induction this is $\Prob(A)\prod_j\Prob(D_j\in E_j)=\Prob(A)\,\Prob(D\in E_1\times\dots\times E_k)$
+for $D=(D_1,\dots,D_k)$ (take $A=\Omega$). Rectangles form a
+$\pi$-system that generates the Borel sets of $\R^k$, so by Dynkin's $\pi$--$\lambda$ theorem
+$\Prob(A\cap\{D\in E\})=\Prob(A)\Prob(D\in E)$ for every Borel $E$: $D$ is independent of $\F_s$.
+Every vector $(W'_{t_1},\dots,W'_{t_m})$ is a linear function of such a $D$, which proves the
+independence in the sense of \cref{rem:bm-independence}.
+\end{proof}
+
+\begin{remark}[Claims on finitely many dates]\label{rem:exo-dates}
+Payoffs $g(S_{t_1},\dots,S_{t_n})$ are priced date by date with the independence lemma
+(\cref{lem:pr-independence}), as in \cref{thm:bin-multi-period}: power claims, forward-start calls
+and chooser options reduce in this way to the Black--Scholes formula (\exref{ex:bs-power},
+\exref{ex:bs-forward-start}, \exref{ex:bs-chooser}).
+\end{remark}
+
+\section{The reflection principle}\label{sec:exo-reflection}
+
+Let $W$ be a Brownian motion with filtration $(\F_t)$ under a probability $\Prob$, let
+$M_t=\max_{u\le t}W_u$, and for $m>0$ let $\tau_m=\inf\{t\ge0:W_t=m\}$, with
+$\inf\emptyset=\infty$. A \emph{stopping time} is a random time $\tau$ with values in
+$[0,\infty]$ such that $\{\tau\le t\}\in\F_t$ for every $t\ge0$. By continuity and the
+intermediate value theorem, $\{\tau_m\le t\}=\{M_t\ge m\}$, and $M_t$ is $\F_t$-measurable
+(it is a supremum over the rational times of $[0,t]$ and $t$), so $\tau_m$ is a stopping time.
+
+After $\tau_m$ the path is as likely to go down as up, so flipping it after $\tau_m$ gives another
+Brownian path, and a path that ends at $w<m$ after touching $m$ is matched with one that ends at
+$2m-w$ (\cref{fig:exo-reflection}). Since $\tau_m$ is random, we approximate it by stopping times
+with finitely many values, at each of which the restart lemma applies.
+
+\begin{theorem}[Reflection principle]\label{thm:exo-reflection}
+Let $T>0$ and $m>0$.
+\begin{enumerate}[label=(\roman*)]
+  \item For every stopping time $\tau$, the process $W^*_t=2W_{t\wedge\tau}-W_t$, which
+    equals $W$ up to $\tau$ and is reflected about $W_\tau$ afterwards, is a Brownian motion.
+  \item For every Borel $h:\R\to[0,\infty)$ with $h=0$ on $(m,\infty)$,
+    \begin{equation}\label{eq:exo-reflection}
+      \E\big[h(W_T)\1_{\{M_T\ge m\}}\big]=\E\big[h(2m-W_T)\big].
+    \end{equation}
+    In particular $\Prob(M_T\ge m,\,W_T\le w)=\Prob(W_T\ge2m-w)=N\big((w-2m)/\sqrt T\big)$ for
+    $w\le m$; $\Prob(M_T\ge m)=2\Prob(W_T\ge m)$, so that $M_T$ has the law of $|W_T|$; and
+    $(M_T,W_T)$ has the density
+    \[
+      f_T(a,w)=\frac{2(2a-w)}{T\sqrt{2\pi T}}\exp\Big(-\frac{(2a-w)^2}{2T}\Big),\qquad a>0,\ w<a .
+    \]
+  \item Let $\nu\in\R$, $X_t=W_t+\nu t$, and let $\overline X_T$, $\underline X_T$ be the maximum
+    and minimum of $X$ on $[0,T]$. For $h$ as in (ii),
+    \begin{equation}\label{eq:exo-reflection-drift}
+      \E\big[h(X_T)\1_{\{\overline X_T\ge m\}}\big]=e^{2\nu m}\,\E\big[h(2m-W_T+\nu T)\big],
+    \end{equation}
+    and for $a<0$ and Borel $h\ge0$ with $h=0$ on $(-\infty,a)$,
+    $\E\big[h(X_T)\1_{\{\underline X_T\le a\}}\big]=e^{2\nu a}\,\E\big[h(2a-W_T+\nu T)\big]$. In
+    particular, for $w\le m$,
+    \begin{gather*}
+      \Prob(\overline X_T\ge m,\,X_T\le w)=e^{2\nu m}N\Big(\frac{w-2m-\nu T}{\sqrt T}\Big),\\
+      \Prob(\overline X_T\ge m)=N\Big(\frac{\nu T-m}{\sqrt T}\Big)+e^{2\nu m}N\Big(\frac{-m-\nu T}{\sqrt T}\Big),
+    \end{gather*}
+    and $(\overline X_T,X_T)$ has the density $e^{\nu w-\nu^2T/2}f_T(a,w)$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+(i) \emph{Finitely many values.} Suppose first that $\tau$ takes values in a finite set
+$\{s_1,\dots,s_K\}\subset[0,\infty)$ and possibly $\infty$. On $\{\tau=\infty\}$, $W^*=W$. Fix
+$0\le u_1<\dots<u_p$ and a bounded Borel $f:\R^p\to\R$. On $\{\tau=s_k\}$ we have
+$W^*_{u_i}=\xi_i-\eta_i$ and $W_{u_i}=\xi_i+\eta_i$, with $\xi_i=W_{u_i\wedge s_k}$ and
+$\eta_i=W_{u_i\vee s_k}-W_{s_k}$. The pair $(\1_{\{\tau=s_k\}},\xi)$ is $\F_{s_k}$-measurable,
+since $\{\tau=s_k\}=\{\tau\le s_k\}\setminus\{\tau\le s_{k-1}\}$; the vector $\eta$ is a function
+of the restarted motion $W_{s_k+\cdot}-W_{s_k}$, hence independent of $\F_{s_k}$
+(\cref{lem:exo-restart}), and it is centred Gaussian, so $-\eta$ has the same law. The law of
+$(\1_{\{\tau=s_k\}},\xi,\eta)$ is the product of the laws of its two independent parts, so it
+equals that of $(\1_{\{\tau=s_k\}},\xi,-\eta)$, and
+$\E[\1_{\{\tau=s_k\}}f(\xi-\eta)]=\E[\1_{\{\tau=s_k\}}f(\xi+\eta)]$. Summing over $k$ and adding
+$\{\tau=\infty\}$ gives $\E[f(W^*_{u_1},\dots,W^*_{u_p})]=\E[f(W_{u_1},\dots,W_{u_p})]$. So $W^*$
+has the finite-dimensional laws of a Brownian motion; it has continuous paths and starts at
+$0$, so it is one (\cref{def:bm}).
+
+\emph{General $\tau$.} Let $\tau^n$ be the smallest point of $2^{-n}\N$ that is at least
+$\tau$ if $\tau\le n$, and $\tau^n=\infty$ if $\tau>n$. For a grid point $s=k2^{-n}\le n$,
+$\{\tau^n\le s\}=\{\tau\le s\}\in\F_s$, so the $\tau^n$ are stopping times with finitely many
+values, and $\tau^n\to\tau$ for every $\omega$. By the first step,
+$W^{*,n}_t=2W_{t\wedge\tau^n}-W_t$ is a Brownian motion, and $W^{*,n}_t\to W^*_t$ for every $t$
+and $\omega$ by continuity of the paths. For bounded continuous $f$, dominated convergence
+gives $\E[f(W^*_{u_1},\dots,W^*_{u_p})]=\lim_n\E[f(W^{*,n}_{u_1},\dots,W^{*,n}_{u_p})]
+=\E[f(W_{u_1},\dots,W_{u_p})]$, and bounded continuous functions determine laws.
+
+(ii) Take $\tau=\tau_m$ in (i). Before $\tau_m$, $W^*=W<m$, and $W^*_{\tau_m}=m$; so $\tau_m$ is also
+the first passage of $W^*$ at $m$, and $\{M^*_T\ge m\}=\{\tau_m\le T\}=\{M_T\ge m\}$, where $M^*$ is
+the running maximum of $W^*$. On this event $W^*_T=2m-W_T$. Since $W^*$ is a Brownian motion,
+$(M^*_T,W^*_T)$ has the law of $(M_T,W_T)$ (\cref{rem:bm-functionals}), and
+\[
+  \E\big[h(W_T)\1_{\{M_T\ge m\}}\big]=\E\big[h(W^*_T)\1_{\{M^*_T\ge m\}}\big]
+  =\E\big[h(2m-W_T)\1_{\{M_T\ge m\}}\big]=\E\big[h(2m-W_T)\big];
+\]
+in the last step, $h(2m-W_T)\ne0$ forces $W_T\ge m$, hence $M_T\ge m$. With $h=\1_{(-\infty,w]}$
+we get the first formula. With $w=m$ it gives $\Prob(M_T\ge m,W_T\le m)=\Prob(W_T\ge m)$, and
+$\{W_T>m\}\subseteq\{M_T\ge m\}$, so $\Prob(M_T\ge m)=2\Prob(W_T\ge m)=\Prob(|W_T|\ge m)$. Finally,
+$f_T(a,w)=-\partial_a\partial_wN\big((w-2a)/\sqrt T\big)$, so the law with density $f_T$ gives the same
+probability to every quadrant $\{a'\ge a,\,w'\le w\}$ (for $w>a>0$ add $\Prob(a<W_T\le w)$; for $a\le0$
+both are $\Prob(W_T\le w)$), and quadrants determine laws (Dynkin's $\pi$--$\lambda$ theorem).
+
+(iii) The statements involve the paths on $[0,T]$ only, and the proofs of (i)--(ii) go through
+for a Brownian motion on $[0,T]$, with the grid $kT2^{-n}$ and $\tau^n=\infty$ if $\tau>T$ (at the
+grid point $s_k=T$ the vector $\eta$ vanishes and the first step is trivial).
+By Girsanov's theorem (\cref{thm:rn-girsanov} with $\Theta\equiv\nu$), $X$ is a Brownian motion on
+$[0,T]$ under $\widehat\Prob$, $\dd\widehat\Prob/\dd\Prob=Z_T=\exp(-\nu W_T-\frac{\nu^2}2T)$, with
+filtration $(\F_t)_{t\le T}$. Since $1/Z_T=\exp(\nu X_T-\frac{\nu^2}2T)$, \cref{prop:pr-change-of-measure}(b)
+and (ii) under $\widehat\Prob$, applied to $\varphi(x)=e^{\nu x-\nu^2T/2}h(x)$, which vanishes on
+$(m,\infty)$, give
+\[
+  \E\big[h(X_T)\1_{\{\overline X_T\ge m\}}\big]=\widehat\E\big[\varphi(X_T)\1_{\{\overline X_T\ge m\}}\big]
+  =\widehat\E\big[\varphi(2m-X_T)\big]
+  =e^{2\nu m}\,\widehat\E\big[e^{-\nu X_T-\nu^2T/2}h(2m-X_T)\big].
+\]
+Under $\widehat\Prob$, $X_T\sim\mathcal N(0,T)$, and by the Gaussian shift
+(\cref{prop:pr-gaussian-shift} with $\theta=-\nu\sqrt T$, applied to $X_T/\sqrt T$) the last
+expectation is $\E[h(2m-G+\nu T)]$ for $G\sim\mathcal N(0,T)$, which is \eqref{eq:exo-reflection-drift}.
+The statement for the minimum is \eqref{eq:exo-reflection-drift} for the Brownian motion $-W$,
+the drift $-\nu$, the level $-a$ and the function $x\mapsto h(-x)$. With $h=\1_{(-\infty,w]}$,
+$\Prob(2m-W_T+\nu T\le w)=N\big((w-2m-\nu T)/\sqrt T\big)$; adding $\Prob(X_T>m)$ for $w=m$ gives
+the law of $\overline X_T$. For the density,
+$\E[g(\overline X_T,X_T)]=\widehat\E\big[e^{\nu X_T-\nu^2T/2}g(\overline X_T,X_T)\big]$ for Borel
+$g\ge0$, and under $\widehat\Prob$ the pair has density $f_T$ by (ii).
+\end{proof}
+
+Two consequences are used below. First, $\overline X_T\le M_T+|\nu|T$ and $M_T$ has the law of
+$|W_T|$, so $\E[e^{p\overline X_T}]<\infty$ for every $p$: in the model \eqref{eq:exo-X},
+\begin{equation}\label{eq:exo-moments}
+  \EQ\big[\overline S_T^{\,p}\big]<\infty\qquad\text{for every }p\ge0 .
+\end{equation}
+Second, letting $T\to\infty$ in the law of $\overline X_T$: if $\nu<0$, the probability that $X$
+ever reaches $m$ is $e^{2\nu m}<1$ (\exref{ex:exo-hitting}). Part (i) is a consequence of the
+\emph{strong Markov property}, of which the first step of its proof is a special case: after an almost surely finite stopping time $\tau$,
+$(W_{\tau+t}-W_\tau)_{t\ge0}$ is a Brownian motion independent of the information at $\tau$
+(\textcite{morters-peres}, Theorem~2.16 and Section~2.2; \textcite{karatzas-shreve}, Section~2.6);
+\textcite{shreve2}, Sections~3.7 and~7.2, derives (ii) and (iii) as here.
+
+\begin{remark}[Crossing between two dates]\label{rem:exo-bridge}
+Given the values $a=X_s$ and $b=X_t$ at two dates $s<t$, both below $m$, the probability that
+$X$ reached $m$ in between is
+\begin{equation}\label{eq:exo-bridge}
+  p(a,b)=\exp\Big(-\frac{2(m-a)(m-b)}{t-s}\Big),
+\end{equation}
+whatever the drift $\nu$. Precisely,
+\[
+  \E\big[\1_{\{\max_{[s,t]}X\ge m\}}\varphi(X_s,X_t)\big]=\E\big[p(X_s,X_t)\,\varphi(X_s,X_t)\big]
+\]
+for bounded Borel $\varphi$ vanishing unless both arguments are below $m$. By \cref{lem:exo-restart}
+and the independence lemma it suffices to take $s=0$, $a=0$, and $h=t$; then
+$\int_m^\infty e^{\nu w-\nu^2h/2}f_h(a',w)\,\dd a'$, divided by the density
+$e^{\nu w-\nu^2h/2}N'(w/\sqrt h)/\sqrt h$ of $X_h$ at $w$, is $e^{-2m(m-w)/h}$: the factor carrying
+$\nu$ cancels. Weighting
+each simulated path by its probability of not crossing between grid dates gives an unbiased
+estimator of a continuously monitored price, used in the demo (the Brownian-bridge technique of
+P.~Glasserman, \emph{Monte Carlo Methods in Financial Engineering}, Springer, 2004, Chapter~6).
+\end{remark}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch13-reflection}
+  \caption{Left: a Brownian path and its reflection after the first passage at $m=0.6$
+    (\cref{thm:exo-reflection}(i)). Right: the density of $\overline X_1$ for three drifts, from
+    \cref{thm:exo-reflection}(iii), against histograms of $10^4$ simulated maxima on a grid of
+    $2000$ steps; the grid misses the top of some excursions, which shifts the histograms
+    slightly to the left.}
+  \label{fig:exo-reflection}
+\end{figure}
+
+\demo{13-exotics.ipynb}{reflect a path at any level, and compare the law of the maximum with
+drift with simulated maxima on coarse and fine grids.}
+
+\section{Barrier options}\label{sec:exo-barrier}
+
+Let $K>0$ be a strike and $B>0$ a barrier. The four barrier calls pay at $T$
+\[
+  \underbrace{(S_T-K)^+\1_{\{\overline S_T<B\}}}_{\text{up-and-out}},\quad
+  \underbrace{(S_T-K)^+\1_{\{\overline S_T\ge B\}}}_{\text{up-and-in}},\quad
+  \underbrace{(S_T-K)^+\1_{\{\underline S_T>B\}}}_{\text{down-and-out}},\quad
+  \underbrace{(S_T-K)^+\1_{\{\underline S_T\le B\}}}_{\text{down-and-in}}.
+\]
+An \emph{out} option is cancelled (knocked out) if the price reaches the barrier; an \emph{in}
+option is worthless unless it does. Since $\overline X_T$ and $\underline X_T$ have densities, strict
+and weak inequalities give the same prices. Some cases are trivial: if $S_0\ge B$ the up-and-out call is knocked out at once, and so is the
+down-and-out call if $S_0\le B$; if $K\ge B$ the up-and-out call pays nothing, because
+$S_T\le\overline S_T<B\le K$ on the event where it is alive.
+
+Write $c(x;k)$ for the Black--Scholes price at time $0$ of a call with strike $k$ and maturity
+$T$ when the stock is at $x$, and $\delta(x;k)=e^{-rT}N\big(d_-(T,x)\big)$, with $d_-$ computed
+with the strike $k$, for the digital call of \cref{prop:bs-digital}.
+
+\begin{proposition}[Barrier options]\label{prop:exo-barrier}
+Let $\theta=2r/\sigma^2-1$.
+\begin{enumerate}[label=(\roman*)]
+  \item \emph{(Up-and-out.)} If $S_0<B$ and $K<B$, the up-and-out call costs
+    \[
+      UO_0=u(S_0)-\Big(\frac B{S_0}\Big)^{\theta}u\Big(\frac{B^2}{S_0}\Big),\qquad
+      u(x)=c(x;K)-c(x;B)-(B-K)\,\delta(x;B).
+    \]
+  \item \emph{(Down-and-out.)} If $S_0>B$, the down-and-out call costs
+    \[
+      DO_0=\ell(S_0)-\Big(\frac B{S_0}\Big)^{\theta}\ell\Big(\frac{B^2}{S_0}\Big),\qquad
+      \ell(x)=\begin{cases}c(x;K)&\text{if }B\le K,\\ c(x;B)+(B-K)\,\delta(x;B)&\text{if }B>K.\end{cases}
+    \]
+  \item \emph{(In--out parity.)} $UI_0+UO_0=DI_0+DO_0=c(S_0;K)$.
+  \item \emph{(Later dates.)} For $t<T$, $UO_t=\1_{\{\overline S_t<B\}}\,UO(T-t,S_t)$, where
+    $UO(T',x)$ is the price in (i) with maturity $T'$ and initial price $x$; similarly for
+    the down-and-out call, with $\1_{\{\underline S_t>B\}}$.
+\end{enumerate}
+\end{proposition}
+
+The function $u(x)$ is the price of the European claim $(S_T-K)^+\1_{\{S_T<B\}}$, a call whose
+payoff is cut off at $B$, and $\ell(x)$ that of $(S_T-K)^+\1_{\{S_T>B\}}$. Each knock-out price is
+the European price minus an \emph{image} term: the same European claim on a stock started from
+the mirror point $B^2/S_0$, weighted by $(B/S_0)^\theta$. For $B\le K$, (ii) is the formula of
+\textcite{merton1973} for the down-and-out call.
+
+\begin{proof}
+(i) Let $b=\frac1\sigma\log(B/S_0)>0$, so that $\overline S_T<B$ if and only if
+$\overline X_T<b$. Let $h(x)=(S_0e^{\sigma x}-K)^+\1_{\{x<b\}}$, which vanishes on $[b,\infty)$. As
+$X_T\le\overline X_T$, the payoff is $h(X_T)\1_{\{\overline X_T<b\}}=h(X_T)-h(X_T)\1_{\{\overline X_T\ge b\}}$,
+and \cref{thm:exo-reflection}(iii), under $\Q$ with $W=\widetilde W$, gives
+\[
+  \EQ\big[h(X_T)\1_{\{\overline X_T\ge b\}}\big]=e^{2\nu b}\,\EQ\big[h(2b-\widetilde W_T+\nu T)\big]
+  =e^{2\nu b}\,\EQ\big[h(2b+X_T)\big],
+\]
+since $-\widetilde W_T$ and $\widetilde W_T$ have the same law. Now
+$S_0e^{\sigma(2b+X_T)}=(B^2/S_0)\,e^{\sigma X_T}$ is the price at $T$ of the stock started from
+$B^2/S_0$, and $2b+X_T<b$ means that this price is below $B$. So
+$e^{-rT}\EQ[h(2b+X_T)]=u(B^2/S_0)$ and $e^{-rT}\EQ[h(X_T)]=u(S_0)$, where $u(x)$ is the price of
+$(S_T-K)^+\1_{\{S_T<B\}}$ for a stock started from $x$. For $K<B$,
+$(y-K)^+\1_{\{y<B\}}=(y-K)^+-(y-B)^+-(B-K)\1_{\{y\ge B\}}$, whose price is the formula for $u$
+(\cref{thm:bs-formula,prop:bs-digital}). Finally $e^{2\nu b}=(B/S_0)^{2\nu/\sigma}$ and
+$2\nu/\sigma=\theta$.
+
+(ii) The same computation with $a=\frac1\sigma\log(B/S_0)<0$, the statement for the minimum in
+\cref{thm:exo-reflection}(iii), and $h(x)=(S_0e^{\sigma x}-K)^+\1_{\{x>a\}}$, which vanishes on
+$(-\infty,a]$: the price is $\ell(S_0)-e^{2\nu a}\ell(B^2/S_0)$, where $\ell(x)$ prices
+$(S_T-K)^+\1_{\{S_T>B\}}$. If $B\le K$ this is the call payoff; if $B>K$ it is
+$(y-B)^+ +(B-K)\1_{\{y>B\}}$.
+
+(iii) The in and out payoffs add up to $(S_T-K)^+$.
+
+(iv) For $u\ge t$, $S_u=S_tR_{u-t}$ with $R_v=\exp\big(\sigma W'_v+(r-\frac{\sigma^2}2)v\big)$, where
+$W'_v=\widetilde W_{t+v}-\widetilde W_t$ is a Brownian motion independent of $\F_t$
+(\cref{lem:exo-restart}). The payoff is
+$\1_{\{\overline S_t<B\}}(S_tR_{T-t}-K)^+\1_{\{S_t\max_{v\le T-t}R_v<B\}}$; apply the independence
+lemma (\cref{lem:pr-independence}) with $X=S_t$ and $Y=(R_{T-t},\max_{v\le T-t}R_v)$.
+\end{proof}
+
+\begin{remark}[Reading the formulas]\label{rem:exo-barrier-reading}
+\begin{enumerate}[label=(\alph*),leftmargin=*]
+  \item As $S_0\uparrow B$ in (i), $UO_0\to u(B)-u(B)=0$: a call about to be knocked out is
+    worth nothing, although it is in the money. With $S_0=K=100$, $B=120$, $r=5\%$,
+    $\sigma=20\%$ and $T=1$, the up-and-out call costs $1.18$ against $10.45$ for the call
+    (\cref{fig:exo-barrier}).
+  \item The up-and-out price is not monotone in $S_0$: its delta is negative near the barrier,
+    and at the barrier it is of order $-(B-K)/(\sigma B\sqrt{T-t})$ close to maturity, so it
+    blows up (\exref{ex:exo-barrier-bounds}). The hedge is large and changes sign near the
+    barrier, the same problem as for the digital option of \exref{ex:bs-digital-greeks}, and for
+    the same reason: the payoff jumps from $B-K$ to $0$ at the barrier. By (iv), the price is
+    $v(t,S_t)$ while the option is alive, and $v$ solves the Black--Scholes equation on
+    $\{x<B\}$ with $v(t,B)=0$; \textcite{shreve2}, Section~7.3, derives the hedge this way.
+\end{enumerate}
+\end{remark}
+
+\begin{remark}[Discrete monitoring]\label{rem:exo-discrete}
+In practice the barrier is checked at finitely many dates, say daily. A path can cross the barrier
+and come back between two checks unnoticed, so a discretely monitored up-and-out call is worth more
+than the continuous one, by an amount that shrinks only like $1/\sqrt m$ for $m$ equally spaced dates
+(\cref{fig:exo-barrier}).
+\textcite{broadie-glasserman-kou-1997} showed that the discretely monitored price equals the
+continuous one with the barrier moved away from $S_0$ by the factor $e^{\beta\sigma\sqrt{T/m}}$,
+up to an error $o(1/\sqrt m)$, where $\beta=-\zeta(\frac12)/\sqrt{2\pi}\approx0.5826$ and $\zeta$ is
+the Riemann zeta function. The constant is the mean overshoot of a Gaussian random walk over a
+distant level, met in \exref{ex:bm-exit-sim}. In \cref{fig:exo-barrier} the shift removes most
+of the error from about $m=26$ dates on, and is poor for $m=4$.
+\end{remark}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch13-barrier}
+  \caption{Up-and-out call with $K=100$, $B=120$, $r=5\%$, $\sigma=20\%$, $T=1$. Left: price
+    against $S_0$, from \cref{prop:exo-barrier}(i) (continuous monitoring), and with $m=12$
+    monitoring dates: Monte Carlo with $2\times10^4$ paths (bars: two standard errors) and the
+    closed form with the shifted barrier of \cref{rem:exo-discrete}. Right: price at $S_0=100$
+    against the number $m$ of monitoring dates.}
+  \label{fig:exo-barrier}
+\end{figure}
+
+\demo{13-exotics.ipynb}{barrier prices against the spot for any barrier, strike and volatility;
+Monte Carlo with discrete monitoring, with the Brownian-bridge weights of \cref{rem:exo-bridge},
+and the shifted barrier.}
+
+\section{Lookback options}\label{sec:exo-lookback}
+
+A \emph{floating-strike lookback put} pays $\overline S_T-S_T$ at $T$: it is the put struck, with
+hindsight, at the highest price of the period, and it is never out of the money.
+
+\begin{proposition}[Lookback put]\label{prop:exo-lookback}
+Let $r\ne0$ and $d_\pm=(r\pm\frac{\sigma^2}2)\sqrt T/\sigma$. The floating-strike lookback put
+costs
+\[
+  LP_0=S_0\Big[e^{-rT}N(-d_-)-N(-d_+)\Big]+S_0\,\frac{\sigma^2}{2r}\Big[N(d_+)-e^{-rT}N(-d_-)\Big].
+\]
+For $r=0$ the price is the limit as $r\to0$:
+$LP_0=S_0\big[N(\eta)-N(-\eta)+2\eta N'(\eta)+2\eta^2N(\eta)\big]$ with $\eta=\sigma\sqrt T/2$. At a
+later date $t<T$, $LP_t=S_t\,\lambda\big(T-t,\overline S_t/S_t\big)$, where
+$\lambda(u,y)=e^{-ru}\EQ\big[\max\big(y,e^{\sigma\overline X_u}\big)\big]-1$ for $y\ge1$.
+\end{proposition}
+
+The first bracket is the price of the at-the-money European put divided by $S_0$; the second
+term, nonnegative because $d_++d_-=2r\sqrt T/\sigma$ has the sign of $r$, is what looking back
+adds. With $S_0=100$, $r=5\%$, $\sigma=20\%$, $T=1$, the lookback put costs $14.29$ against $5.57$
+for the at-the-money put.
+
+\begin{proof}
+By the martingale property, $LP_0=e^{-rT}\EQ[\overline S_T]-S_0$, and
+$\overline S_T=S_0e^{\sigma\overline X_T}$. Writing $e^{\sigma\overline X_T}-1=\int_0^\infty\sigma
+e^{\sigma m}\1_{\{\overline X_T\ge m\}}\,\dd m$ and using Tonelli's theorem and
+\cref{thm:exo-reflection}(iii),
+\[
+  \EQ\big[e^{\sigma\overline X_T}\big]=1+\underbrace{\int_0^\infty\sigma e^{\sigma m}N\Big(\frac{\nu T-m}{\sqrt T}\Big)\dd m}_{I_1}
+  +\underbrace{\int_0^\infty\sigma e^{(\sigma+2\nu)m}N\Big(\frac{-m-\nu T}{\sqrt T}\Big)\dd m}_{I_2}.
+\]
+Note that $\nu\sqrt T=d_-$, $(\nu+\sigma)\sqrt T=d_+$, $\sigma\nu+\frac{\sigma^2}2=r$ and
+$\sigma+2\nu=2r/\sigma=:\kappa$. Integrate by parts (the boundary terms at infinity vanish, as the normal
+tail beats the exponential), substitute $m=\nu T+\sqrt Tz$ in $I_1$ and $m=-\nu T+\sqrt Tz$ in $I_2$, and
+use $\int_{-c}^\infty e^{\alpha z}N'(z)\,\dd z=e^{\alpha^2/2}N(c+\alpha)$:
+\begin{align*}
+  I_1&=-N(d_-)+e^{\sigma\nu T}\int_{-d_-}^\infty e^{\sigma\sqrt Tz}N'(z)\,\dd z=e^{rT}N(d_+)-N(d_-),\\
+  I_2&=\frac\sigma\kappa\Big(-N(-d_-)+e^{-\kappa\nu T}\int_{d_-}^\infty e^{\kappa\sqrt Tz}N'(z)\,\dd z\Big)
+  =\frac{\sigma^2}{2r}\Big(e^{rT}N(d_+)-N(-d_-)\Big),
+\end{align*}
+because $-\kappa\nu+\frac{\kappa^2}2=r$ and $\kappa\sqrt T-d_-=d_+$. Collecting terms,
+$e^{-rT}(1+I_1+I_2)-1$ is the bracketed formula divided by $S_0$. The price is continuous in $r$ by
+dominated convergence, since $\overline X_T$ depends continuously on $\nu$ and
+$e^{\sigma\overline X_T}\le e^{\sigma(M_T+|\nu|T)}$; the case $r=0$ follows by letting $r\to0$
+(l'H\^opital in the second term). For $t<T$, write
+$\overline S_T=\max\big(\overline S_t,\,S_t\max_{v\le T-t}R_v\big)$ with $R$ as in the proof of
+\cref{prop:exo-barrier}(iv), and apply \cref{lem:exo-restart} and the independence lemma with
+$X=(S_t,\overline S_t)$; the result is homogeneous of degree one in $(S_t,\overline S_t)$.
+\end{proof}
+
+The price depends on the path through $(S_t,\overline S_t)$, a Markov pair; \textcite{shreve2},
+Section~7.4, computes $\lambda$ and the hedge. Lookbacks were first priced by
+\textcite{goldman-sosin-gatto-1979}; the fixed-strike lookback call is \exref{ex:exo-fixed-lookback}.
+
+\section{Asian options}\label{sec:exo-asian}
+
+Let $Y_t=\int_0^tS_u\,\dd u$, so that $Y_T/T$ is the average price over $[0,T]$. The
+\emph{(arithmetic, fixed-strike) Asian call} pays $(Y_T/T-K)^+$. Asian options are common on
+commodities and currencies: an average is harder to manipulate than a closing price. An average of
+lognormal variables is not lognormal, and there is no closed formula; but the \emph{geometric}
+average is lognormal.
+
+\begin{proposition}[Geometric Asian options]\label{prop:exo-asian-geometric}
+Let $K>0$, $G_T=\exp\big(\frac1T\int_0^T\log S_u\,\dd u\big)$ and, for $n\ge1$,
+$G^{(n)}=\big(\prod_{i=1}^nS_{iT/n}\big)^{1/n}$. Then $\log(G_T/S_0)$ and $\log(G^{(n)}/S_0)$ are
+normal under $\Q$, with means and variances
+\[
+  \mu=\Big(r-\frac{\sigma^2}2\Big)\frac T2,\quad s^2=\frac{\sigma^2T}3;\qquad
+  \mu_n=\Big(r-\frac{\sigma^2}2\Big)\frac{T(n+1)}{2n},\quad s_n^2=\frac{\sigma^2T(n+1)(2n+1)}{6n^2}.
+\]
+The geometric Asian calls cost
+$e^{-rT}\EQ[(G_T-K)^+]=e^{-rT}\big(F\,N(\delta_+)-K\,N(\delta_-)\big)$ with $F=S_0e^{\mu+s^2/2}$ and
+$\delta_\pm=\big(\log(F/K)\pm\frac{s^2}2\big)/s$, and the same with $(\mu_n,s_n)$ for $G^{(n)}$.
+\end{proposition}
+
+\begin{proof}
+$\log(S_u/S_0)=(r-\frac{\sigma^2}2)u+\sigma\widetilde W_u$. Averaging over $u\in[0,T]$ gives the mean
+$(r-\frac{\sigma^2}2)\frac T2$ plus $\frac\sigma T\int_0^T\widetilde W_u\,\dd u$, which is
+$\mathcal N(0,\sigma^2T/3)$ by \cref{exa:itf-product}. For the discrete average, the mean of
+$\frac1n\sum_it_i$ with $t_i=iT/n$ is $\frac{T(n+1)}{2n}$, and $\frac1n\sum_i\widetilde W_{t_i}$ is
+centred Gaussian (\cref{prop:bm-gaussian}) with variance
+$\frac{T}{n^3}\sum_{i,j=1}^n\min(i,j)=\frac T{n^3}\sum_{k=1}^n(n-k+1)^2=\frac{T(n+1)(2n+1)}{6n^2}$.
+For $G=S_0e^{\mu+s\xi}$ with $\xi\sim\mathcal N(0,1)$ and $s>0$, $G>K$ if and only if $\xi>-\delta_-$,
+and \cref{lem:bs-gaussian} with $a=s$ gives $\E[(G-K)^+]=FN(\delta_-+s)-KN(\delta_-)$.
+\end{proof}
+
+For $n=1$ this is the Black--Scholes call, and $(\mu_n,s_n)\to(\mu,s)$ as $n\to\infty$. Averaging
+cuts the volatility to $\sigma/\sqrt3$, and if $r\ge0$ Asian calls are cheaper than calls
+(\exref{ex:exo-asian-bounds}). By the inequality between arithmetic and geometric means, $G_T\le Y_T/T$, so the geometric call is a
+lower bound for the arithmetic one. The two are also strongly correlated, which makes the
+geometric payoff, whose price is known, an efficient \emph{control variate} for Monte Carlo
+estimates of the arithmetic price \citep{kemna-vorst-1990}: in \cref{fig:exo-asian} it divides the
+standard deviation by a factor between $14$ and $27$.
+
+The arithmetic price is a function of three variables. Given $\F_t$, the average still to come
+depends on the past only through $S_t$, but the payoff also depends on the accrued $Y_t$: the price
+depends on $(S_t,Y_t)$, not on $S_t$ alone (the pair $(S,Y)$ is Markov, $Y$ alone is not).
+
+\begin{proposition}[The Asian PDE]\label{prop:exo-asian-pde}
+Let $K\in\R$ and let $V_t$ be the price of $(Y_T/T-K)^+$.
+\begin{enumerate}[label=(\roman*)]
+  \item $V_t=v(t,S_t,Y_t)$, where, for a Brownian motion $W'$ and
+    $R_u=\exp\big(\sigma W'_u+(r-\frac{\sigma^2}2)u\big)$,
+    \[
+      v(t,x,y)=e^{-r(T-t)}\,\E\Big[\Big(\frac{y+x\int_0^{T-t}R_u\,\dd u}{T}-K\Big)^+\Big].
+    \]
+  \item Let $w$ be continuous on $[0,T]\times(0,\infty)\times\R$, with continuous $\partial_tw$ and
+    continuous first and second derivatives in $(x,y)$ on $[0,T)\times(0,\infty)\times\R$, such that
+    \begin{equation}\label{eq:exo-asian-pde}
+      \partial_tw+rx\,\partial_xw+x\,\partial_yw+\frac{\sigma^2x^2}2\,\partial_{xx}w=rw,\qquad
+      w(T,x,y)=\Big(\frac yT-K\Big)^+,
+    \end{equation}
+    with $|\partial_xw|\le c$ and $|w(t,x,y)|\le c(1+x+|y|)$ for a constant $c$. Then
+    $V_t=w(t,S_t,Y_t)$ for $t\le T$, and holding $\Delta_t=\partial_xw(t,S_t,Y_t)$ shares replicates
+    the claim: $e^{-rt}V_t=V_0+\int_0^t\Delta_u\,\dd(e^{-ru}S_u)$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) $Y_T=Y_t+S_t\int_0^{T-t}R_u\,\dd u$ with $R_u=S_{t+u}/S_t$, a function of the restarted
+Brownian motion of \cref{lem:exo-restart}; apply the independence lemma with $X=(S_t,Y_t)$.
+
+(ii) $Y$ is an It\^o process with $\dd Y_t=S_t\,\dd t$, so $[Y,Y]=[S,Y]=0$, while
+$\dd S_t=rS_t\,\dd t+\sigma S_t\,\dd\widetilde W_t$ (\cref{prop:itf-gbm} under $\Q$). Fix $s<T$. The
+multidimensional It\^o formula (\cref{thm:itf-multi}, on $[0,s]$ and the convex open set
+$(0,\infty)\times\R$) applied to $e^{-rt}w(t,x,y)$ gives, by \eqref{eq:exo-asian-pde},
+\begin{align*}
+  \dd\big(e^{-rt}w(t,S_t,Y_t)\big)&=e^{-rt}\big(\partial_tw+rS_t\partial_xw+S_t\partial_yw
+  +\tfrac12\sigma^2S_t^2\partial_{xx}w-rw\big)\dd t+e^{-rt}\sigma S_t\,\partial_xw\,\dd\widetilde W_t\\
+  &=\Delta_t\,\dd(e^{-rt}S_t),
+\end{align*}
+with the derivatives of $w$ evaluated at $(t,S_t,Y_t)$.
+The integrand $e^{-rt}\sigma S_t\Delta_t$ is bounded by $c\sigma e^{|r|T}S_t$ in absolute value and
+$\EQ[S_t^2]$ is bounded on $[0,T]$, so it is in $\mathbb H^2$ and $e^{-rt}w(t,S_t,Y_t)$ is a
+martingale on $[0,s]$: $e^{-rt}w(t,S_t,Y_t)=\EQ[e^{-rs}w(s,S_s,Y_s)\mid\F_t]$ for $t\le s<T$. As
+$s\uparrow T$, $w(s,S_s,Y_s)\to(Y_T/T-K)^+$ by continuity, and $|w(s,S_s,Y_s)|\le
+c(1+\overline S_T+T\overline S_T)$, which is integrable by \eqref{eq:exo-moments}. Conditional
+dominated convergence gives $e^{-rt}w(t,S_t,Y_t)=e^{-rT}\EQ[(Y_T/T-K)^+\mid\F_t]=e^{-rt}V_t$.
+\end{proof}
+
+Equation \eqref{eq:exo-asian-pde} has two space variables and no diffusion in $y$, which makes it
+awkward for finite differences. \textcite{vecer-2001} reduced it to one: $Y_T/T-K$ is the terminal
+wealth of a simple self-financing portfolio, the option is a call on it with strike zero, and in
+units of the stock this portfolio is a one-dimensional Markov process.
+
+\begin{theorem}[Ve\v{c}e\v{r}'s equation]\label{thm:exo-vecer}
+Let $\gamma(t)=\frac{1-e^{-r(T-t)}}{rT}$ (and $\gamma(t)=\frac{T-t}T$ if $r=0$), $K\in\R$, and
+$V_t$ the price of $(Y_T/T-K)^+$.
+\begin{enumerate}[label=(\roman*)]
+  \item $\Pi_t=e^{-r(T-t)}(Y_t/T-K)+\gamma(t)S_t$ satisfies $\dd(e^{-rt}\Pi_t)=\gamma(t)\,\dd(e^{-rt}S_t)$:
+    it is the wealth of the self-financing strategy that holds $\gamma(t)$ shares
+    (\cref{def:dh-self-financing}), started from $\Pi_0=\gamma(0)S_0-e^{-rT}K$. Its terminal
+    value is $\Pi_T=Y_T/T-K$, so the Asian call pays $\Pi_T^+$.
+  \item $Z_t=\Pi_t/S_t$ satisfies $\dd Z_t=\sigma\big(\gamma(t)-Z_t\big)\big(\dd\widetilde W_t-\sigma\,\dd t\big)$,
+    and $V_t=S_t\,g(t,Z_t)$, where, for a Brownian motion $W'$ and
+    $\Lambda_u=\exp\big(-\sigma(W'_T-W'_u)-(r+\frac{\sigma^2}2)(T-u)\big)$,
+    \[
+      g(t,z)=\E\Big[\Big(e^{r(T-t)}\Lambda_t\big(z-\gamma(t)\big)+\frac1T\int_t^T\Lambda_u\,\dd u\Big)^+\Big].
+    \]
+  \item Let $\tilde g$ be continuous on $[0,T]\times\R$, with continuous $\partial_t\tilde g$,
+    $\partial_z\tilde g$, $\partial_{zz}\tilde g$ on $[0,T)\times\R$, such that
+    \begin{equation}\label{eq:exo-vecer}
+      \partial_t\tilde g+\frac{\sigma^2}2\big(\gamma(t)-z\big)^2\partial_{zz}\tilde g=0,\qquad
+      \tilde g(T,z)=z^+,
+    \end{equation}
+    with $|\partial_z\tilde g|\le c$. Then $V_t=S_t\,\tilde g(t,Z_t)$ for $t\le T$; in particular
+    $V_0=S_0\,\tilde g\big(0,\gamma(0)-e^{-rT}K/S_0\big)$. Holding
+    $\Delta_t=\tilde g(t,Z_t)+\big(\gamma(t)-Z_t\big)\partial_z\tilde g(t,Z_t)$ shares replicates the claim.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+(i) $e^{-rt}\Pi_t=e^{-rT}(Y_t/T-K)+\gamma(t)e^{-rt}S_t$ and $\gamma'(t)=-e^{-r(T-t)}/T$. By the
+product rule with the deterministic $C^1$ function $\gamma$,
+$\dd(e^{-rt}\Pi_t)=e^{-rT}\frac{S_t}T\dd t+\gamma'(t)e^{-rt}S_t\,\dd t+\gamma(t)\,\dd(e^{-rt}S_t)$, and the
+first two terms cancel. Since $\gamma(T)=0$, $\Pi_T=Y_T/T-K$.
+
+(ii) Let $U_t=e^{-rt}S_t$, so $\dd U=\sigma U\,\dd\widetilde W$. It\^o's formula for $1/x$ on
+$(0,\infty)$ (\cref{rem:itf-open}) gives $\dd(1/U)=(1/U)(-\sigma\,\dd\widetilde W+\sigma^2\dd t)$, and
+the product rule (\cref{cor:itf-product}) applied to $Z=(e^{-rt}\Pi)\cdot(1/U)$, with
+$\dd(e^{-rt}\Pi)=\gamma\sigma U\,\dd\widetilde W$, gives
+$\dd Z=Z(-\sigma\,\dd\widetilde W+\sigma^2\dd t)+\gamma\sigma\,\dd\widetilde W-\gamma\sigma^2\dd t$,
+the formula. For the price, use the stock as numeraire: by \cref{prop:rn-numeraire}(ii)--(iii),
+$V_t=e^{-r(T-t)}\EQ[\Pi_T^+\mid\F_t]=S_t\,\E^{\Q^S}[\Pi_T^+/S_T\mid\F_t]=S_t\,\E^{\Q^S}[Z_T^+\mid\F_t]$,
+where $W^S_t=\widetilde W_t-\sigma t$ is a $\Q^S$-Brownian motion on $[0,T]$ and
+$S_u=S_0\exp\big(\sigma W^S_u+(r+\frac{\sigma^2}2)u\big)$. From the definition of $\Pi$,
+$Y_t/T-K=e^{r(T-t)}(\Pi_t-\gamma(t)S_t)$, hence
+\[
+  Z_T=\frac{\Pi_T}{S_T}=e^{r(T-t)}\frac{S_t}{S_T}\big(Z_t-\gamma(t)\big)+\frac1T\int_t^T\frac{S_u}{S_T}\,\dd u ,
+\]
+and $S_u/S_T=\exp\big(-\sigma(W^S_T-W^S_u)-(r+\frac{\sigma^2}2)(T-u)\big)$ for $u\ge t$ depends only
+on the increments of $W^S$ after $t$, which under $\Q^S$ form a Brownian motion independent of
+$\F_t$ (\cref{lem:exo-restart}). The independence lemma under $\Q^S$ gives
+$\E^{\Q^S}[Z_T^+\mid\F_t]=g(t,Z_t)$.
+
+(iii) By It\^o's formula on $[0,s]$, $s<T$, and \eqref{eq:exo-vecer}, $\dd\tilde g(t,Z_t)
+=\sigma(\gamma-Z_t)\partial_z\tilde g\,(\dd\widetilde W_t-\sigma\,\dd t)$, with $\tilde g$ and its
+derivatives evaluated at $(t,Z_t)$. The product rule with $\dd U=\sigma U\,\dd\widetilde W$ gives
+\[
+  \dd\big(U_t\tilde g(t,Z_t)\big)=\sigma U_t\tilde g\,\dd\widetilde W_t+\sigma U_t(\gamma-Z_t)\partial_z\tilde g\,
+  (\dd\widetilde W_t-\sigma\,\dd t)+\sigma^2U_t(\gamma-Z_t)\partial_z\tilde g\,\dd t=\Delta_t\,\dd U_t ;
+\]
+the $\dd t$-terms cancel. Since $|\partial_z\tilde g|\le c$ and $\tilde g(\cdot,0)$ is bounded on
+$[0,T]$, $|\tilde g(t,z)|+|(\gamma(t)-z)\partial_z\tilde g(t,z)|\le c'(1+|z|)$, so
+$|U_t\Delta_t|\le c'(S_t+|\Pi_t|)\le c''(1+\overline S_T)$ by the definition of $\Pi$. The rest is
+the end of the proof of \cref{prop:exo-asian-pde}(ii): the integrand is in $\mathbb H^2$,
+$U_t\tilde g(t,Z_t)$ is a martingale on $[0,s]$, and as $s\uparrow T$,
+$S_s\tilde g(s,Z_s)\to S_TZ_T^+=\Pi_T^+$ with an integrable bound.
+\end{proof}
+
+Under $\Q^S$, $\dd Z_t=\sigma(\gamma(t)-Z_t)\,\dd W^S_t$ has no drift, as the ratio of two traded
+prices must under the measure of its denominator; hence no first-order term in \eqref{eq:exo-vecer}.
+For $z\ge\gamma(t)$, that is $Y_t/T\ge K$, the option will surely be exercised, and the function $g$
+of (ii) is $g(t,z)=z$, since $\E[\Lambda_u]=e^{-r(T-u)}$; with $g\to0$ as $z\to-\infty$, this gives the
+boundary conditions of a finite-difference grid. Solved by Crank--Nicolson, \eqref{eq:exo-vecer} reproduces the benchmark
+prices of continuously averaged Asian calls of \textcite{linetsky-2004} to five decimals
+(\coderef{code/tests/test_exotics.py}). The function of \cref{prop:exo-asian-pde} is
+$w(t,x,y)=x\,\tilde g\big(t,\pi(t,x,y)/x\big)$ with $\pi(t,x,y)=e^{-r(T-t)}(y/T-K)+\gamma(t)x$
+(\exref{ex:exo-vecer-2d}).
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch13-asian}
+  \caption{Asian calls with $S_0=100$, $r=5\%$, $\sigma=30\%$, $T=1$. Left: prices against the
+    strike: the European call, the arithmetic Asian call from \eqref{eq:exo-vecer} (line) and by
+    Monte Carlo (dots), and the geometric Asian call of \cref{prop:exo-asian-geometric}. Right:
+    standard deviation per path of the Monte Carlo estimator of the arithmetic price, plain and
+    with the geometric payoff as a control variate ($10^4$ paths, $100$ time steps).}
+  \label{fig:exo-asian}
+\end{figure}
+
+\demo{13-exotics.ipynb}{arithmetic and geometric Asian prices for any volatility and maturity,
+Ve\v{c}e\v{r}'s function $\tilde g(t,\cdot)$, and the variance reduction of the control variate.}
+
+\section{The perpetual American put}\label{sec:exo-perpetual}
+
+An American put can be exercised at any time before maturity. A \emph{perpetual} American put
+has no maturity: its holder chooses when, if ever, to receive $K-S_\tau$. By analogy with
+\cref{thm:bin-american}(ii), its price is the largest expected discounted payoff over all exercise
+rules. Let $\mathcal T$ be the set of stopping times with values in $[0,\infty]$, and for an initial
+price $S_0=x>0$ let
+\[
+  v(x)=\sup_{\tau\in\mathcal T}\EQ\big[e^{-r\tau}(K-S_\tau)^+\1_{\{\tau<\infty\}}\big].
+\]
+That $v$ is the smallest initial capital from which the seller can hedge the put whatever the
+buyer does is shown in \textcite{shreve2}, Section~8.3; here we compute it. With no maturity,
+time disappears from the problem, and the optimal rule is to exercise when the price first falls
+to a fixed level.
+
+\begin{proposition}[Perpetual American put]\label{prop:exo-perpetual-put}
+Let $r>0$, $K>0$, $\beta=2r/\sigma^2$ and $L^*=\frac{\beta K}{\beta+1}=\frac{2rK}{2r+\sigma^2}$. Then
+\[
+  v(x)=\begin{cases}K-x,&0<x\le L^*,\\[2pt](K-L^*)\,(x/L^*)^{-\beta},&x\ge L^*,\end{cases}
+\]
+and the supremum is attained by $\tau^*=\inf\{t\ge0:S_t\le L^*\}$. The function $v$ is $C^1$, with
+$v'(L^*)=-1$, it satisfies $rv=rxv'+\frac{\sigma^2x^2}2v''$ on $(L^*,\infty)$, and $v>(K-x)^+$ there.
+\end{proposition}
+
+\begin{proof}
+\emph{A martingale.} Let $N_t=e^{-rt}S_t^{-\beta}$. Since
+$-\beta(r-\frac{\sigma^2}2)-r=-\frac12\beta^2\sigma^2$, $N_t=x^{-\beta}\exp\big(-\beta\sigma\widetilde
+W_t-\frac12\beta^2\sigma^2t\big)$ is the exponential martingale of \cref{thm:bm-martingales}(iii),
+and $N_t=N_0-\int_0^t\beta\sigma N_u\,\dd\widetilde W_u$ (\cref{thm:itf-bm}) with an integrand in
+$\mathbb H^2$ on every $[0,T']$. For a stopping time $\tau$ and $t\le T'$, \cref{prop:ito-stopping}
+applied to $\tau\wedge T'$ shows that $N_{t\wedge\tau}$ is a martingale, so
+$\EQ[N_{t\wedge\tau}]=x^{-\beta}$ for all $t\ge0$.
+
+\emph{Lower bound.} For $0<L\le x$ let $\tau_L=\inf\{t:S_t\le L\}$, a stopping time. Before
+$\tau_L$, $S\ge L$, so $0\le N_{t\wedge\tau_L}\le L^{-\beta}$; as $t\to\infty$,
+$N_{t\wedge\tau_L}\to L^{-\beta}e^{-r\tau_L}$ on $\{\tau_L<\infty\}$, and $N_t\le e^{-rt}L^{-\beta}\to0$
+on $\{\tau_L=\infty\}$. Dominated convergence gives $\EQ[e^{-r\tau_L}\1_{\{\tau_L<\infty\}}]=(x/L)^{-\beta}$.
+Since $S_{\tau_L}=L$, exercising at $\tau_L$ yields $(K-L)(x/L)^{-\beta}$ for $L\le K$. For
+$x\ge L^*$ take $L=L^*$; for $x<L^*$ exercise at once, $\tau=0$. So $v$ is at least the formula.
+
+\emph{Upper bound.} For $x_0\in(0,L^*]$, let $f(y)=a+cy^{-\beta}$ with $c=x_0^{\beta+1}/\beta$
+and $a=K-x_0\frac{\beta+1}\beta$, which is nonnegative because $x_0\le L^*$. Then $f$ is convex,
+$f(x_0)=K-x_0$ and $f'(x_0)=-1$: the line $K-y$ is tangent to $f$ at $x_0$, so $f(y)\ge K-y$ for
+all $y>0$, and $f\ge a\ge0$; hence $f(y)\ge(K-y)^+$. For every $\tau\in\mathcal T$ and $t\ge0$,
+\[
+  \EQ\big[e^{-r(t\wedge\tau)}f(S_{t\wedge\tau})\big]=a\,\EQ\big[e^{-r(t\wedge\tau)}\big]+c\,\EQ[N_{t\wedge\tau}]
+  \le a+cx^{-\beta}=f(x),
+\]
+using $a\ge0$ and $r>0$. As $t\to\infty$, the nonnegative variable inside the expectation tends
+to $e^{-r\tau}f(S_\tau)$ on $\{\tau<\infty\}$, so by Fatou's lemma (a consequence of monotone
+convergence) $\EQ[e^{-r\tau}(K-S_\tau)^+\1_{\{\tau<\infty\}}]\le f(x)$. Taking $x_0=x$ if $x\le L^*$ gives
+$v(x)\le K-x$; taking $x_0=L^*$, for which $a=0$ and $c=L^{*\beta+1}/\beta=(K-L^*)L^{*\beta}$, gives
+$v(x)\le(K-L^*)(x/L^*)^{-\beta}$ for every $x$.
+
+\emph{Properties.} At $L^*$ both expressions equal $K-L^*$, and the right derivative is
+$-\beta(K-L^*)/L^*=-\beta K/((\beta+1)L^*)=-1$. The equation holds because $y^{-\beta}$ solves it, as
+in \exref{ex:bs-power}(c). For $x>L^*$, $v(x)=f_{L^*}(x)>K-x$, because the convex $f_{L^*}$ touches
+its tangent line only at $L^*$ (it is strictly convex), and $v>0$.
+\end{proof}
+
+The optimal level $L^*$ maximizes $(K-L)L^\beta$, the value of waiting for $L$, and there the
+exercise value and the value of waiting meet with the same slope, $v'(L^*)=-1$: the
+\emph{smooth-fit} condition. If $r=0$, $v\equiv K$: the levels
+$L\downarrow0$ are reached almost surely, as $\nu<0$, and $K-S_\tau<K$, so no rule attains it. An American
+put with maturity $T$ is worth at most $v$, since it allows fewer exercise rules, and at least the value of the rule $\tau^*\wedge T$,
+which tends to $v$ as $T\to\infty$; its exercise boundary depends on time and has no closed form
+(\cref{ch:16-numerics}). The perpetual put was priced by \textcite{merton1973}; the
+perpetual call on a stock paying dividends is \exref{ex:exo-perpetual-call}.
+
+\demo{13-exotics.ipynb}{the perpetual put and its exercise level for any rate and volatility, with
+binomial American puts of growing maturity approaching it.}
+
+\furtherreading
+\textcite{shreve2}, Chapters~7 and~8, uses the same tools; \textcite{hull} describes the markets.
+E.~Reiner and M.~Rubinstein, \emph{Breaking down the barriers} (\emph{Risk}, 1991), collect the
+closed forms of all barrier calls and puts, with rebates.

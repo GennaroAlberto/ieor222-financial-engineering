@@ -1,6 +1,695 @@
-\begin{planned}
-  \item Radon--Nikodym derivatives and Bayes' formula
-  \item Girsanov's theorem and Novikov's condition; the market price of risk
-  \item risk-neutral pricing with stochastic rates and volatility
-  \item martingale representation, completeness and hedging
-\end{planned}
+% Chapter 11: Change of measure and risk-neutral pricing.
+
+\Cref{ch:06-black-scholes-formula} priced options as expectations under a postulated
+measure $\Q$, and \cref{ch:10-delta-hedging} priced them by replication. This chapter
+connects the two. Girsanov's theorem builds $\Q$ from the real-world measure $\Prob$ by
+reweighting the paths, which changes the drift of the Brownian motion and nothing else. Under
+$\Q$ discounted wealth is a (local) martingale, which gives the risk-neutral pricing formula for
+every replicable claim, path-dependent or not, with random rates and volatilities. The
+martingale representation theorem shows that, when all the randomness comes from one Brownian
+motion, every claim is replicable: the fundamental theorems of \cref{ch:04-binomial} in
+continuous time. The chapter ends with numeraires, dividends and exchange rates.
+
+Throughout, $(\Omega,\F,\Prob)$ is a probability space, $T>0$ is a horizon, and $W$ is a
+Brownian motion with a filtration $(\F_t)_{t\ge0}$ (\cref{def:bm,def:bm-filtration}).
+Stochastic integrals, It\^o processes and quadratic variations are those of
+\cref{ch:07-ito-integral,ch:08-ito-formula}, as summarised in \cref{rem:itf-standing}.
+
+\section{Densities on a filtration}\label{sec:rn-densities}
+
+\Cref{sec:pr-change} changed measures by a density $Z\ge0$ with $\E[Z]=1$:
+$\Q(A)=\E[Z\1_A]$. On a filtered space the density has a history.
+
+\begin{lemma}[Density process and Bayes' formula]\label{lem:rn-density}
+Let $Z_T$ be an $\F_T$-measurable random variable with $Z_T>0$ almost surely and
+$\E[Z_T]=1$, let $\Q(A)=\E[Z_T\1_A]$ for $A\in\F$, and let $Z_t=\E[Z_T\mid\F_t]$,
+$0\le t\le T$.
+\begin{enumerate}[label=(\roman*)]
+  \item $\Q$ is a probability measure equivalent to $\Prob$, $(Z_t)$ is a $\Prob$-martingale
+    with $Z_t>0$ almost surely, and $Z_t$ is the density of $\Q$ on $\F_t$: $\EQ[X]=\E[Z_tX]$
+    for every $\F_t$-measurable $X$ that is nonnegative or $\Q$-integrable.
+  \item \emph{(Bayes' formula)} For $0\le s\le t\le T$ and every $\F_t$-measurable $Y$ with
+    $\EQ|Y|<\infty$,
+    \[
+      \EQ[Y\mid\F_s]=\frac{\E[Z_tY\mid\F_s]}{Z_s}.
+    \]
+  \item An adapted process $(M_t)_{0\le t\le T}$ with $\EQ|M_t|<\infty$ for every $t$ is a
+    $\Q$-martingale if and only if $(Z_tM_t)_{0\le t\le T}$ is a $\Prob$-martingale.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+(i) Equivalence is \cref{prop:pr-change-of-measure}(b), and $Z$ is a martingale by the tower
+property (\cref{rem:pr-density-process}). For $X\ge0$ $\F_t$-measurable,
+$\EQ[X]=\E[Z_TX]=\E[Z_tX]$ by \eqref{eq:pr-change} and \eqref{eq:pr-takeout-positive}; for
+$\Q$-integrable $X$, split $X=X^+-X^-$. With $X=\1_{\{Z_t\le0\}}$ this gives
+$\Q(Z_t\le0)=\E[Z_t\1_{\{Z_t\le0\}}]\le0$, so $\Q(Z_t\le0)=0$, and $\Prob(Z_t\le0)=0$ by
+equivalence.
+
+(ii) By (i), $\E[Z_t|Y|]=\EQ|Y|<\infty$. Let $R=\E[Z_tY\mid\F_s]/Z_s$, which is
+$\F_s$-measurable, and $\Q$-integrable because $\EQ|R|=\E[Z_s|R|]\le\E[Z_t|Y|]$. For
+$A\in\F_s$, by (i) at time $s$, then the definition of conditional expectation, then (i) at
+time $t$,
+\[
+  \EQ[R\1_A]=\E\big[\E[Z_tY\mid\F_s]\1_A\big]=\E[Z_tY\1_A]=\EQ[Y\1_A].
+\]
+So $R$ satisfies the definition of $\EQ[Y\mid\F_s]$ (\cref{def:pr-condexp}) in
+$(\Omega,\F,\Q)$. Identities that hold $\Q$-almost surely hold $\Prob$-almost surely.
+
+(iii) By (i), $\E|Z_tM_t|=\EQ|M_t|<\infty$, and by (ii), $\EQ[M_t\mid\F_s]=M_s$ if and only if
+$\E[Z_tM_t\mid\F_s]=Z_sM_s$.
+\end{proof}
+
+\section{Girsanov's theorem}\label{sec:rn-girsanov}
+
+Let $\Theta$ be a progressively measurable process with $\int_0^T\Theta_u^2\,\dd u<\infty$
+almost surely, that is $\Theta\in\mathbb H^2_{\mathrm{loc}}$ (\cref{def:ito-h2}), and set,
+for $0\le t\le T$,
+\begin{equation}\label{eq:rn-girsanov}
+  Z_t=\exp\Big(-\int_0^t\Theta_u\,\dd W_u-\frac12\int_0^t\Theta_u^2\,\dd u\Big),\qquad
+  \widetilde W_t=W_t+\int_0^t\Theta_u\,\dd u .
+\end{equation}
+
+\begin{theorem}[Girsanov's theorem]\label{thm:rn-girsanov}
+In this setting:
+\begin{enumerate}[label=(\roman*)]
+  \item $Z$ is a positive local martingale with $\dd Z_t=-\Theta_tZ_t\,\dd W_t$, and
+    $\E[Z_T]\le1$.
+  \item If $\E[Z_T]=1$, then $Z$ is a martingale on $[0,T]$, $\Q(A)=\E[Z_T\1_A]$ defines a
+    probability measure equivalent to $\Prob$, and $(\widetilde W_t)_{0\le t\le T}$ is a
+    Brownian motion under $\Q$, for which $(\F_t)_{t\le T}$ is a filtration.
+  \item \emph{(Novikov's condition)} If $\E\big[\exp\big(\frac12\int_0^T\Theta_u^2\,\dd
+    u\big)\big]<\infty$, then $\E[Z_T]=1$. This holds in particular if $\Theta$ is bounded,
+    for instance constant.
+\end{enumerate}
+\end{theorem}
+
+The theorem is due to \textcite{girsanov-transforming}, after \textcite{cameron-martin-1944}
+for deterministic $\Theta$, and (iii) to \textcite{novikov-identity}. We prove (i), and (ii)--(iii) when $\Theta$ is bounded, which
+covers the constant case and every model in this chapter. For general $\Theta$ see
+\textcite{karatzas-shreve}, Sections~3.5.A and~3.5.D, or \textcite{revuz-yor},
+Chapter~VIII, Section~1 (Theorem~1.4 and Novikov's criterion); \textcite{shreve2},
+Section~5.2.1, proves (ii) when $\E\int_0^T\Theta_u^2Z_u^2\,\dd u<\infty$. The proof rests
+on a lemma about exponentials of It\^o integrals.
+
+\begin{lemma}[Exponential martingales]\label{lem:rn-exponential}
+Let $B$ be a Brownian motion with a filtration on some probability space, with expectation
+$\E$, let $\psi\in\mathbb H^2_{\mathrm{loc}}$, and let
+$\mathcal E_t=\exp\big(\int_0^t\psi\,\dd B-\frac12\int_0^t\psi^2\,\dd u\big)$, $t\le T$.
+\begin{enumerate}[label=(\alph*)]
+  \item $\mathcal E_t=1+\int_0^t\psi_u\mathcal E_u\,\dd B_u$ and $\E[\mathcal E_t]\le1$.
+  \item If $|\psi|\le b$ for a constant $b$, then $\E[\mathcal E_t^p]\le e^{p(p-1)b^2t/2}$
+    for every $p\ge1$, and $\mathcal E$ is a martingale on $[0,T]$.
+\end{enumerate}
+\end{lemma}
+
+\begin{proof}
+(a) The identity is It\^o's formula for $e^x$ (\cref{thm:itf-process}), computed in
+\cref{exa:itf-exponential}. The integrand $\psi\mathcal E$ is in $\mathbb
+H^2_{\mathrm{loc}}$, so with the stopping times $\tau_n$ of \cref{rem:ito-local} the stopped
+process $\mathcal E_{t\wedge\tau_n}$ is a martingale and $\E[\mathcal E_{t\wedge\tau_n}]=1$.
+Almost surely $\tau_n=T$ for $n$ large, so $\mathcal E_{t\wedge\tau_n}\to\mathcal E_t$, and
+Fatou's lemma\footnote{$\E[\liminf_nX_n]\le\liminf_n\E[X_n]$ for $X_n\ge0$: apply monotone
+convergence to $\inf_{m\ge n}X_m$.} gives $\E[\mathcal E_t]\le1$.
+
+(b) Write $\mathcal E^{(p\psi)}$ for the exponential built from $p\psi$. Then
+$\mathcal E_t^p=\mathcal E^{(p\psi)}_t\exp\big(\frac{p^2-p}2\int_0^t\psi^2\,\dd u\big)\le
+\mathcal E^{(p\psi)}_te^{p(p-1)b^2t/2}$, and (a) for $p\psi$ gives the bound. With $p=2$,
+$\E\int_0^T\psi^2\mathcal E_u^2\,\dd u\le b^2\int_0^Te^{b^2u}\,\dd u<\infty$, so
+$\psi\mathcal E\in\mathbb H^2$ and $\mathcal E$ is a martingale by \cref{thm:ito-integral}.
+\end{proof}
+
+\begin{proof}[Proof of \cref{thm:rn-girsanov}]
+(i) is \cref{lem:rn-exponential}(a) with $B=W$ and $\psi=-\Theta$. Let now $|\Theta|\le c$.
+By \cref{lem:rn-exponential}(b), $Z$ is a martingale and $\E[Z_T]=1$, which is (iii) in
+this case. As $Z_T>0$, \cref{lem:rn-density} applies: $\Q$ is equivalent to $\Prob$ with
+density $Z_t$ on $\F_t$. To use L\'evy's characterisation, which is stated for all times,
+extend $\widetilde W$ past $T$: let $Z_t=Z_T$ for $t>T$, and let
+$\chi_t=\Theta_t\1_{\{t\le T\}}$ and $M_t=W_t+\int_0^t\chi_u\,\dd u$ for $t\ge0$, so that
+$M=\widetilde W$ on $[0,T]$ and $\dd Z_t=-\chi_tZ_t\,\dd W_t$. Fix $T'\ge T$; on $[0,T']$, $Z_t=\E[Z_T\mid\F_t]$ is the density process of $\Q$.
+\begin{itemize}
+  \item \emph{Quadratic variation.} $M$ is an It\^o process with diffusion coefficient
+    $1$, so $[M,M]_t=t$ (\cref{prop:itf-decomposition}(i)): along partitions with mesh going
+    to $0$, the sums of squared increments converge to $t$ in $\Prob$-probability. They
+    converge in $\Q$-probability as well, because convergence in probability means that
+    every subsequence has a further subsequence converging almost surely
+    (\textcite{durrett}, Section~2.3), and $\Prob$ and $\Q$ have the same null sets.
+  \item \emph{Martingale.} By the product rule (\cref{cor:itf-product}),
+    \begin{align*}
+      \dd(Z_tM_t)&=Z_t\,\dd M_t+M_t\,\dd Z_t+\dd[Z,M]_t\\
+      &=Z_t\chi_t\,\dd t+Z_t\,\dd W_t-M_t\chi_tZ_t\,\dd W_t-\chi_tZ_t\,\dd t
+      =Z_t(1-\chi_tM_t)\,\dd W_t .
+    \end{align*}
+    By \cref{lem:rn-exponential}(b), $\E[Z_t^2]\le e^{c^2T}$ and
+    $\E[Z_t^4]\le e^{6c^2T}$, and $|M_t|\le|W_t|+cT$ gives $\E[M_t^4]\le8(3t^2+c^4T^4)$. By
+    Cauchy--Schwarz, $\E\big[Z_t^2(1-\chi_tM_t)^2\big]\le2\E[Z_t^2]+
+    2c^2\E[Z_t^4]^{1/2}\E[M_t^4]^{1/2}$ is bounded on $[0,T']$, so the integrand is in
+    $\mathbb H^2[0,T']$ and $ZM$ is a $\Prob$-martingale; and
+    $\EQ|M_t|=\E[Z_t|M_t|]<\infty$. By \cref{lem:rn-density}(iii), $M$ is a
+    $\Q$-martingale on $[0,T']$.
+\end{itemize}
+As $T'$ is arbitrary, $M$ is a continuous $\Q$-martingale with $M_0=0$ and $[M,M]_t=t$ for
+all $t\ge0$. By L\'evy's characterisation (\cref{thm:itf-levy}), applied under $\Q$, $M$ is
+a $\Q$-Brownian motion and $(\F_t)$ is a filtration for it; on $[0,T]$, $M=\widetilde W$. Under
+$\Q$, $M$ is not given as an It\^o integral against a $\Q$-Brownian motion, so this is the
+general form of the theorem, cited in \cref{ch:08-ito-formula}, not the case proved there.
+\end{proof}
+
+For a constant $\Theta_t=\theta$, $Z_t=\exp(-\theta W_t-\frac{\theta^2}2t)$ and
+$\widetilde W_t=W_t+\theta t$: under $\Q$, $W$ is a Brownian motion with drift $-\theta$. At
+the single time $T$ this is the Gaussian shift of \cref{rem:pr-girsanov} (with $\theta$
+replaced by $-\theta$); Girsanov's theorem says that the whole path is shifted, with
+independent Gaussian increments under $\Q$.
+
+\begin{remark}[What a change of measure can and cannot do]\label{rem:rn-girsanov-remarks}
+\begin{enumerate}[label=(\alph*),leftmargin=*]
+  \item \emph{Drift, not volatility.} The paths do not change; their weights do.
+    Quadratic variation is a limit in probability along a single path, so it is the same
+    under $\Prob$ and every equivalent $\Q$: $[\widetilde W,\widetilde W]_t=[W,W]_t=t$. An
+    equivalent change of measure can move the drift of an It\^o process, never its
+    diffusion coefficient: two measures under which $\log S$ has quadratic variations
+    $\sigma_1^2T\ne\sigma_2^2T$ over $[0,T]$ are not equivalent.
+  \item \emph{A condition is needed.} The inequality $\E[Z_T]\le1$ can be strict, and then
+    $Z_T$ defines no probability measure. With $T=1$ and the processes $X$ and $B$ of
+    \cref{exa:ito-doubling}, let $a>0$ and let $\tau$ be the first time $u<1$ at which
+    $X_u+\frac12\log(1-u)=-a$, that is, at which $B_v-\frac v2$ reaches $-a$ in the clock
+    $v=-\log(1-u)$. Since $B_v/v\to0$ (\exref{ex:bm-inversion}), $B_v-\frac v2\to-\infty$ and
+    $\tau<1$ almost surely. For $\Theta_s=-(1-s)^{-1/2}\1_{\{s\le\tau\}}$ (set to $0$ on the
+    null event $\{\tau=1\}$, as in that example), $\int_0^1\Theta_s^2\,\dd s=-\log(1-\tau)<\infty$
+    and $-\int_0^1\Theta\,\dd W=X_\tau$, the stopped integral, so
+    $Z_1=\exp\big(X_\tau+\frac12\log(1-\tau)\big)=e^{-a}$ almost surely.
+  \item \emph{Several Brownian motions.} Let $W=(W^1,\dots,W^d)$ be a $d$-dimensional
+    Brownian motion, $\Theta=(\Theta^1,\dots,\Theta^d)$ with each $\Theta^i\in\mathbb
+    H^2_{\mathrm{loc}}$, $Z_t=\exp\big(-\sum_i\int_0^t\Theta^i\,\dd W^i-\frac12\int_0^t|\Theta_u|^2\,\dd u\big)$
+    and $\widetilde W^i_t=W^i_t+\int_0^t\Theta^i_u\,\dd u$. If $\E[Z_T]=1$, for instance if
+    $\Theta$ is bounded, then $\widetilde W$ is a $d$-dimensional $\Q$-Brownian motion on
+    $[0,T]$. The proof for bounded $\Theta$ is the one above, with \cref{thm:itf-multi} and
+    L\'evy's characterisation in $d$ dimensions; see \textcite{karatzas-shreve},
+    Section~3.5.A, and \textcite{shreve2}, Section~5.4.1.
+  \item \emph{Reweighting is importance sampling} (\exref{ex:pr-importance}). For constant
+    $\theta$, $\E[Z_T^2]=e^{\theta^2T}$, and $M$ paths simulated under $\Prob$ have an
+    \emph{effective sample size} $(\sum_iZ^i)^2/\sum_i(Z^i)^2$ of about $Me^{-\theta^2T}$: a
+    diagnostic of how unevenly the weights are spread, that is, of how few paths can dominate
+    a weighted average. The variance of a weighted estimator depends on the payoff and can be
+    larger or smaller than with paths simulated under $\Q$: for the call of
+    \cref{fig:rn-reweighting} it is about four times smaller.
+\end{enumerate}
+\end{remark}
+
+\begin{remark}[Stochastic integrals under $\Q$]\label{rem:rn-integrals}
+In the setting of \cref{thm:rn-girsanov}(ii), let $H\in\mathbb H^2_{\mathrm{loc}}$; the
+condition $\int_0^TH^2\,\dd u<\infty$ is the same under $\Prob$ and $\Q$. Then, almost surely,
+\begin{equation}\label{eq:rn-integrals}
+  \int_0^tH_u\,\dd\widetilde W_u=\int_0^tH_u\,\dd W_u+\int_0^tH_u\Theta_u\,\dd u
+  \qquad\text{for all }t\le T,
+\end{equation}
+where the left side is the It\^o integral built under $\Q$ from the $\Q$-Brownian motion
+$\widetilde W$, and the right side is built under $\Prob$. For simple $H$ both sides are the
+same finite sum. In general, take simple $H^n$ with $\int_0^T(H^n-H)^2\,\dd u\to0$ in
+probability; then the integrals of $H^n$ converge to those of $H$ uniformly on $[0,T]$ in
+probability, under $\Prob$ for $W$ and under $\Q$ for $\widetilde W$
+(\textcite{karatzas-shreve}, Section~3.2.D), while $\int_0^tH^n\Theta\,\dd u\to\int_0^tH\Theta\,\dd u$
+uniformly by Cauchy--Schwarz. As in the proof above, convergence in probability is the same
+under both measures, so the limits agree. In differential form,
+$H\,\dd\widetilde W=H\,\dd W+H\Theta\,\dd t$: an It\^o process under $\Prob$ is an It\^o
+process under $\Q$, with the same diffusion coefficient and a new drift.
+\end{remark}
+
+\paragraph{The market price of risk.} In the Black--Scholes model, the stock is the geometric
+Brownian motion $S_t=S_0\exp\big(\sigma W_t+(\mu-\frac{\sigma^2}2)t\big)$ under $\Prob$
+(\cref{def:bs-gbm}), and the money market grows at the rate $r$. The number
+\[
+  \theta=\frac{\mu-r}{\sigma}
+\]
+is the \emph{market price of risk}: the expected return in excess of the risk-free rate, per
+unit of volatility. With $\Theta\equiv\theta$, \cref{thm:rn-girsanov} gives a measure $\Q$
+under which $\widetilde W_t=W_t+\theta t$ is a Brownian motion on $[0,T]$, and since
+$\sigma W_t+\mu t=\sigma\widetilde W_t+rt$,
+\[
+  S_t=S_0\exp\Big(\sigma\widetilde W_t+\Big(r-\frac{\sigma^2}2\Big)t\Big),\qquad
+  \dd S_t=\mu S_t\,\dd t+\sigma S_t\,\dd W_t=rS_t\,\dd t+\sigma S_t\,\dd\widetilde W_t .
+\]
+This is the setting of \cref{sec:bs-pricing}: every price computed in
+\cref{ch:06-black-scholes-formula} is an expectation under this $\Q$. The real-world drift
+$\mu$ enters only through $\theta$, that is, through the weights $Z_T$, and it disappears
+from prices. \Cref{fig:rn-reweighting} shows the reweighting at work, and what happens if
+the weights are forgotten.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch11-reweighting}
+  \caption{Girsanov's theorem on $10^5$ paths simulated under $\Prob$ with $S_0=100$,
+    $\mu=15\%$, $r=3\%$, $\sigma=20\%$, $T=1$, so $\theta=0.6$. Left: $\widetilde W_T=W_T+\theta T$
+    is $\mathcal N(\theta,1)$ on these paths; weighted by $Z_T$, the same values are
+    $\mathcal N(0,1)$. Right: estimates of the call price with $K=110$, with $95\%$ confidence
+    bands, as the number of paths grows. The weighted average converges to the
+    Black--Scholes price $5.29$; the plain average converges to
+    $e^{-rT}\E[(S_T-K)^+]=12.07$, which is not a price
+    (\coderef{code/src/ieor222/riskneutral.py}).}
+  \label{fig:rn-reweighting}
+\end{figure}
+
+\demo{11-risk-neutral.ipynb}{reweight simulated paths by $Z_T$ for any market price of risk,
+and watch the histogram of $\widetilde W_T$, the effective sample size and the price
+estimates change.}
+
+\section{Risk-neutral pricing}\label{sec:rn-pricing}
+
+\paragraph{The market.} We now let the interest rate, the mean return and the volatility be
+random. Let $r$, $\alpha$ and $\sigma$ be bounded progressively measurable processes, with
+$\sigma_t\ge\varepsilon$ for a constant $\varepsilon>0$. The \emph{money market} is worth
+$B_t=\exp\big(\int_0^tr_u\,\dd u\big)$ at time $t$, and $D_t=1/B_t$ is the \emph{discount
+factor}: $\dd D_t=-r_tD_t\,\dd t$. The \emph{stock} is
+\begin{equation}\label{eq:rn-stock}
+  S_t=S_0\exp\Big(\int_0^t\sigma_u\,\dd W_u+\int_0^t\Big(\alpha_u-\frac{\sigma_u^2}2\Big)\dd u\Big),
+  \qquad\text{so that}\qquad \dd S_t=\alpha_tS_t\,\dd t+\sigma_tS_t\,\dd W_t
+\end{equation}
+by \cref{thm:itf-process}, with $S_0>0$. The Black--Scholes market is the case of constant
+$r$, $\alpha=\mu$ and $\sigma$. By the product rule, with $[D,S]=0$ because $D$ has no
+$\dd W$-term,
+\begin{equation}\label{eq:rn-discounted-stock}
+  \dd(D_tS_t)=D_tS_t\big((\alpha_t-r_t)\,\dd t+\sigma_t\,\dd W_t\big)
+  =\sigma_tD_tS_t\big(\Theta_t\,\dd t+\dd W_t\big),\qquad
+  \Theta_t=\frac{\alpha_t-r_t}{\sigma_t}.
+\end{equation}
+The market price of risk $\Theta$ is bounded, by $(\sup|\alpha|+\sup|r|)/\varepsilon$.
+
+\begin{definition}[Risk-neutral measure]\label{def:rn-measure}
+A \emph{risk-neutral measure}, or \emph{equivalent martingale measure}, is a probability
+measure $\Q$ on $(\Omega,\F_T)$, equivalent to $\Prob$ on $\F_T$, under which the discounted
+price $(D_tS_t)_{0\le t\le T}$ of every traded asset that pays no dividends is a
+martingale. (Dividends are treated in \cref{sec:rn-dividends}.)
+\end{definition}
+
+The money market itself trivially satisfies the condition: $D_tB_t=1$. Prices are measured in
+units of the money market, and under $\Q$ every traded asset earns, on average, the same as
+the money market.
+
+\begin{proposition}[The risk-neutral measure of the model]\label{prop:rn-existence}
+Let $\Q$ and $\widetilde W$ be given by \cref{thm:rn-girsanov} with
+$\Theta=(\alpha-r)/\sigma$. Then $\widetilde W$ is a $\Q$-Brownian motion on $[0,T]$,
+\[
+  \dd S_t=r_tS_t\,\dd t+\sigma_tS_t\,\dd\widetilde W_t,\qquad
+  D_tS_t=S_0\exp\Big(\int_0^t\sigma_u\,\dd\widetilde W_u-\frac12\int_0^t\sigma_u^2\,\dd u\Big),
+\]
+and $(D_tS_t)$ is a $\Q$-martingale, so $\Q$ is a risk-neutral measure. In the
+Black--Scholes market, $\Q$ and $\widetilde W$ realise the setting of \cref{sec:bs-pricing}.
+\end{proposition}
+
+\begin{proof}
+$\Theta$ is bounded, so \cref{thm:rn-girsanov}(ii)--(iii) apply. By \eqref{eq:rn-integrals}
+with $H=\sigma$, $\int_0^t\sigma\,\dd\widetilde W=\int_0^t\sigma\,\dd W+\int_0^t(\alpha-r)\,\dd u$,
+which turns \eqref{eq:rn-stock} times $D_t$ into the displayed formula; and
+$\sigma S\,\dd W=\sigma S\,\dd\widetilde W-(\alpha-r)S\,\dd t$ gives the equation for $S$. Finally $D S/S_0$ is the
+exponential of \cref{lem:rn-exponential} for the $\Q$-Brownian motion $\widetilde W$ and the
+bounded $\psi=\sigma$, hence a $\Q$-martingale.
+\end{proof}
+
+\paragraph{Strategies.} A trader holds $\Delta_t$ shares at time $t$ and keeps the rest of her
+wealth $X_t$ in the money market. A \emph{self-financing strategy} is a pair $(X_0,\Delta)$
+with $X_0\in\R$ and $\Delta$ progressively measurable with $\int_0^T\Delta_t^2S_t^2\,\dd
+t<\infty$ almost surely, whose wealth satisfies
+\begin{equation}\label{eq:rn-wealth}
+  \dd X_t=\Delta_t\,\dd S_t+r_t\big(X_t-\Delta_tS_t\big)\dd t,
+  \qquad\text{equivalently}\qquad
+  \dd(D_tX_t)=\Delta_t\,\dd(D_tS_t).
+\end{equation}
+The second form defines $D_tX_t=X_0+\int_0^t\Delta_u\,\dd(D_uS_u)$ explicitly, and the product
+rule $\dd(DX)=D\,\dd X-rDX\,\dd t$ shows that the two forms agree. In the Black--Scholes
+market (constant $r$, $\mu$, $\sigma$) this is \cref{def:dh-self-financing}. By \eqref{eq:rn-discounted-stock} and \eqref{eq:rn-integrals},
+under the measure of \cref{prop:rn-existence},
+\begin{equation}\label{eq:rn-wealth-q}
+  D_tX_t=X_0+\int_0^t\Delta_u\sigma_uD_uS_u\,\dd\widetilde W_u ,
+\end{equation}
+an It\^o integral with an integrand in $\mathbb H^2_{\mathrm{loc}}$, since $\sigma$ and $D$
+are bounded. An \emph{arbitrage} is a self-financing strategy with $X_0=0$, $X_T\ge0$
+almost surely and $\Prob(X_T>0)>0$. Without a restriction on $\Delta$ there are arbitrages:
+the doubling strategy of \cref{exa:ito-doubling}, with time rescaled from $[0,1]$ to $[0,T]$,
+run under $\Q$ with $\widetilde W$ in place of $W$ and $\Delta_t\sigma_tD_tS_t$ in place of its
+integrand, turns zero into a sure discounted dollar, at the price of unbounded intermediate losses. A strategy is
+\emph{tame} if its discounted wealth is bounded below, $D_tX_t\ge-c$ for a constant $c$: the
+trader has a credit line.
+
+\begin{theorem}[Risk-neutral pricing]\label{thm:rn-pricing}
+Let $\Q$ be a risk-neutral measure and $V_T$ an $\F_T$-measurable claim with
+$\EQ[D_T|V_T|]<\infty$.
+\begin{enumerate}[label=(\roman*)]
+  \item If a self-financing strategy replicates the claim, $X_T=V_T$ almost surely, and its
+    discounted wealth $(D_tX_t)$ is a $\Q$-martingale, then for $0\le t\le T$
+    \begin{equation}\label{eq:rn-pricing}
+      X_t=\EQ\Big[e^{-\int_t^Tr_u\,\dd u}\,V_T\,\Big|\,\F_t\Big],
+      \qquad\text{in particular}\qquad X_0=\EQ[D_TV_T].
+    \end{equation}
+    All such strategies have the same wealth process.
+  \item For the measure of \cref{prop:rn-existence}, the discounted wealth of every
+    self-financing strategy is a $\Q$-local martingale. It is a $\Q$-martingale if
+    $\EQ\int_0^T(\Delta_t\sigma_tD_tS_t)^2\,\dd t<\infty$, and $\EQ[D_TX_T]\le X_0$ if the
+    strategy is tame.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+(i) $D_tX_t=\EQ[D_TX_T\mid\F_t]=\EQ[D_TV_T\mid\F_t]$; divide by the $\F_t$-measurable
+$D_t>0$ (taking out what is known) and use $D_T/D_t=e^{-\int_t^Tr_u\,\dd u}$.
+
+(ii) The first two claims are \eqref{eq:rn-wealth-q} with \cref{rem:ito-local} and
+\cref{thm:ito-integral}, under $\Q$. Let $D_tX_t\ge-c$, and let $\tau_n$ be the stopping times
+of \cref{rem:ito-local} for the integrand in \eqref{eq:rn-wealth-q}. Then
+$\EQ[D_{T\wedge\tau_n}X_{T\wedge\tau_n}]=X_0$, and $D_{T\wedge\tau_n}X_{T\wedge\tau_n}\to
+D_TX_T$ almost surely because $\tau_n=T$ for large $n$. Fatou's lemma, applied to the
+nonnegative $D_{T\wedge\tau_n}X_{T\wedge\tau_n}+c$, gives $\EQ[D_TX_T]+c\le X_0+c$.
+\end{proof}
+
+As in \cref{ch:04-binomial}, the replication cost is the price. If the claim of (i) were
+offered at time $0$ for $p>X_0$, one could sell it, run the replicating strategy from $X_0$,
+and put $p-X_0$ in the money market: at $T$ the strategy settles the claim and $B_T(p-X_0)>0$
+is left. If $p<X_0$, buy the claim and run $(-X_0,-\Delta)$. Conversely, if the claim trades
+at $X_t$, its discounted price is a $\Q$-martingale, so $\Q$ remains risk-neutral for the
+market extended by the claim. The payoff may depend on the whole path, as for Asian and
+barrier options (\cref{ch:13-exotics}); for $V_T=g(S_T)$ in the Black--Scholes market,
+\eqref{eq:rn-pricing} is the price of \cref{prop:bs-markov}. With a random rate the discount
+factor stays inside the expectation: the claim $V_T=1$, the zero-coupon bond, is worth
+$\EQ[e^{-\int_t^Tr_u\,\dd u}\mid\F_t]$ (\cref{ch:14-rates}). And the measure must be $\Q$: the
+same expectation under $\Prob$ depends on $\mu$, and in \cref{fig:rn-reweighting} it more than
+doubles the price of the call.
+
+\begin{example}[A forward contract, three ways]\label{exa:rn-forward}
+In the Black--Scholes market, the long side of a forward contract receives $S_T-K$ at $T$.
+(a) Statically, hold one share and borrow $Ke^{-rT}$ (\cref{prop:arb-forward}): the value is
+$S_t-Ke^{-r(T-t)}$. (b) By \eqref{eq:rn-pricing}, the value is
+$e^{-r(T-t)}\EQ[S_T-K\mid\F_t]=S_t-Ke^{-r(T-t)}$, because $e^{-rt}S_t$ is a $\Q$-martingale.
+(c) The function $v(t,x)=x-Ke^{-r(T-t)}$ solves the Black--Scholes equation
+$\partial_tv+rx\partial_xv+\frac12\sigma^2x^2\partial_{xx}v=rv$ with $v(T,x)=x-K$, so
+$v(t,S_t)$ is the replication value (\cref{thm:dh-verification}), and its delta
+$\partial_xv=1$ is the static hedge of (a). The three
+answers agree, and the forward price, the $K$ that makes the contract worth zero, is
+$S_te^{r(T-t)}$. Here (a) is model-free, (b) uses only the martingale property of
+$e^{-rt}S_t$ under $\Q$, and (c) uses the full model.
+\end{example}
+
+\section{Martingale representation and completeness}\label{sec:rn-complete}
+
+\Cref{thm:rn-pricing} prices claims that can be replicated. Which ones can? In the binomial
+model, all of them (\cref{thm:bin-ftap}); in the trinomial model, not
+(\cref{prop:bin-trinomial}). The answer depends on the information: from now on, $(\F_t)$ is
+the filtration generated by $W$ and augmented by the $\Prob$-null sets,
+$\F_t=\sigma\big(\{W_u:u\le t\}\cup\mathcal N\big)$ with $\mathcal N=\{A\in\F:\Prob(A)=0\}$.
+Adding null sets does not change independence, so this is a filtration for $W$, and $\F_0$
+contains only events of probability $0$ or $1$.
+
+\begin{theorem}[Martingale representation]\label{thm:rn-representation}
+Let $(\F_t)$ be the augmented filtration of $W$.
+\begin{enumerate}[label=(\roman*)]
+  \item Every $\Prob$-martingale $(M_t)_{0\le t\le T}$ has a representation
+    $M_t=M_0+\int_0^t\Gamma_u\,\dd W_u$, almost surely for each $t$, with $M_0$ constant and
+    $\Gamma\in\mathbb H^2_{\mathrm{loc}}$; in particular $M$ has a continuous version, which
+    we use from now on. If $\E[M_T^2]<\infty$, then $\Gamma\in\mathbb H^2$, and $\Gamma$ is
+    unique up to $\dd t\otimes\dd\Prob$-null sets.
+  \item Let $\Q$ and $\widetilde W$ be as in \cref{thm:rn-girsanov}(ii). Every
+    $\Q$-martingale $(\widetilde M_t)_{0\le t\le T}$ has a continuous version with
+    $\widetilde M_t=\widetilde M_0+\int_0^t\widetilde\Gamma_u\,\dd\widetilde W_u$ for some
+    $\widetilde\Gamma\in\mathbb H^2_{\mathrm{loc}}$.
+\end{enumerate}
+\end{theorem}
+
+Part (i) is cited: see \textcite{karatzas-shreve}, Section~3.4.D, \textcite{revuz-yor},
+Chapter~V, Section~3, \textcite{oksendal}, Theorem~4.3.4 (square-integrable case), or
+\textcite{shreve2}, Section~5.3.1. Uniqueness follows from the isometry: if
+$\int_0^T(\Gamma-\Gamma')\,\dd W=0$ then $\E\int_0^T(\Gamma-\Gamma')^2\,\dd u=0$. The
+hypothesis on the filtration cannot be dropped: if $(\F_t)$ also carries a Brownian motion
+$W'$ independent of $W$, then $W'$ is a martingale that is not an integral against $W$
+(\exref{ex:rn-incomplete}). Part (ii) needs care, because $(\F_t)$ is generated by $W$, not
+by $\widetilde W$, which may carry less information when $\Theta$ is random.
+
+\begin{proof}[Proof of (ii)]
+By \cref{lem:rn-density}(iii), $Y_t=Z_t\widetilde M_t$ is a $\Prob$-martingale, so by (i)
+$Y_t=Y_0+\int_0^t\Gamma_u\,\dd W_u$, continuous. Then $Y/Z$ is a continuous version of
+$\widetilde M$. By It\^o's formula for $e^x$, $1/Z_t=\exp\big(\int_0^t\Theta\,\dd
+W+\frac12\int_0^t\Theta^2\,\dd u\big)$ satisfies $\dd(1/Z_t)=Z_t^{-1}(\Theta_t\,\dd
+W_t+\Theta_t^2\,\dd t)$, and the product rule gives
+\[
+  \dd\Big(\frac{Y_t}{Z_t}\Big)=\frac{Y_t}{Z_t}\big(\Theta_t\,\dd W_t+\Theta_t^2\,\dd t\big)
+  +\frac{\Gamma_t}{Z_t}\,\dd W_t+\frac{\Gamma_t\Theta_t}{Z_t}\,\dd t
+  =\widetilde\Gamma_t\big(\dd W_t+\Theta_t\,\dd t\big),\qquad
+  \widetilde\Gamma_t=\frac{\Gamma_t}{Z_t}+\widetilde M_t\Theta_t .
+\]
+$\widetilde\Gamma$ is in $\mathbb H^2_{\mathrm{loc}}$ because $1/Z$ and $\widetilde M$ are
+continuous and $\Gamma,\Theta\in\mathbb H^2_{\mathrm{loc}}$, and
+$\widetilde\Gamma\,(\dd W+\Theta\,\dd t)=\widetilde\Gamma\,\dd\widetilde W$ by
+\eqref{eq:rn-integrals}.
+\end{proof}
+
+\begin{theorem}[Fundamental theorems of asset pricing]\label{thm:rn-ftap}
+Consider the market of \cref{sec:rn-pricing}, in particular the Black--Scholes market, and
+let $\Q$ be the measure of \cref{prop:rn-existence}.
+\begin{enumerate}[label=(\roman*)]
+  \item \emph{(First theorem, one direction.)} $\Q$ is a risk-neutral measure, and no tame
+    strategy is an arbitrage.
+\end{enumerate}
+If moreover $(\F_t)$ is the augmented filtration of $W$:
+\begin{enumerate}[label=(\roman*),resume]
+  \item \emph{(Uniqueness.)} $\Q$ is the only risk-neutral measure.
+  \item \emph{(Second theorem: completeness.)} Every $\F_T$-measurable claim $V_T$ with
+    $\EQ[D_T|V_T|]<\infty$ is replicated by a self-financing strategy whose discounted wealth
+    is the $\Q$-martingale $D_tX_t=\EQ[D_TV_T\mid\F_t]$, so that its price is
+    \eqref{eq:rn-pricing}. The hedge is
+    \begin{equation}\label{eq:rn-hedge}
+      \Delta_t=\frac{\widetilde\Gamma_t}{\sigma_tD_tS_t},
+    \end{equation}
+    where $\widetilde\Gamma$ represents this martingale as in
+    \cref{thm:rn-representation}(ii). If $V_T\ge-c$ for a constant $c$, the strategy is tame.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+(i) $\Q$ is risk-neutral by \cref{prop:rn-existence}. Let $X$ be tame, with $X_0=0$ and
+$X_T\ge0$. By \cref{thm:rn-pricing}(ii), $\EQ[D_TX_T]\le0$, so the nonnegative $D_TX_T$
+vanishes $\Q$-almost surely, hence $\Prob$-almost surely, and $X_T=0$.
+
+(ii) Let $\Q'$ be risk-neutral, $Z'_T>0$ its density with respect to $\Prob$ on $\F_T$
+(Radon--Nikodym, \cref{sec:pr-change}) and $Z'_t=\E[Z'_T\mid\F_t]$. By
+\cref{thm:rn-representation}(i), $Z'_t=1+\int_0^t\Gamma_u\,\dd W_u$. By
+\cref{lem:rn-density}(iii), $Z'DS$ is a $\Prob$-martingale, so by
+\cref{thm:rn-representation}(i) it is an It\^o process without drift. The product rule and
+\eqref{eq:rn-discounted-stock} give another decomposition,
+\[
+  \dd(Z'_tD_tS_t)=\sigma_tD_tS_t\big(\Theta_tZ'_t+\Gamma_t\big)\dd t
+  +D_tS_t\big(\sigma_tZ'_t+\Gamma_t\big)\dd W_t ,
+\]
+and by uniqueness of the decomposition (\cref{prop:itf-decomposition}(ii)) its drift
+vanishes: $\Gamma=-\Theta Z'$, $\dd t\otimes\dd\Prob$-almost everywhere, since $\sigma DS>0$.
+So $\dd Z'_t=-\Theta_tZ'_t\,\dd W_t$, and with $\dd(1/Z_t)$ as in the proof of
+\cref{thm:rn-representation}(ii),
+\[
+  \dd\Big(\frac{Z'_t}{Z_t}\Big)=\frac{Z'_t}{Z_t}\big(\Theta_t\,\dd W_t+\Theta_t^2\,\dd t\big)
+  -\frac{\Theta_tZ'_t}{Z_t}\,\dd W_t-\frac{\Theta_t^2Z'_t}{Z_t}\,\dd t=0 .
+\]
+Hence $Z'_T=Z_T$ and $\Q'=\Q$ on $\F_T$.
+
+(iii) $\widetilde M_t=\EQ[D_TV_T\mid\F_t]$ is a $\Q$-martingale; write it as in
+\cref{thm:rn-representation}(ii) and define $\Delta$ by \eqref{eq:rn-hedge}. Since
+$\sigma\ge\varepsilon$ and $D$ is bounded away from $0$,
+$\int_0^T\Delta^2S^2\,\dd t\le\varepsilon^{-2}\sup_t D_t^{-2}\int_0^T\widetilde\Gamma^2\,\dd
+t<\infty$, so $(\widetilde M_0,\Delta)$ is a self-financing strategy, and by
+\eqref{eq:rn-wealth-q} its discounted wealth is
+$\widetilde M_0+\int_0^t\widetilde\Gamma\,\dd\widetilde W=\widetilde M_t$. At $T$,
+$D_TX_T=D_TV_T$. If $V_T\ge-c$, then $D_tX_t\ge-c\,\EQ[D_T\mid\F_t]\ge-c\,e^{T\sup|r|}$.
+\end{proof}
+
+Trading the claim at its price creates no arbitrage either (compare \cref{rem:bin-extended}).
+
+\begin{corollary}[The market extended by a claim]\label{cor:rn-extended-market}
+In the setting of \cref{thm:rn-ftap}(ii)--(iii), let $V_T$ be $\F_T$-measurable with
+$\EQ[D_T|V_T|]<\infty$, traded at $V_t=\EQ[e^{-\int_t^Tr_u\,\dd u}V_T\mid\F_t]$, so that
+$D_tV_t=V_0+\int_0^t\Gamma^V_u\,\dd\widetilde W_u$ by \cref{thm:rn-representation}(ii). Let a
+strategy hold $\Delta_t$ shares and $\Phi_t$ units of the claim, with $\Delta,\Phi$ progressively
+measurable and $\int_0^T(\Delta_t^2S_t^2+\Phi_t^2(\Gamma^V_t)^2)\,\dd t<\infty$ almost surely, and
+let its discounted wealth be
+$D_tX_t=X_0+\int_0^t\Delta_u\,\dd(D_uS_u)+\int_0^t\Phi_u\,\dd(D_uV_u)$. Then
+$D_tX_t=X_0+\int_0^t(\Delta_u\sigma_uD_uS_u+\Phi_u\Gamma^V_u)\,\dd\widetilde W_u$ is a $\Q$-local
+martingale, and no such strategy with discounted wealth bounded below is an arbitrage.
+\end{corollary}
+
+\begin{proof}
+The formula for $D_tX_t$ is \eqref{eq:rn-wealth-q} plus the representation of $DV$; its
+integrand is in $\mathbb H^2_{\mathrm{loc}}$. The Fatou argument in the proof of
+\cref{thm:rn-pricing}(ii) gives $\EQ[D_TX_T]\le X_0$ when $D X\ge-c$, and the proof of
+\cref{thm:rn-ftap}(i) applies unchanged.
+\end{proof}
+
+The theorem rests on Girsanov's theorem, proved here for bounded $\Theta$, and on the
+martingale representation theorem, cited. Two hypotheses carry it. If $\sigma$ could vanish, $\Delta$ in \eqref{eq:rn-hedge} would be undefined, and where
+$\sigma=0$ and $\alpha\ne r$ the stock would beat or trail the money market without risk,
+which is an arbitrage. If the filtration carries more randomness than
+$W$, for instance a second Brownian motion driving the volatility, there are many
+risk-neutral measures and some claims cannot be replicated (\exref{ex:rn-incomplete}; the
+Heston model of \cref{ch:15-volatility}). For locally bounded semimartingale prices (continuous prices are), no arbitrage in the strong sense of
+``no free lunch with vanishing risk'' among strategies with wealth bounded below is
+equivalent to the existence of an equivalent measure under which discounted prices are
+local martingales \citep{delbaen-schachermayer-1994}; and, under conditions met here, an
+arbitrage-free market is complete if and only if this measure is unique
+(\textcite{harrison-pliska}; \textcite{harrison-pliska-1983}), as in the discrete case of
+\cref{rem:bin-ftap-general}.
+
+The hedge \eqref{eq:rn-hedge} exists, but the representation theorem does not say how to
+compute $\widetilde\Gamma$. For claims $g(S_T)$ in the Black--Scholes model the price is
+$v(t,S_t)$, and It\^o's formula identifies the hedge as $\Delta_t=\partial_xv(t,S_t)$
+(\cref{thm:dh-verification}), for the call $\Delta_t=N(d_+)$ (\cref{prop:bs-greeks}); the same
+holds in local volatility models (\cref{cor:fk-pricing-pde}). The two methods of the course
+are complementary: risk-neutral pricing handles any $\F_T$-measurable claim and random
+coefficients, but its hedge is not explicit; the PDE method of
+\cref{ch:10-delta-hedging,ch:12-feynman-kac} needs a Markovian model and a payoff such as
+$g(S_T)$, and gives the hedge. Where both apply they agree, by the Feynman--Kac formula
+(\cref{thm:fk-feynman-kac}).
+
+\section{Change of numeraire}\label{sec:rn-numeraire}
+
+Discounting by the money market is a choice. Any positive traded price $N$ can serve as the
+unit of account, a \emph{numeraire}, and each numeraire comes with its own martingale
+measure.
+
+\begin{proposition}[Change of numeraire]\label{prop:rn-numeraire}
+Let $\Q$ be a risk-neutral measure and $N$ the positive price process of a traded asset that
+pays no dividends, so that $(D_tN_t)$ is a $\Q$-martingale; let $\Q^N(A)=\EQ\big[D_TN_T\1_A\big]/N_0$
+for $A\in\F_T$.
+\begin{enumerate}[label=(\roman*)]
+  \item $\Q^N$ is a probability measure equivalent to $\Q$, with density $D_tN_t/N_0$ on
+    $\F_t$.
+  \item If $(D_tV_t)$ is a $\Q$-martingale, then $(V_t/N_t)$ is a $\Q^N$-martingale. In
+    particular, for every claim with $\EQ[D_T|V_T|]<\infty$,
+    \[
+      \EQ\Big[e^{-\int_t^Tr_u\,\dd u}V_T\,\Big|\,\F_t\Big]=N_t\,\E^{\Q^N}\Big[\frac{V_T}{N_T}\,\Big|\,\F_t\Big].
+    \]
+  \item \emph{(The stock as numeraire.)} In the Black--Scholes market with $N=S$,
+    $\dd\Q^S/\dd\Q=e^{-rT}S_T/S_0=\exp\big(\sigma\widetilde W_T-\frac{\sigma^2}2T\big)$,
+    $W^S_t=\widetilde W_t-\sigma t$ is a $\Q^S$-Brownian motion on $[0,T]$,
+    \[
+      S_t=S_0\exp\Big(\sigma W^S_t+\Big(r+\frac{\sigma^2}2\Big)t\Big),
+    \]
+    the money market in units of stock, $e^{rt}/S_t$, is a $\Q^S$-martingale, and
+    \begin{equation}\label{eq:rn-call-numeraire}
+      e^{-rT}\EQ\big[(S_T-K)^+\big]=S_0\,\Q^S(S_T>K)-Ke^{-rT}\,\Q(S_T>K)=S_0N(d_+)-Ke^{-rT}N(d_-).
+    \end{equation}
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) $D_TN_T/N_0>0$ has $\Q$-mean $D_0N_0/N_0=1$, so \cref{lem:rn-density}(i) applies with
+$(\Prob,\Q)$ replaced by $(\Q,\Q^N)$; the density process is $\EQ[D_TN_T\mid\F_t]/N_0=D_tN_t/N_0$.
+(ii) By \cref{lem:rn-density}(iii) with the same replacement, $V/N$ is a $\Q^N$-martingale if
+and only if $(D N/N_0)(V/N)=DV/N_0$ is a $\Q$-martingale; and
+$\E^{\Q^N}|V_t/N_t|=\EQ[D_t|V_t|]/N_0<\infty$. For the identity, apply this to
+$V_t=\EQ[(D_T/D_t)V_T\mid\F_t]$, for which $D_tV_t=\EQ[D_TV_T\mid\F_t]$ is a
+$\Q$-martingale, and use $V_t/N_t=\E^{\Q^N}[V_T/N_T\mid\F_t]$.
+(iii) $e^{-rT}S_T/S_0=\exp(\sigma\widetilde W_T-\frac{\sigma^2}2T)$ is the density of
+\cref{thm:rn-girsanov} under $\Q$ with $\Theta=-\sigma$, so $W^S$ is a $\Q^S$-Brownian
+motion, and $\sigma\widetilde W_t+(r-\frac{\sigma^2}2)t=\sigma W^S_t+(r+\frac{\sigma^2}2)t$.
+The money market $e^{rt}$ has $D_te^{rt}=1$, so $e^{rt}/S_t$ is a $\Q^S$-martingale by (ii).
+Split the payoff as $S_T\1_{\{S_T>K\}}-K\1_{\{S_T>K\}}$. By the definition of $\Q^S$,
+$\EQ[e^{-rT}S_T\1_{\{S_T>K\}}]=S_0\Q^S(S_T>K)$; under $\Q^S$, $S_T>K$ if and only if
+$W^S_T/\sqrt T>-d_+$, an event of probability $N(d_+)$; and $\Q(S_T>K)=N(d_-)$
+(\cref{prop:bs-digital}).
+\end{proof}
+
+The two normal probabilities in the Black--Scholes formula are thus the probabilities of
+exercise under two measures, with the money market and with the stock as unit. Under $\Q^S$ the
+stock drifts at $r+\sigma^2$, so exercise is more likely (\cref{fig:rn-numeraire}). The same
+idea prices exchange options (\exref{ex:rn-exchange}) and currency options seen from either
+country (\exref{ex:rn-fx}); with a zero-coupon bond as numeraire it gives the forward measure
+(\cref{prop:ir-forward-measure}).
+
+A numeraire is also a Monte Carlo device. Since
+$e^{-rT}(S_T-K)^+=\big(e^{-rT}S_T/S_0\big)\,S_0(1-K/S_T)^+$, the call price is
+$\E^{\Q^S}\big[S_0(1-K/S_T)^+\big]$: simulate $S$ with drift $r+\sigma^2$ and average a
+payoff bounded by $S_0$. In \cref{fig:rn-numeraire} this estimator has the smaller variance
+at every strike shown.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch11-numeraire}
+  \caption{The stock as numeraire, with $S_0=100$, $K=110$, $r=3\%$, $\sigma=30\%$, $T=1$.
+    Left: the law of $\log(S_T/S_0)$ under $\Q$ and under $\Q^S$; the shaded masses are
+    $N(d_-)$ and $N(d_+)$ of \eqref{eq:rn-call-numeraire}. Right: standard deviation per
+    path, relative to the price, of the two Monte Carlo estimators of the call, as the
+    strike varies; computed exactly by quadrature.}
+  \label{fig:rn-numeraire}
+\end{figure}
+
+\demo{11-risk-neutral.ipynb}{the laws of $S_T$ under $\Q$ and $\Q^S$ for any strike, rate and
+volatility, and the two Monte Carlo estimators of the call side by side.}
+
+\section{Dividends and exchange rates}\label{sec:rn-dividends}
+
+Suppose the stock pays dividends continuously: a holder of one share receives $qS_t\,\dd t$
+in cash over $[t,t+\dd t]$, for a constant \emph{dividend yield} $q\in\R$. The price $S$ is
+then not the value of a self-financing position, and $e^{-rt}S_t$ should not be a
+martingale: part of the return is paid out. The wealth of a trader holding $\Delta_t$ shares
+satisfies
+\begin{equation}\label{eq:rn-wealth-dividends}
+  \dd X_t=\Delta_t\,\dd S_t+q\Delta_tS_t\,\dd t+r\big(X_t-\Delta_tS_t\big)\dd t .
+\end{equation}
+Reinvesting every dividend in the stock turns one share at time $0$ into $e^{qt}$ shares at
+time $t$ (the number $n_t$ of shares solves $\dd n_t=qn_t\,\dd t$): a traded position
+without dividends, worth $e^{qt}S_t$.
+
+\begin{proposition}[Dividends and exchange rates]\label{prop:rn-dividends}
+Let $r,q\in\R$ and $\sigma>0$ be constants, and let the stock, paying the dividend yield $q$,
+be $S_t=S_0\exp\big(\sigma W_t+(\mu-\frac{\sigma^2}2)t\big)$ under $\Prob$. Let $\Q$ and
+$\widetilde W$ be given by \cref{thm:rn-girsanov} with $\Theta\equiv\theta_q=(\mu+q-r)/\sigma$.
+\begin{enumerate}[label=(\roman*)]
+  \item Under $\Q$, $\dd S_t=(r-q)S_t\,\dd t+\sigma S_t\,\dd\widetilde W_t$; the discounted
+    value $e^{-rt}e^{qt}S_t$ of the reinvested position is a $\Q$-martingale; and the
+    discounted wealth of every strategy \eqref{eq:rn-wealth-dividends} satisfies
+    $\dd(e^{-rt}X_t)=\Delta_t\sigma e^{-rt}S_t\,\dd\widetilde W_t$. So \cref{thm:rn-pricing} and
+    \cref{thm:rn-ftap} hold with $\Q$, and the forward price is $S_te^{(r-q)(T-t)}$.
+  \item With $\tau=T-t>0$, $K>0$ and
+    $d_\pm=\big(\log(S_t/K)+(r-q\pm\frac{\sigma^2}{2})\tau\big)/(\sigma\sqrt\tau)$, the prices at
+    time $t$ of the call and the put are
+    \[
+      C_t=S_te^{-q\tau}N(d_+)-Ke^{-r\tau}N(d_-),\qquad
+      P_t=Ke^{-r\tau}N(-d_-)-S_te^{-q\tau}N(-d_+),
+    \]
+    and $C_t-P_t=S_te^{-q\tau}-Ke^{-r\tau}$.
+  \item \emph{(Exchange rates.)} Let $X_t$ be the price in domestic currency of one unit of
+    foreign currency, a geometric Brownian motion under $\Prob$, and let $r$ and $r_f$ be the
+    domestic and foreign interest rates. A unit of foreign currency held in the foreign money
+    market is a traded asset worth $X_te^{r_ft}$ in domestic currency. Hence (i)--(ii) hold
+    with $S=X$ and $q=r_f$: the forward exchange rate is $X_te^{(r-r_f)\tau}$, and the call on
+    one unit of foreign currency is worth $X_te^{-r_f\tau}N(d_+)-Ke^{-r\tau}N(d_-)$
+    \citep{garman-kohlhagen-1983}.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) $\sigma W_t+\mu t=\sigma\widetilde W_t+(r-q)t$, which gives the dynamics under $\Q$ (as in
+\cref{sec:rn-girsanov}) and $e^{-(r-q)t}S_t=S_0\exp(\sigma\widetilde W_t-\frac{\sigma^2}2t)$, a
+$\Q$-martingale (\cref{thm:bm-martingales}). By the product rule and
+\eqref{eq:rn-wealth-dividends},
+$\dd(e^{-rt}X_t)=e^{-rt}\Delta_t\big(\dd S_t+(q-r)S_t\,\dd t\big)=\Delta_t\sigma e^{-rt}S_t\,\dd\widetilde W_t$,
+which is \eqref{eq:rn-wealth-q} for this market; with the reinvested position $e^{qt}S_t$ in
+place of $S$, the proofs of \cref{thm:rn-pricing,thm:rn-ftap} apply unchanged. The forward contract pays $S_T-K$, worth $e^{-r\tau}\EQ[S_T\mid\F_t]-Ke^{-r\tau}
+=S_te^{-q\tau}-Ke^{-r\tau}$, which vanishes for $K=S_te^{(r-q)\tau}$.
+
+(ii) Let $S'_u=e^{-q(T-u)}S_u$ for $u\in[0,T]$, the price of the \emph{prepaid forward}, a claim
+to one share delivered at $T$. Then $S'_u=S'_0\exp\big(\sigma\widetilde W_u+(r-\frac{\sigma^2}2)u\big)$
+and $S'_T=S_T$: $S'$ is the stock of \eqref{eq:bs-model} started from $S'_0=e^{-qT}S_0$. By
+\cref{thm:bs-formula} applied to $S'$, $C_t=c(t,S'_t)$ and $P_t=p(t,S'_t)$ with
+$S'_t=S_te^{-q\tau}$, and $\log(S'_t/K)+(r\pm\frac{\sigma^2}2)\tau=\log(S_t/K)+(r-q\pm\frac{\sigma^2}2)\tau$.
+
+(iii) The asset $X_te^{r_ft}$ plays the role of the reinvested position $e^{qt}S_t$, and the
+definitions of (i)--(ii) only use this asset and the domestic money market.
+\end{proof}
+
+With $q>0$, early exercise of an American call can be optimal (\exref{ex:rn-dividends}). In
+(iii), $\Q$ is the \emph{domestic} risk-neutral measure; a foreign investor uses another one,
+obtained by a change of numeraire (\exref{ex:rn-fx}).
+
+\furtherreading
+\textcite{shreve2}, Chapters~5 and~9, covers this material with the same notation;
+\textcite{bjork-arbitrage} develops the martingale approach and numeraires with many examples.
+Changes of numeraire were used by \textcite{margrabe-exchange} and
+\textcite{jamshidian-bond-option}, among others, and formalised by
+\textcite{geman-elkaroui-rochet-1995}. \textcite{karatzas-shreve}, Sections~3.4--3.5, and
+\textcite{revuz-yor}, Chapters~V and~VIII, prove the representation and Girsanov theorems in
+general. Arbitrage theory in continuous time started with \textcite{harrison-kreps-1979} and
+\textcite{harrison-pliska}; its general form is \textcite{delbaen-schachermayer-1994}.

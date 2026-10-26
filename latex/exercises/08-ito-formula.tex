@@ -1,0 +1,148 @@
+% Exercises for Chapter 8 (Ito's formula). Statements only: solutions are kept privately.
+% Throughout, W is a Brownian motion and (F_t) a filtration for W; "Ito's formula" refers to the
+% theorems of Chapter 8 of the notes.
+
+\begin{exercise}[Moments from It\^o's formula]\label{ex:itf-moments}
+\easy You may use that $W_s$ has finite moments of all orders.
+\begin{enumerate}[label=(\alph*)]
+  \item For an integer $k\ge2$, show that
+    $\E[W_t^k]=\frac12k(k-1)\int_0^t\E[W_s^{k-2}]\,\dd s$. Say why the stochastic integral that
+    appears has mean zero. Deduce that $\E[W_t^{2m}]=(2m-1)(2m-3)\cdots3\cdot1\cdot t^m$ and
+    $\E[W_t^{2m+1}]=0$ for $m\in\N$.
+  \item Fix $u\in\R$ and let $\varphi(t)=\E[\cos(uW_t)]$ and $\psi(t)=\E[\sin(uW_t)]$. Show that
+    $\varphi(t)=1-\frac{u^2}2\int_0^t\varphi(s)\,\dd s$ and
+    $\psi(t)=-\frac{u^2}2\int_0^t\psi(s)\,\dd s$, and deduce that $\E[e^{iuW_t}]=e^{-u^2t/2}$.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[It\^o decompositions]\label{ex:itf-decompositions}
+\easy Fix $T>0$. For each process, write its It\^o decomposition and decide whether it is a
+martingale on $[0,T]$, checking the integrability condition that you use.
+\begin{enumerate}[label=(\alph*)]
+  \item $X_t=tW_t^2$.
+  \item $Y_t=(W_t-t)\,e^{W_t-t/2}$.
+  \item Explain (b) by differentiating $Z^\sigma_t=\exp(\sigma W_t-\frac{\sigma^2}2t)$ with respect to
+    $\sigma$. Which martingale does the second derivative at $\sigma=0$ give?
+  \item $U_t=e^{W_t^2}$. Show that its diffusion coefficient $\Delta_s$ satisfies
+    $\E[\Delta_s^2]=4s(1-4s)^{-3/2}$ for $s<\frac14$ and $\E[\Delta_s^2]=\infty$ for $s\ge\frac14$, and
+    deduce that $\Delta$ is in $\mathbb H^2$ on $[0,T]$ if and only if $T<\frac14$. For which $t$ is
+    $\E[U_t]$ finite?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[A martingale has no drift]\label{ex:itf-martingale-drift}
+\medium Let $T>0$ and $X_t=x_0+\int_0^t\Theta_s\,\dd s+\int_0^t\Delta_s\,\dd W_s$, where $\Delta$ is in
+$\mathbb H^2$ on $[0,T]$ and $\E\big[\big(\int_0^T|\Theta_s|\,\dd s\big)^2\big]<\infty$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that if $\Theta=0$ for $\dd t\otimes\dd\Prob$-almost every $(t,\omega)$, then $X$ is a
+    martingale on $[0,T]$.
+  \item Conversely, let $X$ be a martingale on $[0,T]$. Show that $A_t=\int_0^t\Theta_s\,\dd s$ is a
+    square-integrable martingale on $[0,T]$, and that $\E[A_t^2]=\E\big[\sum_j(\delta_jA)^2\big]$ for every
+    partition of $[0,t]$. Deduce that $A\equiv0$ on $[0,T]$, and that $\Theta=0$ for
+    $\dd t\otimes\dd\Prob$-almost every $(t,\omega)$. \emph{Hint:} bound $\sum_j(\delta_jA)^2$ by an
+    integrable variable that does not depend on the partition.
+  \item Let $f\in C^{1,2}([0,T]\times\R)$ and $Lf=\partial_tf+\frac12\partial_{xx}f$, and assume
+    $\E\int_0^T\partial_xf(s,W_s)^2\,\dd s<\infty$ and
+    $\E\big[\big(\int_0^T|Lf(s,W_s)|\,\dd s\big)^2\big]<\infty$. Show that $(f(t,W_t))_{t\le T}$ is a
+    martingale if and only if $Lf=0$ on $[0,T]\times\R$.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[The price of one stock in units of another]\label{ex:itf-ratio}
+\medium Let $(W^1,W^2)$ be a two-dimensional Brownian motion, $\rho\in[-1,1]$, $B^1=W^1$,
+$B^2=\rho W^1+\sqrt{1-\rho^2}\,W^2$, and, for $i=1,2$,
+$S^i_t=S^i_0\exp\big(\sigma_iB^i_t+(\mu_i-\frac{\sigma_i^2}2)t\big)$ with $S^i_0>0$, $\sigma_i>0$ and
+$\mu_i\in\R$.
+\begin{enumerate}[label=(\alph*)]
+  \item The notes give $\dd S^i_t$ (\noteref{prop:itf-gbm}) and
+    $\dd[S^1,S^2]_t=\rho\sigma_1\sigma_2S^1_tS^2_t\,\dd t$ (the paragraph on correlated Brownian motions
+    after \noteref{thm:itf-multi}). Compute $\dd(1/S^2_t)$, and show that $U=S^1/S^2$ satisfies
+    \[
+      \dd U_t=U_t\Big[\big(\mu_1-\mu_2+\sigma_2^2-\rho\sigma_1\sigma_2\big)\dd t+\sigma_1\,\dd B^1_t-\sigma_2\,\dd B^2_t\Big].
+    \]
+  \item Let $\bar\sigma^2=\sigma_1^2-2\rho\sigma_1\sigma_2+\sigma_2^2$ and assume $\bar\sigma>0$. Show
+    that $\bar B=(\sigma_1B^1-\sigma_2B^2)/\bar\sigma$ is a Brownian motion and that $U$ is a geometric
+    Brownian motion with volatility $\bar\sigma$ driven by $\bar B$. When is $\bar\sigma=0$, and what is
+    $U$ then?
+  \item Compute $\E[U_T]$, and find the condition on $\mu_1,\mu_2$ under which $U$ is a martingale. Is
+    $\mu_1=\mu_2$ enough? Interpret for an investor who measures her wealth in shares of stock~2.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Two Brownian motions that are not jointly Gaussian]\label{ex:itf-not-gaussian}
+\medium This exercise continues \exref{ex:ito-sign}. Let $\operatorname{sgn}(x)=1$ for $x>0$ and $-1$ for $x\le0$, let $\rho_s=1$ for $s\in[0,1]$ and
+$\rho_s=\operatorname{sgn}(W_1)$ for $s>1$, and $B_t=\int_0^t\rho_s\,\dd W_s$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $\rho$ is progressively measurable and that $B$ is a Brownian motion. Write $B_t$
+    explicitly for $t\ge1$.
+  \item Compute $[W,B]_t$ and $\E[W_tB_t]$.
+  \item Show that $\Prob(W_2+B_2>0)=\frac38$, and deduce that $(W_2,B_2)$ is not a Gaussian vector,
+    although $W_2$ and $B_2$ are both $\mathcal N(0,2)$. \emph{Hint:} write $W_1$ and $W_2-W_1$ in
+    terms of two independent $\mathcal N(0,1)$ variables, and use the rotational invariance of the
+    standard Gaussian law on $\R^2$.
+  \item The extreme case. Let $W$ and $B$ be Brownian motions for the same filtration with
+    $[W,B]_t=t$ for every $t$. Show that $B_t=W_t$ for all $t$, almost surely. \emph{Hint:} compute
+    $\E[V_2(W-B;\Pi)]$ for a partition $\Pi$ of $[0,t]$ in two ways, and use
+    $\E[V_2(W;\Pi)^2]=t^2+2\sum_jh_j^2$ from the proof of \noteref{thm:bm-qv}.
+  \item What do (a)--(d) say about how the correlation of two assets should be specified in a model?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[The squared norm of a Brownian motion]\label{ex:itf-bessel}
+\medium Let $W=(W^1,\dots,W^d)$ be a $d$-dimensional Brownian motion, $d\ge1$, and
+$R_t=|W_t|^2=\sum_k(W^k_t)^2$. Let $e(x)=x/|x|$ for $x\in\R^d\setminus\{0\}$ and $e(0)=(1,0,\dots,0)$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $\dd R_t=d\,\dd t+2\sum_kW^k_t\,\dd W^k_t$, and deduce $\E[R_t]$.
+  \item Show that $\beta_t=\sum_k\int_0^te^k(W_s)\,\dd W^k_s$ is a Brownian motion, and that
+    $R_t=d\,t+2\int_0^t\sqrt{R_s}\,\dd\beta_s$, with the integral understood as in
+    \noteref{def:itf-integral}.
+  \item Compute $\E[R_t^2]$ with It\^o's formula, and check your answer against the law of $R_t/t$.
+  \item For $d=1$, show that $\beta$ coincides almost surely with $\int_0^t\operatorname{sgn}(W_s)\,\dd W_s$
+    of \exref{ex:itf-not-gaussian}, although $e$ and $\operatorname{sgn}$ differ at $0$.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[It\^o and Stratonovich sums]\label{ex:itf-ito-sums}
+\medium This is a computational exercise, with a theoretical first part. For $f\in C^2(\R)$ and a
+partition $\Pi$ of $[0,t]$, let
+\[
+  I_\Pi=\sum_jf'(W_{t_j})\,\delta_jW,\qquad
+  J_\Pi=\sum_j\tfrac12\big(f'(W_{t_j})+f'(W_{t_{j+1}})\big)\,\delta_jW .
+\]
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $J_\Pi\to f(W_t)-f(0)$ in probability as $\|\Pi\|\to0$: trapezoid sums obey the chain
+    rule of ordinary calculus. This generalises the case $\lambda=\frac12$ of
+    \noteref{prop:ito-wdw}(ii).
+  \item Take $f(x)=\cos x$, $t=1$ and uniform partitions with $h=2^{-k}$, $k=2,\dots,14$. Simulate at least
+    $1000$ Brownian paths on the finest grid, and compute for each $h$ the root-mean-square error, as an
+    approximation of $f(W_1)-f(0)$, of (i) $I_\Pi$, (ii) $I_\Pi+\frac12\sum_jf''(W_{t_j})\,h$, and
+    (iii) $J_\Pi$. Plot the three errors against $h$ on logarithmic axes.
+  \item Which errors tend to $0$, and at which rates? For (ii), show that the error is
+    \[
+      \frac12\sum_jf''(W_{t_j})\big((\delta_jW)^2-h\big)
+    \]
+    plus terms of higher order, compute the mean square of this leading term to first order in $h$, and
+    compare with your simulation. For (i), identify the limit.
+  \item The sums $J_\Pi$ converge faster and obey the ordinary chain rule. Why are gains from trading still
+    modelled with the sums $I_\Pi$?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Tanaka's formula]\label{ex:itf-tanaka}
+\hard It\^o's formula does not apply to $f(x)=|x|$, which is not differentiable at $0$. Let
+$\operatorname{sgn}$ be as in \exref{ex:itf-not-gaussian}, $B_t=\int_0^t\operatorname{sgn}(W_s)\,\dd W_s$,
+and $f_\varepsilon(x)=\sqrt{x^2+\varepsilon^2}$ for $\varepsilon>0$.
+\begin{enumerate}[label=(\alph*)]
+  \item What would It\^o's formula, applied to $|x|$ without justification, predict for $|W_t|$? Why is
+    the prediction false?
+  \item Write It\^o's formula for $f_\varepsilon(W_t)$.
+  \item Show that $\E\int_0^t\1\{W_s=0\}\,\dd s=0$, and that $\int_0^tf_\varepsilon'(W_s)\,\dd W_s\to B_t$ in
+    $L^2$ as $\varepsilon\to0$.
+  \item Deduce that $L^\varepsilon_t=\frac12\int_0^tf''_\varepsilon(W_s)\,\dd s$ converges in $L^2$ to
+    $L_t=|W_t|-B_t$ for every $t$, so that $|W_t|=B_t+L_t$ (Tanaka's formula). Show that $L$ has continuous
+    paths, $L_0=0$, $L$ is nondecreasing, and $\E[L_t]=\sqrt{2t/\pi}$.
+  \item Let $0\le a<b$ and $\delta>0$. Show that $L_b=L_a$ almost surely on the event
+    $\{|W_s|\ge\delta\text{ for all }s\in[a,b]\}$: $L$ increases only when $W$ is at $0$. Compare with the
+    discrete decomposition of $|S_n|$ in \exref{ex:mg-doob}(d).
+\end{enumerate}
+\end{exercise}

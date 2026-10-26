@@ -1,5 +1,685 @@
-\begin{planned}
-  \item It\^o's formula for Brownian motion, with proof
-  \item It\^o processes and their quadratic variation; the multidimensional formula and the product rule
-  \item worked examples and martingales by drift cancellation
-\end{planned}
+% Chapter 8: Ito's formula.
+
+The chain rule of ordinary calculus says that $\dd f(g(t))=f'(g(t))\,\dd g(t)$ for a
+differentiable function $g$. \Cref{ch:07-ito-integral} found that Brownian motion breaks
+this rule: $W_t^2=2\int_0^tW_s\,\dd W_s+t$ (\cref{prop:ito-wdw}), and the chain rule misses
+the term $t$. This chapter explains where the extra term comes from and computes it for
+every smooth function. Expand $f(W)$ to second order along a partition: the second-order
+term is $\frac12f''(W)(\delta W)^2$, and since the sum of the squared increments
+$(\delta W)^2$ does not vanish but converges to $t$ (\cref{thm:bm-qv}), this term survives in
+the limit. Every other term of the expansion disappears. The result is It\^o's formula.
+
+It\^o's formula is the main computational tool of the rest of the course: it gives the dynamics
+of smooth functions of prices, tells when they are martingales, and handles several correlated
+assets.
+
+Throughout, $(\Omega,\F,\Prob)$ is a probability space, $W$ a Brownian motion and $(\F_t)$ a
+filtration for $W$ (\cref{def:bm-filtration}); as in \cref{ch:07-ito-integral}, every event of
+probability zero belongs to $\F_0$. For a partition
+$\Pi=\{0=t_0<t_1<\dots<t_m=t\}$ of $[0,t]$ we write $h_j=t_{j+1}-t_j$, $\|\Pi\|=\max_jh_j$,
+and $\delta_jX=X_{t_{j+1}}-X_{t_j}$ for the increments of a process $X$. For a process $X$ with
+continuous paths and $r>0$, the modulus of continuity
+$\operatorname{osc}_X(r)=\sup\{|X_u-X_v|:u,v\in[0,t],\,|u-v|\le r\}$ tends to $0$ as
+$r\to0$, for every outcome, because a continuous function is uniformly continuous on
+$[0,t]$. Identities between random variables hold almost surely.
+
+\section{Variations, and what survives a Taylor expansion}\label{sec:itf-variations}
+
+Recall the $p$-variation $V_p(g;\Pi)=\sum_j|\delta_jg|^p$ of a function $g$ along a partition
+(\cref{sec:bm-qv}). A function $g$ on $[0,t]$ has \emph{finite variation} if
+$\sup_\Pi V_1(g;\Pi)<\infty$. The basic example in this chapter is
+$A_t=\int_0^t\Theta_s\,\dd s$ with $\int_0^t|\Theta_s|\,\dd s<\infty$: since
+$|\delta_jA|\le\int_{t_j}^{t_{j+1}}|\Theta_s|\,\dd s$, we have
+$V_1(A;\Pi)\le\int_0^t|\Theta_s|\,\dd s$ for every partition.
+
+\begin{lemma}[Higher variations vanish]\label{lem:itf-variation}
+Let $g$ be continuous on $[0,t]$, let $0<p<q$, and let $(\Pi_n)$ be partitions of $[0,t]$ with
+$\|\Pi_n\|\to0$. Then
+\[
+  V_q(g;\Pi_n)\le\Big(\max_j|\delta_jg|\Big)^{q-p}\,V_p(g;\Pi_n),
+  \qquad\text{and}\qquad \max_j|\delta_jg|\to0 .
+\]
+In particular, if $\sup_nV_p(g;\Pi_n)<\infty$, then $V_q(g;\Pi_n)\to0$; a continuous function
+of finite variation has zero quadratic variation.
+\end{lemma}
+
+\begin{proof}
+Write $|\delta_jg|^q=|\delta_jg|^{q-p}|\delta_jg|^p$ and bound the first factor by its maximum
+over $j$. The maximum is at most $\operatorname{osc}_g(\|\Pi_n\|)$, which tends to $0$.
+\end{proof}
+
+For Brownian motion, $V_2(W;\Pi_n)\to t$ in probability, so the inequality of the lemma gives
+$V_q(W;\Pi_n)\to0$ in probability for every $q>2$ (\exref{ex:bm-pvariation}); for $p<2$ it reads
+$V_p(W;\Pi_n)\ge V_2(W;\Pi_n)/(\max_j|\delta_jW|)^{2-p}$, so $V_p(W;\Pi_n)\to\infty$ in probability
+(for $p=1$ and $\sum_n\|\Pi_n\|<\infty$, almost surely: \cref{cor:bm-fv}).
+Among the $p$-variations of Brownian motion, only the quadratic one has a finite nonzero limit,
+and this decides which terms of a Taylor expansion survive. Let $f$ be smooth and $g$ a continuous path.
+Telescoping over a partition of $[0,t]$ and expanding each term to second order,
+\begin{equation}\label{eq:itf-taylor}
+  f(g_t)-f(g_0)=\sum_jf'(g_{t_j})\,\delta_jg+\frac12\sum_jf''(g_{t_j})\,(\delta_jg)^2
+  +\sum_jR_j,\qquad|R_j|\le C|\delta_jg|^3,
+\end{equation}
+with $C$ depending on $f$ and on the range of the path. If $g$ is continuously differentiable, the second and third sums are bounded by
+$\max|f''|\,V_2(g;\Pi)$ and $C\,V_3(g;\Pi)$, which tend to $0$: only the first sum remains, and its
+limit $\int_0^tf'(g_s)g'_s\,\dd s$ gives the chain rule. If $g=W$, the third sum still vanishes,
+but the second does not: it is a weighted sum of squared increments, and the next section shows
+that it converges to $\frac12\int_0^tf''(W_s)\,\dd s$. The bookkeeping rules
+$\dd W\,\dd W=\dd t$, $\dd W\,\dd t=0$, $\dd t\,\dd t=0$ of \cref{sec:bm-qv} are the short form of
+this statement.
+
+\section{It\^o's formula for Brownian motion}\label{sec:itf-bm}
+
+\begin{remark}[What we use from \cref{ch:07-ito-integral}]\label{rem:itf-standing}
+For $H\in\mathbb H^2$ (\cref{def:ito-h2}), the integral $I_t=\int_0^tH_s\,\dd W_s$ of
+\cref{thm:ito-integral} is continuous, adapted, linear in $H$, a martingale with
+$\E[I_t^2]=\E\int_0^tH_s^2\,\dd s$, and $[I,I]_t=\int_0^tH_s^2\,\dd s$; for simple $H$ it is the
+sum of \cref{def:ito-simple}. For $H\in\mathbb H^2_{\mathrm{loc}}$ it is defined by localization
+(\cref{rem:ito-local}): it is continuous, adapted and linear, $[I,I]_t=\int_0^tH_s^2\,\dd s$ still
+holds, and it is in general only a local martingale. \Cref{ch:07-ito-integral} works on a fixed
+horizon $[0,T]$, which plays no role: if $T<T'$ and simple $H^n\to H$ in $\mathbb H^2[0,T']$, then
+$H^n\to H$ in $\mathbb H^2[0,T]$ and the integrals of the $H^n$ over the two horizons agree on
+$[0,T]$, so by the uniqueness in \cref{thm:ito-integral} the two integrals of $H$ are
+indistinguishable on $[0,T]$ (for $\mathbb H^2_{\mathrm{loc}}$, by localization). Taking
+$T=1,2,\dots$, statements on every $[0,T]$ combine into statements for all $t\ge0$. Continuous
+adapted processes are progressively measurable (\textcite{karatzas-shreve}, Proposition~1.1.13),
+hence in $\mathbb H^2_{\mathrm{loc}}$, and in $\mathbb H^2$ if bounded. Quadratic variations and
+covariations are those of \cref{def:ito-covariation}, limits in probability.
+\end{remark}
+
+\begin{lemma}[Locality]\label{lem:itf-local}
+Let $H,G\in\mathbb H^2_{\mathrm{loc}}$, $t\in(0,T]$, and $E$ an event such that
+$H_s(\omega)=G_s(\omega)$ for all $s\le t$ and $\omega\in E$. Then, almost surely on $E$,
+$\int_0^sH\,\dd W=\int_0^sG\,\dd W$ for every $s\le t$.
+\end{lemma}
+
+\begin{proof}
+Let $K=H-G$, $\tau_n=\inf\{s:\int_0^sK_u^2\,\dd u\ge1/n\}\wedge t$ and
+$\tau=\inf\{s:\int_0^sK_u^2\,\dd u\ge1\}\wedge T$, stopping times with $\tau_n\le\tau$. By
+\cref{rem:ito-local}, $\int K\,\dd W$ coincides up to time $\tau$ with the integral of
+$K\1_{[0,\tau]}\in\mathbb H^2$, so \cref{prop:ito-stopping} gives
+$\int_0^{s\wedge\tau_n}K\,\dd W=\int_0^sK\1_{[0,\tau_n]}\,\dd W$ for $s\le t$. Since
+$\int_0^tK_u^2\1_{[0,\tau_n]}(u)\,\dd u\le1/n$, Doob's inequality (\cref{lem:ito-doob}) and the
+isometry give $\E\big[\sup_{s\le t}\big(\int_0^{s\wedge\tau_n}K\,\dd W\big)^2\big]\le4/n$. On $E$,
+$\int_0^tK_u^2\,\dd u=0$, so $\tau_n=t$ for every $n$, and
+$\Prob\big(E\cap\{\sup_{s\le t}|\int_0^sK\,\dd W|>\varepsilon\}\big)\le4/(n\varepsilon^2)$ for all
+$n$ and $\varepsilon>0$. So $\int_0^sK\,\dd W=0$ for all $s\le t$, almost surely on $E$, and
+linearity concludes.
+\end{proof}
+
+The first step is to identify the limit of the first-order sum in \eqref{eq:itf-taylor}: the
+gains of a strategy that holds $H_{t_j}$ units over $[t_j,t_{j+1})$.
+
+\begin{lemma}[Riemann sums with continuous integrands]\label{lem:itf-riemann}
+Let $\Delta\in\mathbb H^2_{\mathrm{loc}}$, $M_t=\int_0^t\Delta_s\,\dd W_s$, and let $H$ be a
+continuous adapted process. For $t>0$ and partitions $\Pi$ of $[0,t]$ with $\|\Pi\|\to0$,
+\[
+  \sum_jH_{t_j}\,\delta_jM\longrightarrow\int_0^tH_s\Delta_s\,\dd W_s\quad\text{in probability.}
+\]
+If $H$ is bounded and $\Delta\in\mathbb H^2$, the convergence holds in $L^2$. With $\Delta\equiv1$:
+$\sum_jH_{t_j}\delta_jW\to\int_0^tH_s\,\dd W_s$.
+\end{lemma}
+
+\begin{proof}
+The product $H\Delta$ is progressively measurable and
+$\int_0^tH_s^2\Delta_s^2\,\dd s\le\max_{s\le t}H_s^2\int_0^t\Delta_s^2\,\dd s<\infty$, so
+$H\Delta\in\mathbb H^2_{\mathrm{loc}}$. Write $S_\Pi$ for the sum.
+
+\emph{Bounded case}: $|H|\le c$ and $\Delta\in\mathbb H^2$. For $0\le a<b\le t$ and $\xi$ bounded
+and $\F_a$-measurable,
+\begin{equation}\label{eq:itf-takeout}
+  \int_0^t\xi\1_{[a,b)}(s)\,\Delta_s\,\dd W_s=\xi\,(M_b-M_a).
+\end{equation}
+For $\xi=1$ this is \cref{rem:ito-notation}; for simple $\Delta$ it is \cref{def:ito-simple}, after
+adding $a$ and $b$ to the grid of $\Delta$. In general, take simple $\Delta^n\to\Delta$ in $\mathbb H^2$; then
+$\xi\1_{[a,b)}\Delta^n\to\xi\1_{[a,b)}\Delta$ in $\mathbb H^2$, and by the isometry both sides of
+\eqref{eq:itf-takeout} for $\Delta^n$ converge in $L^2$ to those for $\Delta$. Summing
+\eqref{eq:itf-takeout} over the intervals of $\Pi$ gives $S_\Pi=\int_0^tH^\Pi_s\Delta_s\,\dd W_s$,
+where $H^\Pi_s=H_{t_j}$ for $s\in[t_j,t_{j+1})$. By linearity and the isometry,
+\[
+  \E\Big[\Big(S_\Pi-\int_0^tH_s\Delta_s\,\dd W_s\Big)^2\Big]=\E\int_0^t\big(H^\Pi_s-H_s\big)^2\Delta_s^2\,\dd s .
+\]
+For every $(s,\omega)$, $|H^\Pi_s-H_s|\le\operatorname{osc}_H(\|\Pi\|)\to0$, and the integrand is at
+most $4c^2\Delta_s^2$, which is integrable on $[0,t]\times\Omega$. By dominated convergence, the
+right side tends to $0$.
+
+\emph{General case.} For $K>0$ let $H^K=\max(-K,\min(H,K))$, a bounded continuous adapted
+process, and $\Delta^K_s=\Delta_s\1\{\int_0^s\Delta_u^2\,\dd u\le K\}$, which is in $\mathbb H^2$
+since $\int_0^t(\Delta^K_s)^2\,\dd s\le K$. On the event
+$E_K=\{\max_{s\le t}|H_s|\le K,\ \int_0^t\Delta_s^2\,\dd s\le K\}$ we have $H^K=H$ and
+$\Delta^K=\Delta$ on $[0,t]$, so by \cref{lem:itf-local}, almost surely on $E_K$, $M$ coincides on $[0,t]$ with
+$\int\Delta^K\dd W$ and $\int_0^tH\Delta\,\dd W=\int_0^tH^K\Delta^K\dd W$. Hence, with $S^K_\Pi$ the
+sum for $(H^K,\Delta^K)$,
+\[
+  \Prob\Big(\Big|S_\Pi-\int_0^tH\Delta\,\dd W\Big|>\varepsilon\Big)
+  \le\Prob(E_K^c)+\Prob\Big(\Big|S^K_\Pi-\int_0^tH^K\Delta^K\dd W\Big|>\varepsilon\Big).
+\]
+The last term tends to $0$ as $\|\Pi\|\to0$ by the bounded case, and $\Prob(E_K^c)\to0$ as
+$K\to\infty$ because $\max_{s\le t}|H_s|$ and $\int_0^t\Delta_s^2\,\dd s$ are finite.
+\end{proof}
+
+We write $f\in C^{1,2}([0,\infty)\times\R)$ when $f(t,x)$ has partial derivatives $\partial_tf$,
+$\partial_xf$ and $\partial_{xx}f$ that are continuous on $[0,\infty)\times\R$ (one-sided in $t$
+at $t=0$); $C^{1,2}([0,T]\times\R)$ is defined in the same way.
+
+\begin{theorem}[It\^o's formula for Brownian motion]\label{thm:itf-bm}
+Let $f\in C^{1,2}([0,\infty)\times\R)$. Almost surely, for every $t\ge0$,
+\begin{equation}\label{eq:itf-bm}
+  f(t,W_t)=f(0,0)+\int_0^t\partial_tf(s,W_s)\,\dd s+\int_0^t\partial_xf(s,W_s)\,\dd W_s
+  +\frac12\int_0^t\partial_{xx}f(s,W_s)\,\dd s .
+\end{equation}
+The integrand $\partial_xf(s,W_s)$ is continuous and adapted, hence in $\mathbb H^2_{\mathrm{loc}}$.
+If $\E\int_0^T\partial_xf(s,W_s)^2\,\dd s<\infty$, it is in $\mathbb H^2$ on $[0,T]$, and the
+stochastic integral in \eqref{eq:itf-bm} is a martingale on $[0,T]$. The same holds on $[0,T]$
+for $f\in C^{1,2}([0,T]\times\R)$.
+\end{theorem}
+
+In differential notation,
+$\dd f(t,W_t)=\big(\partial_tf+\frac12\partial_{xx}f\big)(t,W_t)\,\dd t+\partial_xf(t,W_t)\,\dd W_t$:
+expand $f$ to first order in $t$ and to second order in $x$, and replace $(\dd W_t)^2$ by $\dd t$.
+
+\begin{proof}
+Fix $t>0$ and partitions $\Pi$ of $[0,t]$ with $\|\Pi\|\to0$, and write $\delta_j=\delta_jW$.
+Telescoping,
+\[
+  f(t,W_t)-f(0,0)=\underbrace{\sum_j\big[f(t_{j+1},W_{t_{j+1}})-f(t_j,W_{t_{j+1}})\big]}_{A_\Pi}
+  +\underbrace{\sum_j\big[f(t_j,W_{t_{j+1}})-f(t_j,W_{t_j})\big]}_{B_\Pi}.
+\]
+Fix an outcome $\omega$. Its path is bounded on $[0,t]$, by $k_\omega$ say, and the three
+derivatives of $f$ are uniformly continuous on the compact set $[0,t]\times[-k_\omega,k_\omega]$.
+Let $\varpi(r)$ be the largest of their moduli of continuity there, so that
+$|g(s,x)-g(s',x')|\le\varpi(r)$ whenever $|s-s'|\le r$ and $|x-x'|\le r$, for
+$g\in\{\partial_tf,\partial_xf,\partial_{xx}f\}$; then $\varpi(r)\to0$ as $r\to0$. Let
+$r_\Pi=\|\Pi\|+\operatorname{osc}_W(\|\Pi\|)$, which tends to $0$.
+
+\emph{Time increments.} By the mean value theorem, the $j$-th term of $A_\Pi$ is
+$\partial_tf(\tau_j,W_{t_{j+1}})\,h_j$ for some $\tau_j\in[t_j,t_{j+1}]$, and for every
+$s\in[t_j,t_{j+1}]$ the point $(\tau_j,W_{t_{j+1}})$ is within $r_\Pi$ of $(s,W_s)$ in each
+coordinate. Hence $\big|A_\Pi-\int_0^t\partial_tf(s,W_s)\,\dd s\big|\le t\,\varpi(r_\Pi)\to0$, for
+every outcome.
+
+\emph{Space increments.} By Taylor's formula with the Lagrange remainder,
+$f(t_j,W_{t_{j+1}})-f(t_j,W_{t_j})=\partial_xf(t_j,W_{t_j})\,\delta_j+\frac12\partial_{xx}f(t_j,\xi_j)\,\delta_j^2$
+for some $\xi_j$ between $W_{t_j}$ and $W_{t_{j+1}}$. Hence
+\[
+  B_\Pi=\sum_j\partial_xf(t_j,W_{t_j})\,\delta_j+\frac12\sum_jg_j\,\delta_j^2+\frac12R_\Pi,
+  \qquad g_j=\partial_{xx}f(t_j,W_{t_j}),
+\]
+where $R_\Pi$, defined by this identity, is a random variable with
+$|R_\Pi|\le\varpi(r_\Pi)\,V_2(W;\Pi)$ (since $|\xi_j-W_{t_j}|\le r_\Pi$). The first sum converges in
+probability to $\int_0^t\partial_xf(s,W_s)\,\dd W_s$ by \cref{lem:itf-riemann}. The remainder
+tends to $0$ in probability, because $\varpi(r_\Pi)\to0$ for every outcome and
+$V_2(W;\Pi)\to t$ in probability (\cref{thm:bm-qv}).
+
+\emph{Second-order term.} Write $\sum_jg_j\delta_j^2=\sum_jg_jh_j+\sum_jg_j(\delta_j^2-h_j)$.
+The first sum is a Riemann sum, within $t\,\varpi(r_\Pi)$ of
+$\int_0^t\partial_{xx}f(s,W_s)\,\dd s$. The second sum tends to $0$ in probability: this is the
+law of large numbers along a path announced in \cref{sec:bm-qv}. Let $K>0$, let
+$g^K_j=\partial_{xx}f\big(t_j,\max(-K,\min(W_{t_j},K))\big)$, which is $\F_{t_j}$-measurable and
+bounded by $c_K=\max_{[0,t]\times[-K,K]}|\partial_{xx}f|$, and let $D_j=\delta_j^2-h_j$. As in the
+proof of \cref{thm:bm-qv}, $D_j$ is independent of $\F_{t_j}$, with $\E[D_j]=0$ and
+$\E[D_j^2]=2h_j^2$. For $i<j$, $g^K_iD_ig^K_j$ is $\F_{t_j}$-measurable and integrable, so
+$\E[g^K_iD_ig^K_jD_j]=\E[g^K_iD_ig^K_j]\,\E[D_j]=0$: the cross terms vanish, and
+\[
+  \E\Big[\Big(\sum_jg^K_jD_j\Big)^2\Big]=\sum_j\E\big[(g^K_j)^2\big]\,\E\big[D_j^2\big]\le2c_K^2\sum_jh_j^2\le2c_K^2\,t\,\|\Pi\| .
+\]
+On the event $E_K=\{\max_{s\le t}|W_s|\le K\}$, $g^K_j=g_j$ for every $j$. By Chebyshev's
+inequality,
+$\Prob\big(|\sum_jg_jD_j|>\varepsilon\big)\le\Prob(E_K^c)+2c_K^2t\|\Pi\|/\varepsilon^2$. Let
+$\|\Pi\|\to0$ and then $K\to\infty$; $\Prob(E_K^c)\to0$ because the path is bounded on $[0,t]$.
+
+\emph{Conclusion.} $A_\Pi+B_\Pi=f(t,W_t)-f(0,0)$ does not depend on $\Pi$, and we have shown that
+it converges in probability to the right side of \eqref{eq:itf-bm}. Limits in probability are
+unique almost surely, so \eqref{eq:itf-bm} holds almost surely for each fixed $t$. Both sides
+are continuous in $t$, so equality almost surely at all rational $t$ at once gives equality for all
+$t$. The statements about $\mathbb H^2$ are \cref{rem:itf-standing}.
+\end{proof}
+
+\begin{example}\label{exa:itf-bm}
+(a) For $f(x)=x^2$: $W_t^2=\int_0^t2W_s\,\dd W_s+t$. The integrand is in $\mathbb H^2$, since
+$\E\int_0^T4W_s^2\,\dd s=2T^2$, so $W_t^2-t$ is a martingale, as in \cref{thm:bm-martingales}.
+
+(b) For $f(t,x)=\exp(\sigma x-\frac{\sigma^2}2t)$: $\partial_tf=-\frac{\sigma^2}2f$,
+$\partial_xf=\sigma f$ and $\partial_{xx}f=\sigma^2f$, so the $\dd t$-terms cancel and
+$Z_t=f(t,W_t)$ satisfies $Z_t=1+\int_0^t\sigma Z_s\,\dd W_s$, or $\dd Z_t=\sigma Z_t\,\dd W_t$.
+Since $\E[Z_s^2]=e^{\sigma^2s}$, $\E\int_0^T\sigma^2Z_s^2\,\dd s<\infty$ and $Z$ is a martingale,
+as in \cref{thm:bm-martingales}(iii).
+\end{example}
+
+Both examples are instances of one mechanism: when the $\dd t$-terms of It\^o's formula cancel,
+what remains is a stochastic integral.
+
+\begin{corollary}[Martingales by drift cancellation]\label{cor:itf-martingale}
+Let $T>0$ and $f\in C^{1,2}([0,T]\times\R)$ with
+\begin{equation}\label{eq:itf-heat}
+  \partial_tf+\tfrac12\partial_{xx}f=0\quad\text{on }[0,T]\times\R .
+\end{equation}
+Then $f(t,W_t)=f(0,0)+\int_0^t\partial_xf(s,W_s)\,\dd W_s$ for $t\le T$. If moreover
+$\E\int_0^T\partial_xf(s,W_s)^2\,\dd s<\infty$, then $(f(t,W_t))_{t\le T}$ is a martingale.
+\end{corollary}
+
+\begin{proof}
+The $\dd s$-integrals in \eqref{eq:itf-bm} cancel by \eqref{eq:itf-heat}; the rest is
+\cref{thm:itf-bm}.
+\end{proof}
+
+Equation \eqref{eq:itf-heat} is the backward heat equation. It is also solved by $x^3-3tx$ and
+$x^4-6tx^2+3t^2$, which recovers \exref{ex:bm-hermite} (the integrability condition holds since
+$W_s$ has moments of all orders). Without that condition, $f(t,W_t)$ is in general only a local
+martingale (\cref{rem:ito-local}); a converse is \exref{ex:itf-martingale-drift}, and
+\cref{ch:12-feynman-kac} turns the corollary around.
+
+\begin{proposition}[Geometric Brownian motion]\label{prop:itf-gbm}
+Let $S_0>0$, $\mu,\sigma\in\R$, and $S_t=S_0\exp\big(\sigma W_t+(\mu-\frac{\sigma^2}2)t\big)$
+(\cref{def:bs-gbm}, where $\sigma>0$; here any $\sigma\in\R$ is allowed). For every $r\in\R$,
+\begin{enumerate}[label=(\roman*)]
+  \item $S_t=S_0+\int_0^t\mu S_s\,\dd s+\int_0^t\sigma S_s\,\dd W_s$, that is,
+    $\dd S_t=\mu S_t\,\dd t+\sigma S_t\,\dd W_t$;
+  \item $\dd(e^{-rt}S_t)=(\mu-r)\,e^{-rt}S_t\,\dd t+\sigma\,e^{-rt}S_t\,\dd W_t$;
+  \item the integrands $\sigma S$ and $\sigma e^{-rt}S$ are in $\mathbb H^2$ on every $[0,T]$, and
+    $(e^{-rt}S_t)_{t\ge0}$ is a martingale if and only if $\mu=r$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) Apply \cref{thm:itf-bm} to $f(t,x)=S_0\exp\big(\sigma x+(\mu-\frac{\sigma^2}2)t\big)$:
+$\partial_tf=(\mu-\frac{\sigma^2}2)f$, $\partial_xf=\sigma f$, $\partial_{xx}f=\sigma^2f$, and the
+$\dd t$-coefficient is $(\mu-\frac{\sigma^2}2+\frac{\sigma^2}2)f=\mu f$. (ii) The same computation
+with $\mu-r$ in place of $\mu$, since
+$e^{-rt}S_t=S_0\exp\big(\sigma W_t+(\mu-r-\frac{\sigma^2}2)t\big)$. (iii) The Gaussian moment
+generating function gives $\E[S_s^2]=S_0^2e^{(2\mu+\sigma^2)s}$, which is bounded on $[0,T]$. If
+$\mu=r$, (ii) has no $\dd t$-term and the integrand is in $\mathbb H^2$, so $e^{-rt}S_t$ is a
+martingale. If $\mu\ne r$, $\E[e^{-rt}S_t]=S_0e^{(\mu-r)t}\ne S_0$ for $t>0$.
+\end{proof}
+
+In (i), $\dd S_t/S_t=\mu\,\dd t+\sigma\,\dd W_t$, while $\log S_t$ grows at the smaller rate
+$\mu-\frac{\sigma^2}2$: the difference is the volatility drag of \cref{rem:mg-dies,rem:bm-dies},
+produced by the second-order term. Uniqueness for the equation in (i) is proved in \cref{ch:09-sde},
+and the measure under which $\mu=r$ is constructed in \cref{ch:11-risk-neutral}.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch08-ito-pathwise}
+  \caption{It\^o's formula along one Brownian path on a grid of $2^{16}$ steps, for
+    $f(x)=\cosh(2x)$, with the integrals computed by left-point sums
+    (\coderef{code/src/ieor222/itoformula.py}). Left: $f(W_t)-f(0)$, which is nonnegative, and
+    the right side of \eqref{eq:itf-bm} lie on top of each other; the chain rule of ordinary
+    calculus, $\int_0^tf'(W_s)\,\dd W_s$, drifts away and even turns negative. Right: the gap is
+    the second-order term $\frac12\int_0^tf''(W_s)\,\dd s$.}
+  \label{fig:itf-pathwise}
+\end{figure}
+
+\demo{08-ito-formula.ipynb}{It\^o's formula checked along a path for the function, grid and seed
+of your choice, with and without the second-order term.}
+
+\section{It\^o processes}\label{sec:itf-processes}
+
+Prices are rarely functions of $(t,W_t)$ alone. The class of processes that It\^o's formula maps
+into itself is the following.
+
+\begin{definition}[It\^o process]\label{def:itf-process}
+An \emph{It\^o process} is a process of the form
+\[
+  X_t=x_0+\int_0^t\Theta_s\,\dd s+\int_0^t\Delta_s\,\dd W_s,\qquad t\ge0,
+\]
+where $x_0$ is $\F_0$-measurable (often a constant), $\Delta\in\mathbb H^2_{\mathrm{loc}}$, and
+$\Theta$ is progressively measurable
+with $\int_0^T|\Theta_s|\,\dd s<\infty$ almost surely for every $T$. $\Theta$ is the \emph{drift}
+and $\Delta$ the \emph{diffusion coefficient}; in differential notation,
+$\dd X_t=\Theta_t\,\dd t+\Delta_t\,\dd W_t$, $X_0=x_0$.
+\end{definition}
+
+An It\^o process has continuous paths and is adapted, and linear combinations of It\^o processes
+are It\^o processes. The proofs below (of \cref{prop:itf-decomposition,thm:itf-process,thm:itf-multi,cor:itf-product})
+use $x_0$ only through $X_0=x_0$ and work path by path, so they hold verbatim for random $x_0$. By \cref{thm:itf-bm}, $f(t,W_t)$ is an It\^o process with
+$\Theta=(\partial_tf+\frac12\partial_{xx}f)(t,W_t)$ and $\Delta=\partial_xf(t,W_t)$. If
+$\Delta\in\mathbb H^2$, then $X-\int\Theta\,\dd s$ is a martingale; with
+$\Delta\in\mathbb H^2_{\mathrm{loc}}$ only, it is a local martingale. The larger class is needed:
+$e^{W_t^2}$ is an It\^o process whose diffusion coefficient is not in $\mathbb H^2$ on $[0,T]$ for
+$T\ge\frac14$ (\exref{ex:itf-decompositions}).
+
+\begin{definition}[Integral with respect to an It\^o process]\label{def:itf-integral}
+Let $X$ be an It\^o process as in \cref{def:itf-process}, and $H$ a progressively measurable
+process with $\int_0^T|H_s\Theta_s|\,\dd s<\infty$ and $\int_0^TH_s^2\Delta_s^2\,\dd s<\infty$
+almost surely for every $T$ (for instance, $H$ continuous and adapted). Then
+\[
+  \int_0^tH_s\,\dd X_s=\int_0^tH_s\Theta_s\,\dd s+\int_0^tH_s\Delta_s\,\dd W_s .
+\]
+\end{definition}
+
+If $H$ is continuous and adapted, $\sum_jH_{t_j}\delta_jX\to\int_0^tH_s\,\dd X_s$ in probability:
+the $\dd W$ part is \cref{lem:itf-riemann}, and the $\dd s$ part converges for every outcome, since
+$\big|\sum_jH_{t_j}\int_{t_j}^{t_{j+1}}\Theta_s\,\dd s-\int_0^tH_s\Theta_s\,\dd s\big|\le
+\operatorname{osc}_H(\|\Pi\|)\int_0^t|\Theta_s|\,\dd s$. So $\int H\,\dd X$ is the gain of
+holding $H_t$ units of an asset with price $X$, the continuous-time form of the martingale
+transform of \cref{def:mg-transform}.
+
+\begin{proposition}[Covariation and uniqueness of the decomposition]\label{prop:itf-decomposition}
+Let $X$ be as in \cref{def:itf-process} and $Y_t=y_0+\int_0^t\tilde\Theta_s\,\dd s+\int_0^t\tilde\Delta_s\,\dd W_s$
+another It\^o process.
+\begin{enumerate}[label=(\roman*)]
+  \item For every $t\ge0$, $[X,X]_t=\int_0^t\Delta_s^2\,\dd s$ and $[X,Y]_t=\int_0^t\Delta_s\tilde\Delta_s\,\dd s$.
+  \item If $X_t=Y_t$ for all $t\in[0,T]$ almost surely, then $x_0=y_0$, and $\Theta=\tilde\Theta$
+    and $\Delta=\tilde\Delta$ for $\dd t\otimes\dd\Prob$-almost every $(t,\omega)\in[0,T]\times\Omega$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) Write $X=x_0+A+M$ and $Y=y_0+\tilde A+\tilde M$ with $A=\int\Theta\,\dd s$,
+$M=\int\Delta\,\dd W$, and similarly for $Y$. The paths of $A$ and $\tilde A$ have finite variation,
+so by bilinearity and \cref{lem:ito-fv}, $[X,Y]_t=[M,\tilde M]_t$. This is
+$\int_0^t\Delta_s\tilde\Delta_s\,\dd s$ by \cref{prop:ito-covariation}(i) when
+$\Delta,\tilde\Delta\in\mathbb H^2$, and in general by polarization, since
+$[M\pm\tilde M,M\pm\tilde M]_t=\int_0^t(\Delta_s\pm\tilde\Delta_s)^2\,\dd s$ (\cref{rem:ito-local}).
+
+(ii) $D=X-Y$ is an It\^o process with $D_0=x_0-y_0$, drift $\Theta-\tilde\Theta$ and diffusion
+coefficient $\Delta-\tilde\Delta$, and $D\equiv0$ on $[0,T]$. So $x_0=y_0$ almost surely, and all quadratic
+variation sums of $D$ vanish: by (i), $\int_0^T(\Delta_s-\tilde\Delta_s)^2\,\dd s=0$ almost surely.
+By Tonelli's theorem, $\Delta=\tilde\Delta$ for $\dd t\otimes\dd\Prob$-almost every $(t,\omega)$. Then
+$\E\int_0^T(\Delta-\tilde\Delta)^2\dd s=0$, so $\int(\Delta-\tilde\Delta)\,\dd W=0$ on $[0,T]$ by the
+isometry, and $\int_0^t(\Theta_s-\tilde\Theta_s)\,\dd s=0$ for all $t\le T$, almost surely. Fix such an
+outcome and let $\phi=\Theta-\tilde\Theta$. The finite measures $\int_B\phi^+\dd s$ and
+$\int_B\phi^-\dd s$ on $[0,T]$ agree on the intervals $[0,t]$, which form a $\pi$-system generating
+the Borel sets, so they agree on every Borel set $B$ by Dynkin's $\pi$--$\lambda$ theorem. With
+$B=\{\phi>0\}$ this gives $\int_0^T\phi^+\dd s=0$, and likewise $\int_0^T\phi^-\dd s=0$. So
+$\phi=0$ for almost every $s$, and Tonelli's theorem concludes again.
+\end{proof}
+
+In differential form, part (i) is a multiplication table:
+\begin{center}
+\begin{tabular}{@{}c|cc@{\qquad}l@{}}
+  & $\dd t$ & $\dd W_t$ & \\ \cline{1-3}
+  $\dd t$ & $0$ & $0$ & $\dd[X,X]_t=\Delta_t^2\,\dd t$\\
+  $\dd W_t$ & $0$ & $\dd t$ & $\dd[X,Y]_t=\Delta_t\tilde\Delta_t\,\dd t$
+\end{tabular}
+\end{center}
+The drift does not contribute to the quadratic variation: $[X,X]$ can be read off a single path on
+any time interval, whatever the drift. Part (ii) says that the drift and the diffusion coefficient
+are determined by the process; in \cref{ch:10-delta-hedging}, matching the $\dd W$-terms and the
+$\dd t$-terms of two expressions for a hedged portfolio gives the hedge ratio and the Black--Scholes
+equation.
+
+For It\^o processes, the martingale argument for the second-order term is replaced by a lemma
+that uses only the quadratic variation.
+
+\begin{lemma}[Weighted quadratic variation]\label{lem:itf-weighted}
+Let $X$ be a continuous process and $A$ a continuous nondecreasing process with $A_0=0$, such that
+$V_2(X;\Pi)\to A_s$ in probability for every $s\in(0,t]$ and partitions $\Pi$ of $[0,s]$ with
+$\|\Pi\|\to0$. Let $G$ be a process with continuous paths. Then, for partitions $\Pi$ of $[0,t]$ with
+$\|\Pi\|\to0$,
+\[
+  \sum_jG_{t_j}(\delta_jX)^2\longrightarrow\int_0^tG_s\,\dd A_s\quad\text{in probability,}
+\]
+the right side being a Riemann--Stieltjes integral along each path. For an It\^o process,
+$A=[X,X]$ and the limit is $\int_0^tG_s\Delta_s^2\,\dd s$.
+\end{lemma}
+
+\begin{proof}
+Write $S(\Pi)$ for the sum and $\|G\|=\max_{s\le t}|G_s|$. Fix an integer $m\ge1$, let
+$r_k=kt/m$, and let $\Pi'$ be $\Pi$ with the points $r_1,\dots,r_{m-1}$ added. Inserting a point
+$u$ into an interval $[t_j,t_{j+1}]$ replaces $G_{t_j}(a+b)^2$ by $G_{t_j}a^2+G_ub^2$, with
+$a=X_u-X_{t_j}$ and $b=X_{t_{j+1}}-X_u$; the change $2G_{t_j}ab+(G_{t_j}-G_u)b^2$ is at most
+$4\|G\|\operatorname{osc}_X(\|\Pi\|)^2$. Hence $|S(\Pi)-S(\Pi')|\le4m\|G\|\operatorname{osc}_X(\|\Pi\|)^2$,
+which tends to $0$ for every outcome. Next, group the intervals of $\Pi'$ according to the block
+$[r_k,r_{k+1}]$ that contains them:
+\[
+  S(\Pi')=\sum_{k=0}^{m-1}G_{r_k}Q_k+R,\qquad |R|\le\operatorname{osc}_G(t/m)\,V_2(X;\Pi'),
+\]
+where $Q_k$ is the sum of $(\delta X)^2$ over the intervals of $\Pi'$ in $[r_k,r_{k+1}]$. Since $Q_k$ is
+the difference of the quadratic variation sums of $X$ along the partitions $\Pi'\cap[0,r_{k+1}]$ and
+$\Pi'\cap[0,r_k]$, whose meshes are at most $\|\Pi\|$, $Q_k\to A_{r_{k+1}}-A_{r_k}$ in probability, and
+$V_2(X;\Pi')\to A_t$. Finally, for every outcome,
+$\big|\sum_kG_{r_k}(A_{r_{k+1}}-A_{r_k})-\int_0^tG\,\dd A\big|\le\operatorname{osc}_G(t/m)\,A_t$.
+Altogether,
+\begin{align*}
+  \Big|S(\Pi)-\int_0^tG\,\dd A\Big|\le{}&4m\|G\|\operatorname{osc}_X(\|\Pi\|)^2
+  +\Big|\sum_kG_{r_k}\big(Q_k-A_{r_{k+1}}+A_{r_k}\big)\Big|\\
+  &+\operatorname{osc}_G(t/m)\big(V_2(X;\Pi')+A_t\big).
+\end{align*}
+Given $\varepsilon,\eta>0$, choose $m$ with
+$\Prob\big(\operatorname{osc}_G(t/m)(2A_t+1)>\varepsilon\big)<\eta$, which is possible because
+$\operatorname{osc}_G(t/m)\to0$ for every outcome. As $\|\Pi\|\to0$, the first term tends to $0$, the
+second tends to $0$ in probability (a finite sum of finite random variables times terms that tend to
+$0$ in probability), and $\Prob(V_2(X;\Pi')>A_t+1)\to0$. So
+$\limsup\Prob\big(|S(\Pi)-\int_0^tG\,\dd A|>3\varepsilon\big)\le\eta$.
+\end{proof}
+
+By polarization, $\sum_jG_{t_j}\delta_jX\delta_jY\to\int_0^tG_s\,\dd[X,Y]_s$ when $X\pm Y$ satisfy the
+hypothesis; for It\^o processes the limit is $\int_0^tG_s\Delta_s\tilde\Delta_s\,\dd s$.
+
+\begin{theorem}[It\^o's formula for It\^o processes]\label{thm:itf-process}
+Let $X$ be an It\^o process as in \cref{def:itf-process} and $f\in C^{1,2}([0,\infty)\times\R)$.
+Almost surely, for every $t\ge0$,
+\begin{align*}
+  f(t,X_t)&=f(0,x_0)+\int_0^t\partial_tf(s,X_s)\,\dd s+\int_0^t\partial_xf(s,X_s)\,\dd X_s
+    +\frac12\int_0^t\partial_{xx}f(s,X_s)\,\dd[X,X]_s\\
+  &=f(0,x_0)+\int_0^t\Big(\partial_tf+\Theta_s\,\partial_xf+\frac12\Delta_s^2\,\partial_{xx}f\Big)(s,X_s)\,\dd s
+    +\int_0^t\partial_xf(s,X_s)\,\Delta_s\,\dd W_s .
+\end{align*}
+In particular, $f(t,X_t)$ is an It\^o process.
+\end{theorem}
+
+\begin{proof}
+Repeat the proof of \cref{thm:itf-bm} with $X$ in place of $W$. The time increments and the bound
+$|R_\Pi|\le\varpi(r_\Pi)V_2(X;\Pi)$ use only the continuity of the paths, and
+$V_2(X;\Pi)\to[X,X]_t$ (\cref{prop:itf-decomposition}) replaces \cref{thm:bm-qv}. The
+first-order sum converges to $\int_0^t\partial_xf(s,X_s)\,\dd X_s$ by the remark after
+\cref{def:itf-integral}, and the second-order sum
+$\sum_j\partial_{xx}f(t_j,X_{t_j})(\delta_jX)^2$ converges to
+$\int_0^t\partial_{xx}f(s,X_s)\Delta_s^2\,\dd s$ by \cref{lem:itf-weighted}. The result is an It\^o
+process: $\partial_xf(s,X_s)\Delta_s$ is in $\mathbb H^2_{\mathrm{loc}}$, and the $\dd s$-integrand is
+integrable on $[0,T]$, because $\partial_tf$, $\partial_xf$, $\partial_{xx}f$ are bounded along the
+path on $[0,T]$ and $\int_0^T(1+|\Theta_s|+\Delta_s^2)\,\dd s<\infty$.
+\end{proof}
+
+\begin{remark}[Functions on an open set]\label{rem:itf-open}
+If $D\subseteq\R$ is an open interval, $X$ takes values in $D$, and $f\in C^{1,2}([0,\infty)\times D)$
+(for instance $\log x$ or $1/x$ for a positive $X$), the formula still holds. Along each path, the values $X_s$, $s\le t$, form a compact subset of $D$ at a positive
+distance $d_\omega$ from its complement; once $\operatorname{osc}_X(\|\Pi\|)<d_\omega/2$, every
+segment between $X_{t_j}$ and $X_{t_{j+1}}$ lies in a compact subset of $D$, and the proof goes
+through unchanged.
+\end{remark}
+
+\begin{example}[Exponentials of It\^o integrals]\label{exa:itf-exponential}
+Let $\theta\in\mathbb H^2_{\mathrm{loc}}$ and
+$Z_t=\exp\big(\int_0^t\theta_s\,\dd W_s-\frac12\int_0^t\theta_s^2\,\dd s\big)$, which is $e^{X_t}$ for the
+It\^o process $\dd X_t=-\frac12\theta_t^2\,\dd t+\theta_t\,\dd W_t$. By \cref{thm:itf-process} with
+$f(x)=e^x$ and $[X,X]_t=\int_0^t\theta_s^2\,\dd s$,
+\[
+  \dd Z_t=Z_t\Big(-\frac12\theta_t^2\,\dd t+\theta_t\,\dd W_t\Big)+\frac12Z_t\theta_t^2\,\dd t=Z_t\theta_t\,\dd W_t .
+\]
+So $Z$ has no drift. If $\theta$ is deterministic, $\int_0^t\theta\,\dd W\sim\mathcal N\big(0,\int_0^t\theta^2\dd s\big)$
+(\cref{prop:ito-deterministic}), so $\E[Z_s^2]=\exp(\int_0^s\theta_u^2\dd u)$, the integrand $Z\theta$ is in
+$\mathbb H^2$, and $Z$ is a martingale. For random $\theta$, conditions are given in
+\cref{ch:11-risk-neutral}, where $Z$ is the density of Girsanov's change of measure.
+\end{example}
+
+\section{Several Brownian motions}\label{sec:itf-multi}
+
+A market with several assets is driven by several sources of noise. A \emph{$d$-dimensional
+Brownian motion} is a vector $W=(W^1,\dots,W^d)$ of independent Brownian motions, and $(\F_t)$ is a
+filtration for $W$ if $W_t$ is $\F_t$-measurable and the vector $W_t-W_s$ is independent of $\F_s$ for
+$s<t$. Then $(\F_t)$ is a filtration for each $W^k$, and the integrals $\int H\,\dd W^k$,
+$H\in\mathbb H^2_{\mathrm{loc}}$, are those of \cref{ch:07-ito-integral}. An \emph{It\^o process driven
+by $W$} is $X_t=x_0+\int_0^t\Theta_s\,\dd s+\sum_{k=1}^d\int_0^t\Delta^k_s\,\dd W^k_s$, with $\Theta$
+as in \cref{def:itf-process} and $\Delta^1,\dots,\Delta^d\in\mathbb H^2_{\mathrm{loc}}$; integrals
+with respect to $X$ are defined as in \cref{def:itf-integral}.
+
+\begin{lemma}[Independent noises do not interact]\label{lem:itf-cross}
+For $H,G\in\mathbb H^2_{\mathrm{loc}}$ and $k,l\in\{1,\dots,d\}$,
+\[
+  \Big[\int H\,\dd W^k,\int G\,\dd W^l\Big]_t=\1_{\{k=l\}}\int_0^tH_sG_s\,\dd s .
+\]
+In particular $[W^k,W^l]_t=\1_{\{k=l\}}\,t$.
+\end{lemma}
+
+\begin{proof}
+For $k=l$ this is \cref{prop:itf-decomposition}(i).
+Let $k\ne l$, $I=\int H\,\dd W^k$, $J=\int G\,\dd W^l$, and $C_\Pi(I,J)=\sum_j\delta_jI\,\delta_jJ$.
+
+\emph{Simple integrands.} Let $H=\xi_i$ and $G=\zeta_i$ on $[s_i,s_{i+1})$ for a common grid
+$0=s_0<\dots<s_p=t$, with $\xi_i,\zeta_i$ $\F_{s_i}$-measurable as in \cref{def:ito-simple}. Adding the points $s_i$
+to $\Pi$ changes $C_\Pi$ by at most $2p\operatorname{osc}_I(\|\Pi\|)\operatorname{osc}_J(\|\Pi\|)$, which
+tends to $0$. Once they are in $\Pi$, $C_\Pi=\sum_i\xi_i\zeta_i\,c_i$, where $c_i$ is the sum of
+$\delta_jW^k\delta_jW^l$ over the intervals of $\Pi$ inside $[s_i,s_{i+1}]$: the difference of the
+covariation sums of $W^k$ and $W^l$ along $\Pi\cap[0,s_{i+1}]$ and $\Pi\cap[0,s_i]$. By
+\cref{prop:ito-covariation}(ii), $c_i\to0$ in probability, and so does $C_\Pi$.
+
+\emph{Integrands in $\mathbb H^2$.} The increments of a square-integrable martingale $N$ over a
+partition are orthogonal, so $\E[V_2(N;\Pi)]=\E[(N_t-N_0)^2]$ for every $\Pi$. Let $H',G'$ be simple,
+with integrals $I',J'$. By the Cauchy--Schwarz inequality, first for sums and then for expectations,
+and the isometry,
+\[
+  \E\big|C_\Pi(I,J)-C_\Pi(I',J')\big|\le\E\big|C_\Pi(I-I',J)\big|+\E\big|C_\Pi(I',J-J')\big|
+  \le\|H-H'\|\,\|G\|+\|H'\|\,\|G-G'\|,
+\]
+with $\|H\|^2=\E\int_0^tH_s^2\,\dd s$. The bound does not depend on $\Pi$ and is as small as we wish
+for suitable simple $H',G'$; with the simple case and Markov's inequality, $C_\Pi(I,J)\to0$ in
+probability. For $H,G\in\mathbb H^2_{\mathrm{loc}}$, localize with \cref{lem:itf-local} as in the
+proof of \cref{lem:itf-riemann}.
+\end{proof}
+
+By bilinearity and the argument of \cref{prop:itf-decomposition}, It\^o processes
+$X^i=x^i_0+\int\Theta^i\,\dd s+\sum_k\int\Delta^{ik}\dd W^k$ satisfy
+\begin{equation}\label{eq:itf-multi-cov}
+  [X^i,X^j]_t=\int_0^t\sum_{k=1}^d\Delta^{ik}_s\Delta^{jk}_s\,\dd s ,
+\end{equation}
+which is the rule $\dd W^k\dd W^l=\1_{\{k=l\}}\dd t$, and the decomposition is unique: the proof of
+\cref{prop:itf-decomposition}(ii) applies with $[D,D]_t=\int_0^t\sum_k(\Delta^k_s-\tilde\Delta^k_s)^2\dd s$.
+
+\begin{theorem}[Multidimensional It\^o formula]\label{thm:itf-multi}
+Let $X=(X^1,\dots,X^n)$ be It\^o processes driven by $W$, with $X_0=x_0$, and let
+$f\in C^{1,2}([0,\infty)\times\R^n)$ (continuous $\partial_tf$, $\partial_if$, $\partial_{ij}f$).
+Almost surely, for every $t\ge0$,
+\[
+  f(t,X_t)=f(0,x_0)+\int_0^t\partial_tf(s,X_s)\,\dd s+\sum_{i=1}^n\int_0^t\partial_if(s,X_s)\,\dd X^i_s
+  +\frac12\sum_{i,j=1}^n\int_0^t\partial_{ij}f(s,X_s)\,\dd[X^i,X^j]_s ,
+\]
+with $[X^i,X^j]$ given by \eqref{eq:itf-multi-cov}. As in \cref{rem:itf-open}, $\R^n$ may be replaced
+by an open convex set in which $X$ takes its values.
+\end{theorem}
+
+\begin{proof}
+Repeat the proof of \cref{thm:itf-process} with the second-order Taylor formula in $\R^n$,
+$f(t_j,y)-f(t_j,x)=\sum_i\partial_if(t_j,x)(y-x)_i+\frac12\sum_{i,l}\partial_{il}f(t_j,\xi)(y-x)_i(y-x)_l$
+with $\xi$ on the segment $[x,y]$. The first-order sums converge by \cref{lem:itf-riemann}, applied
+to each $W^k$, and the second-order sums
+$\sum_j\partial_{il}f(t_j,X_{t_j})\,\delta_jX^i\,\delta_jX^l$ converge to
+$\int_0^t\partial_{il}f(s,X_s)\,\dd[X^i,X^l]_s$ by \cref{lem:itf-weighted} and polarization, and the
+remainder is at most $\varpi(r_\Pi)\sum_{i,l}\sum_j|\delta_jX^i||\delta_jX^l|\le n\,\varpi(r_\Pi)\sum_iV_2(X^i;\Pi)$,
+which tends to $0$ in probability.
+\end{proof}
+
+\paragraph{Correlated Brownian motions.} Let $C=(\rho_{ij})$ be a correlation matrix and $L$ a matrix
+with $LL^\top=C$ (a Cholesky factor). Then $B=LW$ has components $B^i=\sum_kL_{ik}W^k$ that are
+Brownian motions for $(\F_t)$: they are continuous, start at $0$, and $B_t-B_s=L(W_t-W_s)$ is
+independent of $\F_s$, with $B^i_t-B^i_s\sim\mathcal N(0,(t-s)\rho_{ii})=\mathcal N(0,t-s)$. By
+\cref{lem:itf-cross}, $[B^i,B^j]_t=\sum_kL_{ik}L_{jk}t=\rho_{ij}t$, which is the rule
+$\dd B^i\dd B^j=\rho_{ij}\,\dd t$. Since $\int H\,\dd B^i=\sum_kL_{ik}\int H\,\dd W^k$ (for simple $H$
+by definition, in general by density and the isometry), an It\^o process driven by $B$ is an It\^o
+process driven by $W$, and \cref{thm:itf-multi} applies. For two stocks
+$\dd S^i_t=\mu_iS^i_t\,\dd t+\sigma_iS^i_t\,\dd B^i_t$ with $[B^1,B^2]_t=\rho t$, it gives
+$\dd[S^1,S^2]_t=\rho\sigma_1\sigma_2S^1_tS^2_t\,\dd t$. Conversely, by \cref{thm:itf-levy} below, two
+Brownian motions for the same filtration with $[B^1,B^2]_t=\rho t$, $|\rho|<1$, are of this form,
+with $W=\big(B^1,(B^2-\rho B^1)/\sqrt{1-\rho^2}\big)$. A random covariation is a different matter
+(\exref{ex:itf-not-gaussian}).
+
+\begin{corollary}[Product rule]\label{cor:itf-product}
+For It\^o processes $X$ and $Y$ driven by $W$, almost surely, for every $t\ge0$,
+\[
+  X_tY_t=X_0Y_0+\int_0^tX_s\,\dd Y_s+\int_0^tY_s\,\dd X_s+[X,Y]_t,
+\]
+that is, $\dd(XY)=X\,\dd Y+Y\,\dd X+\dd[X,Y]$.
+\end{corollary}
+
+\begin{proof}
+\Cref{thm:itf-multi} with $n=2$ and $f(x,y)=xy$: $\partial_xf=y$, $\partial_yf=x$,
+$\partial_{xy}f=\partial_{yx}f=1$ and $\partial_{xx}f=\partial_{yy}f=0$.
+\end{proof}
+
+The covariation is the term that ordinary integration by parts misses. It vanishes when one of the
+processes has no $\dd W$-part, for instance a deterministic discount factor:
+$\dd(e^{-rt}S_t)=e^{-rt}\,\dd S_t-re^{-rt}S_t\,\dd t$, which gives \cref{prop:itf-gbm}(ii) again.
+
+\begin{example}[The time integral of Brownian motion]\label{exa:itf-product}
+With $X_t=t$ and $Y=W$, $[X,W]=0$ and $tW_t=\int_0^ts\,\dd W_s+\int_0^tW_s\,\dd s$. Writing
+$tW_t=\int_0^tt\,\dd W_s$,
+\[
+  \int_0^tW_s\,\dd s=\int_0^t(t-s)\,\dd W_s\ \sim\ \mathcal N\Big(0,\int_0^t(t-s)^2\dd s\Big)=\mathcal N\big(0,t^3/3\big)
+\]
+by \cref{prop:ito-deterministic}. Early increments weigh more, having been part of the integral for
+longer. The same computation gives the integrated short rate of Gaussian models (\cref{ch:14-rates}).
+\end{example}
+
+The last result of the chapter identifies Brownian motion by two properties that It\^o calculus can
+check: being a martingale, and having quadratic variation $t$.
+
+\begin{theorem}[L\'evy's characterization of Brownian motion]\label{thm:itf-levy}
+Let $M=(M^1,\dots,M^d)$ be a process with continuous paths and $M_0=0$, such that each $M^i$ is a
+martingale with respect to $(\F_t)$ and $[M^i,M^j]_t=\1_{\{i=j\}}\,t$ for all $t\ge0$ and all $i,j$. Then
+$M$ is a $d$-dimensional Brownian motion and $(\F_t)$ is a filtration for it.
+\end{theorem}
+
+This is \textcite{shreve2}, Theorems~4.6.4 ($d=1$) and~4.6.5 ($d=2$), and
+\textcite{karatzas-shreve}, Theorem~3.3.16, for every $d$ and for continuous local martingales; in the
+latter the covariation is defined through the Doob--Meyer decomposition, which for continuous local
+martingales agrees with the limit in probability of sums used here (\textcite{revuz-yor}, Chapter~IV,
+Theorem~1.8). We prove the case in which the $M^i$ are It\^o integrals
+against $W$, which is the one we can reach with the tools of this chapter.
+
+\begin{proof}[Proof when $M^i=\sum_k\int\Delta^{ik}\dd W^k$ with $\Delta^{ik}\in\mathbb H^2_{\mathrm{loc}}$]
+Fix $u\in\R^d$ and let $Y=u\cdot M=\sum_iu_iM^i$, an It\^o process driven by $W$ with no drift and
+diffusion coefficients $\Gamma^k=\sum_iu_i\Delta^{ik}$. By bilinearity,
+$[Y,Y]_t=\sum_{i,j}u_iu_j[M^i,M^j]_t=|u|^2t$, and by \eqref{eq:itf-multi-cov},
+$\int_0^t\sum_k(\Gamma^k_s)^2\dd s=|u|^2t$. Apply \cref{thm:itf-multi} to the real and imaginary parts
+of $f(t,y)=\exp\big(iy+\frac12|u|^2t\big)$: since $\partial_tf=\frac12|u|^2f$, $\partial_{yy}f=-f$ and
+$\dd[Y,Y]_t=|u|^2\dd t$, the $\dd t$-terms cancel, and
+\[
+  f(t,Y_t)=1+\sum_k\int_0^ti\,f(s,Y_s)\,\Gamma^k_s\,\dd W^k_s .
+\]
+On $[0,T]$, $|f(s,Y_s)|\le e^{|u|^2T/2}$ and $\E\int_0^T\sum_k(\Gamma^k_s)^2\dd s=|u|^2T$, so the
+integrands are in $\mathbb H^2$ and the real and imaginary parts of $f(t,Y_t)$ are martingales. For
+$s<t$, multiplying $\E[f(t,Y_t)\mid\F_s]=f(s,Y_s)$ by the bounded $\F_s$-measurable
+$e^{-iu\cdot M_s-|u|^2t/2}$ gives
+\[
+  \E\big[e^{iu\cdot(M_t-M_s)}\,\big|\,\F_s\big]=e^{-|u|^2(t-s)/2}\qquad\text{for every }u\in\R^d .
+\]
+For $A\in\F_s$ with $\Prob(A)>0$, the characteristic function of $M_t-M_s$ under $\Prob(\cdot\mid A)$
+is therefore that of $\mathcal N(0,(t-s)I_d)$; characteristic functions determine laws, so
+$\Prob(\{M_t-M_s\in B\}\cap A)=\Prob(A)\,\mathcal N(0,(t-s)I_d)(B)$ for Borel $B\subseteq\R^d$: the
+increment is independent of $\F_s$ with law $\mathcal N(0,(t-s)I_d)$. Applying this to successive
+intervals, the increments of $M$ over $0\le t_1<\dots<t_m$ are independent with laws
+$\mathcal N(0,(t_{k+1}-t_k)I_d)$. So all the $M^i_{t_k}$ together form a centred Gaussian vector with
+$\Cov(M^i_s,M^j_t)=\1_{\{i=j\}}\min(s,t)$: each $M^i$ is a Brownian motion by
+\cref{prop:bm-gaussian}, and the $M^i$ are independent (\cref{rem:bm-independence}).
+\end{proof}
+
+For example, let
+$\operatorname{sgn}(x)=1$ for $x>0$ and $-1$ for $x\le0$, and
+$B_t=\int_0^t\operatorname{sgn}(W_s)\,\dd W_s$. Then $[B,B]_t=\int_0^t\operatorname{sgn}(W_s)^2\dd s=t$,
+so $B$ is a Brownian motion: it moves with $W$ when $W$ is positive and against it when $W$ is not
+(\cref{fig:itf-levy}); its relation to $|W|$ is \exref{ex:itf-tanaka}. In
+\cref{ch:11-risk-neutral}, L\'evy's theorem identifies the Brownian motion of Girsanov's theorem.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.9\textwidth]{ch08-levy}
+  \caption{$B_t=\int_0^t\operatorname{sgn}(W_s)\,\dd W_s$ by left-point sums. Left: one path of $W$ and
+    of $B$; during the long negative excursion of $W$, $B$ moves against it. Right: the law of $B_1$
+    over $20000$ paths, against the $\mathcal N(0,1)$ density. On the grid the increments
+    $\operatorname{sgn}(W_{t_j})\,\delta_jW$ are exactly independent $\mathcal N(0,h_j)$, so this panel
+    checks the computation; \cref{thm:itf-levy} is the statement that the limit is a Brownian motion.}
+  \label{fig:itf-levy}
+\end{figure}
+
+\demo{08-ito-formula.ipynb}{covariations and the product rule for correlated Brownian motions with the
+correlation of your choice; and L\'evy's theorem for integrands with $|\Delta|=1$ that you select, against
+one with $|\Delta|\ne1$.}
+
+\furtherreading
+\textcite{shreve2}, Sections~4.4 and~4.6, covers the same ground with the same notation and more
+financial examples. \textcite{karatzas-shreve}, Section~3.3, and \textcite{revuz-yor},
+Chapter~IV, prove It\^o's formula for continuous semimartingales, of which It\^o processes are a
+special case, with the localization done in full. \textcite{oksendal}, Chapter~4, is a short and
+readable alternative, and \textcite{steele}, Chapter~8, develops It\^o's formula and its first
+applications with much intuition. \textcite{legall}, Chapter~5, is a concise modern account that
+includes L\'evy's characterization.

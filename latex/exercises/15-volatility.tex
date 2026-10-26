@@ -1,0 +1,157 @@
+% Exercises for Chapter 15 (implied volatility and the smile). Statements only: solutions are kept privately.
+% Notation as in the notes: F_T = S_0 e^{(r-q)T}, k = log(K/F_T), b(k,s) the normalized Black--Scholes
+% call of eq:iv-b, w(k,T) the total implied variance, N and N' the standard normal distribution
+% function and density.
+
+\begin{exercise}[Variance and volatility swaps]\label{ex:iv-vol-swap}
+\easy A \emph{volatility swap} pays $\sqrt{RV}-K_{\mathrm{vol}}$ at $T$, where $RV=\frac1T\int_0^T\sigma_t^2\,\dd t$ is
+the realized variance of \noteref{prop:iv-variance-swap}, and $K_{\mathrm{vol}}=\EQ[\sqrt{RV}]$ makes it
+worth $0$. Let $K_{\mathrm{var}}=\EQ[RV]$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $K_{\mathrm{vol}}\le\sqrt{K_{\mathrm{var}}}$, with equality if and only if $RV$ is almost
+    surely constant.
+  \item Write $RV=K_{\mathrm{var}}(1+\varepsilon)$ and expand $\sqrt{1+\varepsilon}$ to second order to show
+    that, when $\Var(RV)$ is small, $K_{\mathrm{vol}}\approx\sqrt{K_{\mathrm{var}}}-\Var(RV)/(8K_{\mathrm{var}}^{3/2})$.
+  \item Evaluate the approximation for $K_{\mathrm{var}}=0.04$ and a standard deviation of $RV$ of $0.01$,
+    and compare with the exact value when $RV$ takes the values $0.03$ and $0.05$ with probability
+    $\frac12$ each. Why can the volatility swap not, in general, be replicated by a static strip of
+    options and a dynamic position in the stock, as the variance swap is?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Normal and lognormal implied volatilities]\label{ex:iv-bachelier}
+\medium Take $r=q=0$, so that $F_T=S_0$, and fix $T>0$. In the Bachelier model of
+\noteref{rem:iv-bachelier}, the call with strike $K$ costs
+$C_{\mathrm N}(K)=(S_0-K)N(d)+\sigma_{\mathrm N}\sqrt T\,N'(d)$, $d=(S_0-K)/(\sigma_{\mathrm N}\sqrt T)$.
+\begin{enumerate}[label=(\alph*)]
+  \item At $K=S_0$, show that $C_{\mathrm N}(S_0)=\sigma_{\mathrm N}\sqrt{T/(2\pi)}$. If the same price is quoted with
+    a normal implied volatility $\sigma_{\mathrm N}$ and a Black--Scholes implied volatility
+    $\sigma_{\mathrm{BS}}$, show that $0\le\sigma_{\mathrm{BS}}-\sigma_{\mathrm N}/S_0\le\sigma_{\mathrm{BS}}^3T/24$. You
+    may use \noteref{prop:bs-atm}. How good is $\sigma_{\mathrm N}/S_0$ as an estimate of $\sigma_{\mathrm{BS}}$
+    for $\sigma_{\mathrm{BS}}=20\%$ and $T=1$?
+  \item Now fix $\sigma_{\mathrm N}>0$ and let $\Sigma(K)$ be the Black--Scholes implied volatility of
+    $C_{\mathrm N}(K)$. Show that $\Sigma$ is differentiable and, with $s=\Sigma(S_0)\sqrt T$,
+    \[
+      \Sigma'(S_0)=-\frac{N(s/2)-\frac12}{S_0\sqrt T\,N'(s/2)}<0,\qquad
+      \Sigma'(S_0)\approx-\frac{\Sigma(S_0)}{2S_0}\ \text{ for small }s .
+    \]
+  \item Compute $\Sigma(K)$ for $S_0=100$, $\sigma_{\mathrm N}=20$, $T=1$ and $K=70,80,\dots,130$, and compare
+    with $\sigma_{\mathrm N}/\sqrt{S_0K}$. What does a trader who believes in the Bachelier model see in the
+    Black--Scholes smile?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[The wings of the smile]\label{ex:iv-wings}
+\medium Let the call prices at one maturity come from a pricing measure $\Q$, and let $w(k)$ be their
+total implied variance, so that $d_+(k)=-k/\sqrt{w(k)}+\sqrt{w(k)}/2\to-\infty$ as $k\to\infty$
+(\noteref{prop:iv-static-arbitrage}).
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $w(k)<2k$ for all $k$ large enough, so that $\limsup_{k\to\infty}w(k)/k\le2$.
+  \item Suppose $\Q(S_T=0)=0$. Show that $P(K,T)/(Ke^{-rT})\to0$ as $K\downarrow0$, and that this ratio
+    equals $b\big(-k,\sqrt{w(k)}\big)$. Deduce, as in the proof of \noteref{prop:iv-static-arbitrage}(i), that
+    $w(k)<2|k|$ for all $k$ negative enough.
+  \item For raw SVI, $w(k)=a+b\big(\rho(k-m)+\sqrt{(k-m)^2+\varsigma^2}\big)$ with $b\ge0$, $|\rho|<1$,
+    $\varsigma>0$, show that $w(k)/k\to b(1+\rho)$ as $k\to\infty$ and $w(k)/|k|\to b(1-\rho)$ as
+    $k\to-\infty$. Show that if $b(1+\rho)=2$, then $d_+(k)\to0$ and the normalized call price tends to
+    $\frac12$ as $k\to\infty$. Conclude that a raw SVI slice coming from a pricing measure with
+    $\Q(S_T=0)=0$ has $b(1+|\rho|)<2$.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Small volatility of volatility]\label{ex:iv-two-point}
+\medium In the setting of \noteref{prop:iv-mixing}, let $V$ take the values $m(1-\delta)$ and $m(1+\delta)$
+with probability $\frac12$ each, where $m>0$ and $0<\delta<1$, and let $h_k(v)=b(k,\sqrt v)$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $\E[h_k(V)]=h_k(m)+\frac12h_k''(m)m^2\delta^2+O(\delta^4)$ as $\delta\to0$, for fixed $k$, and
+    deduce that
+    \[
+      w(k)=m+\frac{m^2\delta^2}2\Big(\frac{k^2}{2m^2}-\frac18-\frac1{2m}\Big)+O(\delta^4).
+    \]
+    You may use the formula for $h_k''/h_k'$ in the proof of \noteref{prop:iv-mixing}.
+  \item Describe the shape of this approximate smile, and compare the values of $k$ at which it crosses
+    the level $m$ with the threshold of \noteref{prop:iv-mixing}(iii).
+  \item This is a computational part. For $m=0.04$ (a volatility of $20\%$ over $T=1$), compute the exact
+    smile $\sqrt{w(k)}$ for $k\in\{0,\pm0.1,\pm0.3,\pm0.5\}$ and $\delta\in\{0.2,0.5\}$ by inverting the
+    mixture prices, and compare with the approximation. When is the approximation accurate?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[The leverage effect in the Heston model]\label{ex:iv-leverage}
+\medium Under $\Prob$, let $v$ follow the square-root equation of \noteref{prop:iv-heston} driven by $B$,
+and let $W$ be a Brownian motion with $[W,B]_t=\rho t$. Let $R_t=\int_0^t\sqrt{v_s}\,\dd W_s$, the martingale
+part of the log return $\log(S_t/S_0)$ over $[0,t]$. You may use that $\E\int_0^Tv_s\,\dd s<\infty$, and that
+for progressively measurable $H,G$ with $\E\int_0^tH_s^2\,\dd s$ and $\E\int_0^tG_s^2\,\dd s$ finite,
+$\E\big[\int_0^tH\,\dd W\int_0^tG\,\dd B\big]=\rho\,\E\int_0^tH_sG_s\,\dd s$.
+\begin{enumerate}[label=(\alph*)]
+  \item By applying It\^o's formula to $e^{\kappa u}v_u$, show that
+    $v_u=\theta+(v_0-\theta)e^{-\kappa u}+\xi\int_0^ue^{-\kappa(u-s)}\sqrt{v_s}\,\dd B_s$.
+  \item Show that for $t,h\ge0$, $\Cov(R_t,v_{t+h})=\rho\xi\int_0^te^{-\kappa(t+h-s)}\E[v_s]\,\dd s$, and compute it
+    when $v_0=\theta$.
+  \item Interpret the sign, and compare with \noteref{prop:iv-mixture}(iii) and the right panel of
+    \noteref{fig:iv-stylised}. How does a negative correlation between returns and future variance show
+    in the smile?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Dupire's formula in implied variance]\label{ex:iv-dupire-w}
+\medium Let the call prices be given by a total implied variance $w(k,T)$, twice continuously
+differentiable in $k$ and continuously differentiable in $T$, and let
+$\gamma(k,T)=e^{rT}C(F_Te^k,T)/F_T=b\big(k,\sqrt{w(k,T)}\big)$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that, in the variables $(k,T)$, Dupire's equation \noteref{eq:iv-dupire-pde} becomes
+    $\partial_T\gamma=\frac12\sigma(T,F_Te^k)^2(\partial_{kk}\gamma-\partial_k\gamma)$: the rate and the dividend
+    yield disappear.
+  \item Using the identities in the proof of \noteref{prop:iv-static-arbitrage}, show that
+    $\partial_T\gamma=\psi\,\partial_Tw$ and $\partial_{kk}\gamma-\partial_k\gamma=2\psi g$, with
+    $\psi=N'(d_+)/(2\sqrt w)$, and deduce formula \noteref{eq:iv-dupire-w}.
+  \item Suppose $w(k,T)=\int_0^T\vartheta(t)^2\,\dd t$ does not depend on $k$, for a continuous positive
+    function $\vartheta$. What is the local volatility, and what is the model?
+  \item Explain why \noteref{eq:iv-dupire-w} produces a negative local variance on part of the slice of
+    \noteref{fig:iv-static} with Vogt's parameters, as soon as the total variance increases with $T$ there.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[The Heston characteristic function]\label{ex:iv-heston-riccati}
+\hard Consider the Heston model of \noteref{prop:iv-heston} under $\Q$, with $X_t=\log(S_t/F_t)$, so that
+$\dd X_t=-\frac12v_t\,\dd t+\sqrt{v_t}\,\dd\widetilde W_t$. Fix a real $u$ and $T>0$. In this exercise you may
+treat complex logarithms and square roots formally.
+\begin{enumerate}[label=(\alph*)]
+  \item Let $f(t,x,v)$ be complex valued and continuously differentiable once in $t$ and twice in
+    $(x,v)$. Show that $f(t,X_t,v_t)$ has zero drift if and only if, along the path,
+    \[
+      \partial_tf-\frac v2\,\partial_xf+\frac v2\,\partial_{xx}f+\rho\xi v\,\partial_{xv}f+\kappa(\theta-v)\,\partial_vf
+      +\frac{\xi^2v}2\,\partial_{vv}f=0 .
+    \]
+    Which equation does the price $c(t,s,v)$ of a call satisfy, if $e^{-rt}c(t,S_t,v_t)$ is a martingale
+    and $c$ is smooth?
+  \item Look for $f=\exp\big(iux+A(T-t)+D(T-t)v\big)$ with $A(0)=D(0)=0$. Show that the equation of (a) holds
+    if and only if $A'=\kappa\theta D$ and
+    \[
+      D'=\frac{\xi^2}2D^2-(\kappa-\rho\xi iu)D-\frac12(u^2+iu).
+    \]
+  \item Let $D_\pm=(\beta\pm d)/\xi^2$ be the roots of the right side, with $\beta$ and $d$ as in
+    \noteref{eq:iv-heston-cf}. By computing the derivative of $\log\big((D-D_-)/(D-D_+)\big)$, derive the
+    formula for $D$ in \noteref{eq:iv-heston-cf}, and check that $A$ given there satisfies $A'=\kappa\theta D$.
+  \item Let $\xi\to0$ (the variance becomes deterministic). Solve the equation for $D$ in that case, and
+    check that $\exp(A+Dv_0)$ is the characteristic function of $\mathcal N(-V/2,V)$ with
+    $V=\int_0^Tv_t\,\dd t$ and $v_t=\theta+(v_0-\theta)e^{-\kappa t}$.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Fitting and checking a smile]\label{ex:iv-svi-fit}
+\medium This is a computational exercise. Take the Heston model of \noteref{fig:iv-heston} with $\rho=-0.7$:
+$S_0=100$, $r=2\%$, $q=0$, $v_0=\theta=0.04$, $\kappa=2$, $\xi=0.5$, and $T=0.5$. You may compute Heston call
+prices with \noteref{lem:iv-lewis} and \noteref{prop:iv-heston}, or with the function \texttt{heston\_call}
+of the course code (\coderef{code/src/ieor222/volatility.py}).
+\begin{enumerate}[label=(\alph*)]
+  \item Compute the total implied variances $w_i$ at $k_i=-0.4,-0.35,\dots,0.3$.
+  \item Fit a raw SVI slice to the $w_i$ by least squares, with $b\ge0$, $|\rho|<1$ and $\varsigma>0$ (for
+    instance with the function \texttt{least\_squares} of \texttt{scipy.optimize}). Report the parameters
+    and the largest error in volatility points.
+  \item Check the fitted slice for butterfly arbitrage on $k\in[-2,2]$, and its wings against
+    \exref{ex:iv-wings}.
+  \item Price the digital call with strike $F_T$ from the fitted smile with \noteref{prop:iv-digital}, and
+    compare with the Heston price $e^{-rT}\Q(S_T>F_T)=-\partial_KC$, computed by a finite difference of Heston
+    prices, and with the Black--Scholes digital at the at-the-money implied volatility.
+\end{enumerate}
+\end{exercise}

@@ -1,5 +1,639 @@
-\begin{planned}
-  \item self-financing portfolios and replication in continuous time
-  \item the Black--Scholes equation derived by delta hedging
-  \item hedging in discrete time: the hedging error and its dependence on the rebalancing frequency
-\end{planned}
+% Chapter 10: The Black--Scholes equation by hedging.
+
+\Cref{ch:04-binomial} replicated every claim of the binomial model by a portfolio rebalanced
+at each node, with a hedge ratio given by a discrete derivative of the price.
+\Cref{ch:06-black-scholes-formula} let the tree become fine and obtained the Black--Scholes
+prices as expectations under a measure $\Q$, but nothing in that chapter replicates a claim in
+continuous time. With It\^o's formula (\cref{ch:08-ito-formula}) we can now trade
+continuously.
+
+The argument is that of \textcite{black-scholes} and \textcite{merton1973}. If a claim can be
+replicated and its price is a smooth function $v(t,S_t)$ of time and the stock price, then two
+expressions for the same process must agree: the wealth equation of the replicating portfolio
+and It\^o's formula for $v(t,S_t)$. Matching their $\dd W$-terms gives the hedge,
+$\Delta_t=\partial_xv(t,S_t)$; matching their $\dd t$-terms gives a partial differential
+equation for $v$ in which the expected return $\mu$ of the stock does not appear. Conversely,
+every solution of that equation with moderate growth gives a hedge, and the Black--Scholes
+formula is one. The chapter ends with what happens when the hedge is rebalanced at finitely
+many dates, as it must be in practice: the hedging error no longer vanishes, but it is of the
+order of the square root of the time between rebalancing dates, and it is driven by the
+gamma of the claim.
+
+\paragraph{Setting.} Throughout, $W$ is a Brownian motion with a filtration $(\F_t)_{t\ge0}$
+(\cref{def:bm-filtration}) under the real-world measure $\Prob$, and $T>0$ is a horizon. The
+market consists of a money market, worth $e^{rt}$ at time $t$ for some $r\in\R$, and a stock
+whose price is the geometric Brownian motion (\cref{def:bs-gbm})
+\begin{equation}\label{eq:dh-stock}
+  S_t=S_0\exp\Big(\sigma W_t+\Big(\mu-\frac{\sigma^2}{2}\Big)t\Big),\qquad S_0>0,\ \mu\in\R,\ \sigma>0 .
+\end{equation}
+By \cref{prop:itf-gbm},
+\begin{equation}\label{eq:dh-dS}
+  \dd S_t=\mu S_t\,\dd t+\sigma S_t\,\dd W_t,\qquad
+  \dd\big(e^{-rt}S_t\big)=(\mu-r)\,e^{-rt}S_t\,\dd t+\sigma\,e^{-rt}S_t\,\dd W_t .
+\end{equation}
+Two facts about the law of $S$ are used repeatedly. For $u>0$, $\log S_u$ is normal with
+variance $\sigma^2u>0$, so $S_u$ has a density that is positive on $(0,\infty)$. And for every
+$q\in\R$, by the Gaussian moment generating function,
+\begin{equation}\label{eq:dh-moments}
+  \E\big[S_u^q\big]=S_0^q\exp\Big(q\Big(\mu-\frac{\sigma^2}{2}\Big)u+\frac{q^2\sigma^2}{2}\,u\Big),
+\end{equation}
+which is bounded for $u\in[0,T]$. As in \cref{ch:08-ito-formula}, we write
+$v\in C^{1,2}([0,T)\times(0,\infty))$ when $v$ has partial derivatives $\partial_tv$,
+$\partial_xv$ and $\partial_{xx}v$ that are continuous on $[0,T)\times(0,\infty)$ (one-sided in
+$t$ at $t=0$).
+
+The results of \cref{ch:08-ito-formula} are stated for processes indexed by $t\ge0$ and functions
+on $[0,\infty)\times\R$. We use them on intervals $[0,t']$, for processes defined only up to time
+$T$ or before $T$, and functions defined for $t<T$. This is legitimate. Multiplying the drift and
+the diffusion coefficient of an It\^o process by $\1_{[0,t']}$ gives an It\^o process on
+$[0,\infty)$ that agrees with the given one on $[0,t']$ and is constant afterwards. And if
+$t'<t''$ and $f\in C^{1,2}([0,t'']\times\R)$, then $f(\phi(t),x)$ is in $C^{1,2}([0,\infty)\times\R)$
+and agrees with $f$ on $[0,t']\times\R$, where $\phi$ is continuously differentiable, equal to the
+identity on $[0,t']$ and with values in $[0,t'']$, for instance
+$\phi(t)=t'+(t''-t')\big(1-e^{-(t-t')/(t''-t')}\big)$ for $t>t'$.
+
+\section{Self-financing strategies}\label{sec:dh-strategies}
+
+In the binomial model, a portfolio that holds $\Delta_n$ shares from time $n$ to $n+1$ and
+keeps the rest of its value in the money market evolves by \eqref{eq:bin-wealth}. Over an
+interval $[t,t+h]$ of continuous time, with continuous compounding, the same bookkeeping reads
+\[
+  X_{t+h}=\Delta_tS_{t+h}+e^{rh}\big(X_t-\Delta_tS_t\big),\quad\text{that is,}\quad
+  e^{-r(t+h)}X_{t+h}-e^{-rt}X_t=\Delta_t\big(e^{-r(t+h)}S_{t+h}-e^{-rt}S_t\big),
+\]
+the analogue of \eqref{eq:bin-discounted-wealth}. Along a partition of $[0,t]$, the
+discounted wealth is $X_0$ plus a martingale transform (\cref{def:mg-transform}) of the
+discounted stock price, and as the partition is refined such sums converge to integrals with
+respect to the It\^o process $e^{-rt}S_t$ (\cref{ch:08-ito-formula}). We take the limit as
+the definition.
+
+\begin{definition}[Self-financing strategy]\label{def:dh-self-financing}
+A \emph{self-financing strategy} is a pair $(X_0,\Delta)$ of an initial capital $X_0\in\R$
+and a progressively measurable process $\Delta=(\Delta_t)_{0\le t\le T}$
+(\cref{def:ito-h2}) such that
+\begin{equation}\label{eq:dh-integrability}
+  \int_0^T\Delta_t^2\,\dd t<\infty\quad\text{almost surely.}
+\end{equation}
+$\Delta_t$ is the number of shares held at time $t$. The \emph{value} of the strategy is the
+process $X$ defined, for $0\le t\le T$, by
+\begin{equation}\label{eq:dh-discounted-wealth}
+  e^{-rt}X_t=X_0+\int_0^t\Delta_u\,\dd\big(e^{-ru}S_u\big)
+  :=X_0+\int_0^t(\mu-r)\Delta_u\,e^{-ru}S_u\,\dd u+\int_0^t\sigma\Delta_u\,e^{-ru}S_u\,\dd W_u ;
+\end{equation}
+the amount $X_t-\Delta_tS_t$ is held in the money market.
+\end{definition}
+
+The integrals exist. Along each path, $S$ is continuous and positive on $[0,T]$, so
+$0<m_\omega\le S_u\le M_\omega$ there. Hence
+$\int_0^T(\sigma\Delta_ue^{-ru}S_u)^2\,\dd u\le\sigma^2e^{2|r|T}M_\omega^2\int_0^T\Delta_u^2\,\dd u<\infty$,
+so the integrand of $\dd W$ is in $\mathbb H^2_{\mathrm{loc}}$, and
+$\int_0^T|\Delta_u|e^{-ru}S_u\,\dd u<\infty$ by the Cauchy--Schwarz inequality: $e^{-rt}X_t$ is an
+It\^o process (\cref{def:itf-process}). For the same reason, \eqref{eq:dh-integrability} is
+equivalent to $\int_0^T\Delta_t^2S_t^2\,\dd t<\infty$: it says that the dollar amount held in
+the stock is square-integrable in time, which is what the stochastic integral needs.
+
+\begin{lemma}[Wealth equation]\label{lem:dh-wealth}
+Let $(X_0,\Delta)$ be a self-financing strategy. Its value $X$ is the only It\^o process such
+that, almost surely, for all $t\in[0,T]$,
+\begin{equation}\label{eq:dh-wealth}
+  X_t=X_0+\int_0^t\Delta_u\,\dd S_u+\int_0^tr\big(X_u-\Delta_uS_u\big)\,\dd u,
+\end{equation}
+where $\int_0^t\Delta_u\,\dd S_u=\int_0^t\mu\Delta_uS_u\,\dd u+\int_0^t\sigma\Delta_uS_u\,\dd W_u$.
+Equivalently,
+\begin{equation}\label{eq:dh-three-terms}
+  \dd X_t=rX_t\,\dd t+(\mu-r)\Delta_tS_t\,\dd t+\sigma\Delta_tS_t\,\dd W_t .
+\end{equation}
+\end{lemma}
+
+\begin{proof}
+$Y_t=e^{-rt}X_t$ is an It\^o process with drift $(\mu-r)\Delta_te^{-rt}S_t$ and diffusion
+coefficient $\sigma\Delta_te^{-rt}S_t$ (frozen after $T$, as explained in the setting), and $e^{rt}$
+is an It\^o process with no $\dd W$-part, so
+$[e^{r\cdot},Y]=0$ (\cref{prop:itf-decomposition}). The product rule (\cref{cor:itf-product})
+gives
+\[
+  \dd X_t=\dd\big(e^{rt}Y_t\big)=re^{rt}Y_t\,\dd t+e^{rt}\,\dd Y_t
+  =rX_t\,\dd t+(\mu-r)\Delta_tS_t\,\dd t+\sigma\Delta_tS_t\,\dd W_t ,
+\]
+which is \eqref{eq:dh-three-terms}, and \eqref{eq:dh-wealth} follows by writing
+$rX+(\mu-r)\Delta S=\mu\Delta S+r(X-\Delta S)$. If $X'$ is another It\^o process satisfying
+\eqref{eq:dh-wealth}, then $D=X-X'$ satisfies $D_t=\int_0^trD_u\,\dd u$ for all $t$, almost
+surely. Along such a path $D$ is continuous, hence continuously differentiable with $D'=rD$
+and $D_0=0$; so $(e^{-rt}D_t)'=0$ and $D\equiv0$.
+\end{proof}
+
+The three terms of \eqref{eq:dh-three-terms} are the return $rX_t\,\dd t$ that the whole
+wealth would earn in the money market, the risk premium $(\mu-r)\Delta_tS_t\,\dd t$ earned on
+the $\Delta_tS_t$ dollars held in the stock, and the risk $\sigma\Delta_tS_t\,\dd W_t$, also
+proportional to the stock position. Holding no shares gives $X_t=X_0e^{rt}$; holding one share
+with $X_0=S_0$ gives $e^{-rt}X_t=S_0+(e^{-rt}S_t-S_0)$ by \eqref{eq:dh-dS}, that is, $X=S$.
+
+\begin{remark}[Which strategies are allowed]\label{rem:dh-admissible}
+Adaptedness, which progressive measurability includes, says that the position at time $t$
+uses only the information in $\F_t$. Condition \eqref{eq:dh-integrability} is what the integral
+needs, but it allows strategies that nobody could run. With $T=1$, \cref{exa:ito-doubling}
+constructs an integrand $H\in\mathbb H^2_{\mathrm{loc}}$ with
+$\int_0^1H_u\,\dd W_u=1$ almost surely. If $\mu=r$, the strategy with $X_0=0$ and
+$\Delta_t=H_t/(\sigma e^{-rt}S_t)$ satisfies \eqref{eq:dh-integrability}, because $S$ is bounded
+away from $0$ along each path, and \eqref{eq:dh-discounted-wealth} gives $X_1=e^r$ almost
+surely: something for nothing. Like the doubling strategy of \cref{exa:mg-doubling}, it needs
+unlimited credit, since its value is not bounded below. Statements that rule out arbitrage
+must therefore restrict the class of strategies (\cref{ch:11-risk-neutral}). The results of
+this chapter need no such restriction: they construct a strategy that replicates a claim,
+rather than rule strategies out.
+\end{remark}
+
+\section{The Black--Scholes equation}\label{sec:dh-pde}
+
+We need It\^o's formula for $v(t,S_t)$ when $v$ is defined only for $x>0$. Composing with the
+exponential reduces it to It\^o's formula for Brownian motion.
+
+\begin{lemma}[It\^o's formula for functions of the stock]\label{lem:dh-ito}
+Let $v\in C^{1,2}([0,T)\times(0,\infty))$ and write
+$\mathcal L^\mu v=\partial_tv+\mu x\,\partial_xv+\frac12\sigma^2x^2\,\partial_{xx}v$. Almost surely,
+for every $t\in[0,T)$,
+\begin{equation}\label{eq:dh-ito}
+  e^{-rt}v(t,S_t)=v(0,S_0)+\int_0^te^{-ru}\big(\mathcal L^\mu v-rv\big)(u,S_u)\,\dd u
+  +\int_0^t\sigma e^{-ru}S_u\,\partial_xv(u,S_u)\,\dd W_u .
+\end{equation}
+The integrand of $\dd W$ is continuous and adapted on $[0,t]$, hence in $\mathbb H^2_{\mathrm{loc}}$.
+\end{lemma}
+
+\begin{proof}
+Fix $t'<T$, let $s(u,w)=S_0\exp\big(\sigma w+(\mu-\frac{\sigma^2}2)u\big)$, so that
+$S_u=s(u,W_u)$, and let $f(u,w)=e^{-ru}v\big(u,s(u,w)\big)$, which is in
+$C^{1,2}([0,t']\times\R)$ by the chain rule. Since $\partial_us=(\mu-\frac{\sigma^2}{2})s$,
+$\partial_ws=\sigma s$ and $\partial_{ww}s=\sigma^2s$, with the derivatives of $v$ evaluated at
+$(u,s(u,w))$,
+\[
+  \partial_uf=e^{-ru}\Big(\partial_tv-rv+\Big(\mu-\frac{\sigma^2}{2}\Big)s\,\partial_xv\Big),\quad
+  \partial_wf=e^{-ru}\sigma s\,\partial_xv,\quad
+  \partial_{ww}f=e^{-ru}\big(\sigma^2s^2\,\partial_{xx}v+\sigma^2s\,\partial_xv\big).
+\]
+So $\partial_uf+\frac12\partial_{ww}f=e^{-ru}(\mathcal L^\mu v-rv)$, and \cref{thm:itf-bm} on
+$[0,t']$ gives \eqref{eq:dh-ito} for $t\le t'$. Taking $t'=T-1/m$, $m=1,2,\dots$, covers
+$[0,T)$.
+\end{proof}
+
+This is the formula
+$\dd v=\partial_tv\,\dd t+\partial_xv\,\dd S+\frac12\partial_{xx}v\,\dd[S,S]$ of
+\cref{thm:itf-process}, with $\dd[S,S]_t=\sigma^2S_t^2\,\dd t$ (\cref{prop:itf-decomposition}),
+followed by the product rule for the discount factor.
+
+Consider a European claim that pays $g(S_T)$ at time $T$, for a Borel function
+$g:(0,\infty)\to\R$, and suppose that it is \emph{replicated}: some self-financing strategy has
+$X_T=g(S_T)$ almost surely. A seller who receives $X_0$ and follows the strategy can pay
+$g(S_T)$ whatever happens, so $X_0$ is the cost of the claim, and $X_t$ its value at time
+$t$. Following Black, Scholes and Merton, suppose further that this value depends on the past
+only through the current stock price, $X_t=v(t,S_t)$, as in the recombining trees of
+\cref{sec:bin-multi-period}.
+
+\begin{theorem}[The Black--Scholes equation and the delta hedge]\label{thm:dh-bs-pde}
+Let $g:(0,\infty)\to\R$ be Borel, let $(X_0,\Delta)$ be a self-financing strategy with
+$X_T=g(S_T)$ almost surely, and let $v\in C^{1,2}([0,T)\times(0,\infty))$ be such that
+$X_t=v(t,S_t)$ almost surely, for every $t\in[0,T)$. Then:
+\begin{enumerate}[label=(\roman*)]
+  \item $v$ solves the \emph{Black--Scholes equation}
+    \begin{equation}\label{eq:dh-pde}
+      \partial_tv(t,x)+rx\,\partial_xv(t,x)+\frac{\sigma^2x^2}{2}\,\partial_{xx}v(t,x)=r\,v(t,x),
+      \qquad(t,x)\in[0,T)\times(0,\infty);
+    \end{equation}
+  \item the strategy is the \emph{delta hedge}: $\Delta_t=\partial_xv(t,S_t)$ for
+    $\dd t\otimes\dd\Prob$-almost every $(t,\omega)\in[0,T)\times\Omega$;
+  \item if moreover $v$ is continuous on $[0,T]\times(0,\infty)$, then $v(T,x)=g(x)$ for
+    Lebesgue-almost every $x>0$, and for every $x>0$ if $g$ is continuous.
+\end{enumerate}
+Neither the equation nor the hedge involves $\mu$.
+\end{theorem}
+
+\begin{proof}
+Fix $t'<T$. The processes $X$ and $v(t,S_t)$ have continuous paths on $[0,t']$ and agree
+almost surely at each rational time, hence at all times in $[0,t']$, almost surely. So
+$e^{-rt}X_t$, given by \eqref{eq:dh-discounted-wealth}, and $e^{-rt}v(t,S_t)$, given by
+\eqref{eq:dh-ito}, are two decompositions of one It\^o process on $[0,t']$; after freezing
+both at $t'$ as explained in the setting, \cref{prop:itf-decomposition}(ii) applies with $T=t'$. For $\dd t\otimes\dd\Prob$-almost every
+$(u,\omega)\in[0,t']\times\Omega$ their diffusion coefficients agree,
+\[
+  \sigma\Delta_u\,e^{-ru}S_u=\sigma e^{-ru}S_u\,\partial_xv(u,S_u),
+\]
+and so do their drifts,
+\[
+  (\mu-r)\Delta_u\,e^{-ru}S_u=e^{-ru}\Big(\partial_tv+\mu S_u\,\partial_xv+\frac{\sigma^2S_u^2}{2}\,\partial_{xx}v-rv\Big)(u,S_u).
+\]
+As $\sigma e^{-ru}S_u>0$, the first identity gives $\Delta_u=\partial_xv(u,S_u)$. Substituting
+it into the second, the terms $\mu S_u\partial_xv(u,S_u)$ on the two sides cancel, and what
+remains is $F(u,S_u)=0$, where
+$F=\partial_tv+rx\,\partial_xv+\frac12\sigma^2x^2\,\partial_{xx}v-rv$ is continuous on
+$[0,T)\times(0,\infty)$. Letting $t'\uparrow T$ along a sequence proves (ii), and shows that
+$F(u,S_u)=0$ for $\dd t\otimes\dd\Prob$-almost every $(u,\omega)\in[0,T)\times\Omega$.
+
+To pass from the path to the whole half-plane, note that by Tonelli's theorem
+$\int_0^T\Prob\big(F(u,S_u)\ne0\big)\,\dd u=\E\int_0^T\1_{\{F(u,S_u)\ne0\}}\,\dd u=0$, so
+$\Prob(F(u,S_u)\ne0)=0$ for almost every $u\in(0,T)$. Fix such a $u$. The set
+$O_u=\{x>0:F(u,x)\ne0\}$ is open, because $F(u,\cdot)$ is continuous, and $S_u$ falls in it with
+probability zero. Since $S_u$ has a density that is positive on $(0,\infty)$, $O_u$ has
+Lebesgue measure zero, and an open set of measure zero is empty. Hence $F(u,\cdot)=0$ for
+almost every $u\in[0,T)$, and by continuity of $F$ for every $u$: this is (i).
+
+(iii) $X$ has continuous paths on $[0,T]$, and so has $v(t,S_t)$ under the extra hypothesis, so
+$X_T=\lim_{t\uparrow T}v(t,S_t)=v(T,S_T)$ almost surely. Hence $v(T,S_T)=g(S_T)$ almost surely,
+so the Borel set $\{x>0:v(T,x)\ne g(x)\}$ has probability zero under the law of $S_T$, and
+therefore Lebesgue measure zero. If $g$ is continuous the set is open, hence empty.
+\end{proof}
+
+The proof is short because the work is done by \cref{prop:itf-decomposition}: the hedge is
+read off the $\dd W$-terms, and the equation off the $\dd t$-terms. The original argument of
+\textcite{black-scholes} reads the same computation differently. The position long one claim
+and short $\partial_xv(t,S_t)$ shares has no $\dd W$-term, so over a short interval it is
+riskless, and a riskless position must earn the riskless rate; written out, this is
+\eqref{eq:dh-pde}. The equation is linear, so a portfolio of claims is hedged by the sum of
+the hedges.
+
+\begin{remark}[The drift does not matter]\label{rem:dh-mu}
+\begin{enumerate}[label=(\alph*),leftmargin=*]
+  \item \emph{Why $\mu$ drops out.} In the proof, $\mu$ enters twice: through the risk premium
+    $(\mu-r)\Delta_tS_t$ earned by the shares in the portfolio \eqref{eq:dh-three-terms}, and
+    through the drift $\mu S_t\,\partial_xv$ of the value of the claim \eqref{eq:dh-ito}. With
+    $\Delta_t=\partial_xv(t,S_t)$ the two are equal: a portfolio that tracks the claim carries
+    exactly the claim's exposure to the stock, and with it exactly the claim's share of the
+    risk premium. Traders who agree on $r$ and $\sigma$ but not on $\mu$ agree on prices and
+    hedges; this is \cref{rem:bin-p} in continuous time.
+  \item \emph{What $\mu$ does affect.} By \eqref{eq:dh-ito} and \eqref{eq:dh-pde}, the drift of
+    $v(t,S_t)$ is $rv+(\mu-r)S_t\,\partial_xv$: over a short interval the claim's expected
+    return is $r$ plus the stock's excess return $\mu-r$ times the \emph{elasticity}
+    $S_t\,\partial_xv/v$. For a call, $c<xN(d_+)=x\,\partial_xc$ (\cref{thm:bs-formula,prop:bs-greeks}),
+    so the elasticity exceeds one: a call is a leveraged position in the stock, with a larger
+    risk premium, not none. The drift also determines the probability that the claim ends
+    in the money, and, in \cref{sec:dh-discrete}, the size of the error of a hedge
+    rebalanced at discrete dates.
+  \item \emph{Why this is fortunate.} Since $\log S_u=\log S_0+(\mu-\frac{\sigma^2}{2})u+\sigma W_u$, along
+    dyadic partitions of $[0,t]$ the sum of squared log-returns converges almost surely to
+    $\sigma^2t$: the drift contributes nothing, by the rules $\dd W\,\dd t=0$ and
+    $\dd t\,\dd t=0$ of \cref{sec:bm-qv}, and $\sum(\sigma\,\delta W)^2\to\sigma^2t$ by
+    \cref{thm:bm-qv}. One path determines $\sigma$. The natural estimate of $\mu$,
+    $\log(S_t/S_0)/t+\frac{\sigma^2}{2}$, has standard deviation $\sigma/\sqrt t$: about
+    $6\%$ per year with $\sigma=20\%$ and ten years of data. Prices depend on the parameter
+    that is easy to estimate, not on the one that is hard.
+  \item \emph{The measure $\Q$.} In \cref{ch:06-black-scholes-formula}, prices were expectations
+    under a measure under which the stock has drift $r$. \Cref{thm:dh-verification}(iii)
+    below shows that the two routes give the same prices, and \cref{ch:11-risk-neutral}
+    constructs that measure from $\Prob$ (\cref{thm:rn-girsanov}).
+\end{enumerate}
+\end{remark}
+
+\section{Verification and the Black--Scholes formula}\label{sec:dh-verification}
+
+\Cref{thm:dh-bs-pde} says what the price and the hedge must be if a smooth price exists. The
+converse is a \emph{verification} theorem: a solution of the equation, with moderate growth,
+is a price, and its derivative is the hedge.
+
+\begin{theorem}[Verification]\label{thm:dh-verification}
+Let $g:(0,\infty)\to\R$ be continuous, and let $v\in C^{1,2}([0,T)\times(0,\infty))$ be
+continuous on $[0,T]\times(0,\infty)$, solve \eqref{eq:dh-pde}, and satisfy $v(T,x)=g(x)$ for
+$x>0$. Assume the growth condition: for some constants $C,\kappa\ge0$,
+\begin{equation}\label{eq:dh-growth}
+  |\partial_xv(t,x)|\le C\big(1+x^\kappa+x^{-\kappa}\big),\qquad(t,x)\in[0,T)\times(0,\infty).
+\end{equation}
+Let $X_0=v(0,S_0)$, $\Delta_t=\partial_xv(t,S_t)$ for $t<T$, and $\Delta_T=0$.
+\begin{enumerate}[label=(\roman*)]
+  \item $(X_0,\Delta)$ is a self-financing strategy, and its value satisfies $X_t=v(t,S_t)$ for
+    all $t\in[0,T]$, almost surely. In particular $X_T=g(S_T)$: the strategy replicates the
+    claim.
+  \item $\E\int_0^T\Delta_t^2S_t^2\,\dd t<\infty$.
+  \item If $\mu=r$, then $(e^{-rt}X_t)_{0\le t\le T}$ is a martingale, $g(S_T)$ is integrable,
+    and $v(t,S_t)=e^{-r(T-t)}\E\big[g(S_T)\,\big|\,\F_t\big]$ for every $t\in[0,T]$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+(i) $\Delta$ is continuous and adapted on $[0,T)$, so it is progressively measurable
+(\cref{def:ito-h2}), and by \eqref{eq:dh-growth},
+$\int_0^T\Delta_t^2\,\dd t\le C^2\int_0^T(1+S_t^\kappa+S_t^{-\kappa})^2\,\dd t<\infty$ along every path,
+since $S$ is continuous and positive. By \eqref{eq:dh-pde},
+$\mathcal L^\mu v-rv=(\mu-r)x\,\partial_xv$, so \cref{lem:dh-ito} reads, for $t<T$,
+\[
+  e^{-rt}v(t,S_t)=v(0,S_0)+\int_0^t(\mu-r)\,\partial_xv(u,S_u)\,e^{-ru}S_u\,\dd u
+  +\int_0^t\sigma\,\partial_xv(u,S_u)\,e^{-ru}S_u\,\dd W_u ,
+\]
+which is the right side of \eqref{eq:dh-discounted-wealth}. So $X_t=v(t,S_t)$ for all $t<T$,
+almost surely. As $t\uparrow T$, $X_t\to X_T$ because $X$ is continuous, and
+$v(t,S_t)\to v(T,S_T)=g(S_T)$ because $v$ is continuous on $[0,T]\times(0,\infty)$.
+
+(ii) $\Delta_t^2S_t^2\le3C^2\big(S_t^2+S_t^{2\kappa+2}+S_t^{2-2\kappa}\big)$, whose expectation is bounded
+on $[0,T]$ by \eqref{eq:dh-moments}; Tonelli's theorem concludes.
+
+(iii) If $\mu=r$, the $\dd u$-integral in \eqref{eq:dh-discounted-wealth} vanishes, and by (ii)
+the integrand $\sigma\Delta_ue^{-ru}S_u$ is in $\mathbb H^2$, so $e^{-rt}X_t$ is a martingale
+on $[0,T]$ (\cref{thm:ito-integral}). Its terminal value $e^{-rT}g(S_T)$ is therefore
+integrable, and $e^{-rt}X_t=\E[e^{-rT}g(S_T)\mid\F_t]$; multiply by $e^{rt}$ and use (i).
+\end{proof}
+
+\begin{remark}[What is proved about prices]\label{rem:dh-price}
+\begin{enumerate}[label=(\alph*),leftmargin=*]
+  \item \emph{One price.} Under the hypotheses of \cref{thm:dh-verification}, suppose the
+    claim can be traded at time $0$ at a price $c>v(0,S_0)$. Sell it, run the strategy of
+    the theorem from $v(0,S_0)$, and put $c-v(0,S_0)$ in the money market. At time $T$ the
+    strategy pays $g(S_T)$, which settles the claim, and $(c-v(0,S_0))e^{rT}>0$ is left, almost
+    surely. If $c<v(0,S_0)$, reverse every position. This is the argument of
+    \cref{thm:bin-one-period}, and it uses one explicit strategy, whose value is $\pm v(t,S_t)$.
+    For a call, the hedge of a sale is worth $c(t,S_t)\ge0$; the reversed hedge is worth
+    $-c(t,S_t)\ge-S_t$, which is not bounded below by a constant, although the call held
+    alongside covers it. So $v(0,S_0)$ is the only price at which the claim can trade
+    without offering a riskless profit of this kind.
+  \item \emph{No arbitrage at that price.} That no other strategy makes a riskless profit when
+    the claim trades at $v(0,S_0)$ is a statement about all strategies, and by
+    \cref{rem:dh-admissible} it needs a restriction on them. It is the fundamental theorem
+    of \cref{ch:11-risk-neutral} (\cref{thm:rn-ftap}), extended to a market that
+    also trades the claim in \cref{cor:rn-extended-market}.
+  \item \emph{One solution.} Could two solutions of \eqref{eq:dh-pde} with the same terminal
+    condition, both satisfying \eqref{eq:dh-growth}, give two hedges with different costs? No.
+    The equation does not involve $\mu$ or $S_0$, so we may apply
+    \cref{thm:dh-verification}(iii) in the model with $\mu=r$ and any initial price $x>0$, and
+    to the function $(s,y)\mapsto v(t+s,y)$ on the horizon $T-t$, which satisfies the same
+    hypotheses. At time $0$ this gives
+    \begin{equation}\label{eq:dh-feynman-kac}
+      v(t,x)=e^{-r(T-t)}\,\E\Big[g\Big(x\exp\Big(\sigma W_{T-t}+\Big(r-\frac{\sigma^2}{2}\Big)(T-t)\Big)\Big)\Big],
+      \qquad(t,x)\in[0,T]\times(0,\infty),
+    \end{equation}
+    and the right side does not depend on the solution. This is the Feynman--Kac formula for
+    \eqref{eq:dh-pde}; \cref{ch:12-feynman-kac} proves it for general diffusions
+    (\cref{thm:fk-feynman-kac}). Uniqueness is a statement about a class of solutions: here,
+    those satisfying \eqref{eq:dh-growth}.
+\end{enumerate}
+\end{remark}
+
+It remains to find solutions. \Cref{ch:06-black-scholes-formula} computed the call and put
+prices as expectations; the next proposition checks that they solve the equation, with the
+right terminal condition and growth, by calculus alone.
+
+\begin{proposition}[The Black--Scholes formula solves the equation]\label{prop:dh-bs-solution}
+Let $K>0$, let $c$ and $p$ be the call and put functions of \cref{thm:bs-formula}, and set
+$c(T,x)=(x-K)^+$ and $p(T,x)=(K-x)^+$.
+\begin{enumerate}[label=(\roman*)]
+  \item $c,p\in C^{1,2}([0,T)\times(0,\infty))$, and both solve \eqref{eq:dh-pde}.
+  \item $c$ and $p$ are continuous on $[0,T]\times(0,\infty)$.
+  \item $0<\partial_xc<1$ and $-1<\partial_xp<0$ on $[0,T)\times(0,\infty)$.
+\end{enumerate}
+Consequently, the call is replicated by the strategy with $X_0=c(0,S_0)$ and
+$\Delta_t=N\big(d_+(T-t,S_t)\big)$, whose value is $X_t=c(t,S_t)$, and the put by the strategy
+with $X_0=p(0,S_0)$ and $\Delta_t=-N\big(-d_+(T-t,S_t)\big)$, whose value is $p(t,S_t)$.
+\end{proposition}
+
+\begin{proof}
+(i) For $t<T$, $\tau=T-t>0$ and $d_\pm(\tau,x)$ are smooth functions of $(t,x)$, and so are
+$c$ and $p$. By \cref{prop:bs-greeks}(i), (ii) and (iv),
+\[
+  \partial_tc+rx\,\partial_xc+\frac{\sigma^2x^2}{2}\,\partial_{xx}c
+  =-\frac{x\sigma N'(d_+)}{2\sqrt\tau}-rKe^{-r\tau}N(d_-)+rxN(d_+)+\frac{\sigma^2x^2}{2}\,\frac{N'(d_+)}{x\sigma\sqrt\tau}
+  =r\,c .
+\]
+The terms in $N'(d_+)$ cancel; this is where the identity $Ke^{-r\tau}N'(d_-)=xN'(d_+)$ of
+\cref{prop:bs-greeks}, used to compute the theta, does its work. For the put, $p=c-w$ with
+$w(t,x)=x-Ke^{-r\tau}$ by the parity of \cref{thm:bs-formula}, and $w$ solves
+\eqref{eq:dh-pde}: $\partial_tw+rx\,\partial_xw=-rKe^{-r\tau}+rx=rw$. The equation is linear.
+
+(iii) By \cref{prop:bs-greeks}(i), $\partial_xc=N(d_+)\in(0,1)$ and $\partial_xp=N(d_+)-1$.
+
+(ii) Continuity at points with $t<T$ is part of (i). Fix $x>0$ and let $t\uparrow T$: if $x>K$,
+then $d_\pm\to+\infty$ and $c(t,x)\to x-K$; if $x<K$, then $d_\pm\to-\infty$ and $c(t,x)\to0$;
+if $x=K$, then $d_\pm=(r\pm\frac{\sigma^2}{2})\sqrt\tau/\sigma\to0$ and
+$c(t,x)\to\frac K2-\frac K2=0$. So $c(t,x)\to(x-K)^+$. By (iii) and the mean value theorem,
+$|c(t,y)-c(t,x)|\le|y-x|$ for $t<T$, and also for $t=T$. Hence
+$|c(t,y)-c(T,x)|\le|y-x|+|c(t,x)-c(T,x)|\to0$ as $(t,y)\to(T,x)$. For the put, use $p=c-w$.
+
+Finally, by (iii) the growth condition \eqref{eq:dh-growth} holds with $C=1$ and $\kappa=0$, the
+payoffs are continuous, and \cref{thm:dh-verification} applies.
+\end{proof}
+
+By \cref{thm:dh-verification}(iii) in the model with $\mu=r$, $c(t,S_t)$ is also
+$e^{-r(T-t)}\E[(S_T-K)^+\mid\F_t]$, the expectation computed in \cref{thm:bs-formula}: the
+hedging route of this chapter and the expectation route of \cref{ch:06-black-scholes-formula}
+lead to the same function. The delta of the call, $N(d_+)$, is the number of shares in the
+replicating portfolio, and the rest of its value, $-Ke^{-r\tau}N(d_-)$, is borrowed: the
+hedge of a call is a leveraged long position in the stock.
+
+\begin{example}[Power claims and forwards]\label{exa:dh-power}
+For $a\in\R$, the claim paying $S_T^a$ has the price $v(t,x)=e^{-\alpha(T-t)}x^a$ with
+$\alpha=(1-a)(r+\frac{a\sigma^2}{2})$, found by an expectation in
+\exref{ex:bs-power}. The equation is checked directly: $\partial_tv=\alpha v$,
+$x\,\partial_xv=av$ and $x^2\,\partial_{xx}v=a(a-1)v$, so the left side of \eqref{eq:dh-pde} is
+$(\alpha+ra+\frac{\sigma^2}{2}a(a-1))v=rv$. Here $v$ is smooth on $[0,T]\times(0,\infty)$,
+$|\partial_xv|=|a|e^{-\alpha(T-t)}x^{a-1}$ satisfies \eqref{eq:dh-growth}, and the hedge
+$\Delta_t=av(t,S_t)/S_t$ keeps the fixed fraction $a$ of the claim's value in the stock. For
+$a=1$ the claim is the stock and $\Delta=1$; for $a=0$ it is a zero-coupon bond,
+$v=e^{-r(T-t)}$ and $\Delta=0$; for $a=2$, $\Gamma=\partial_{xx}v=2e^{(r+\sigma^2)(T-t)}$.
+Similarly, the forward contract $g(x)=x-K$ has $v(t,x)=x-Ke^{-r(T-t)}$ and $\Delta=1$: the static
+hedge of \cref{prop:arb-forward}.
+\end{example}
+
+\demo{10-delta-hedging.ipynb}{follow the delta hedge of a call along a simulated path: the
+stock, the number of shares, and the value of the portfolio tracking the price of the call.}
+
+\section{Hedging in discrete time}\label{sec:dh-discrete}
+
+The delta hedge trades at every instant, which no one can do. Fix $n\ge1$, let $h=T/n$ and
+$t_k=kh$, and consider a seller who receives $v(0,S_0)$, holds $\delta_k=\partial_xv(t_k,S_{t_k})$
+shares from each date $t_k$, $k<n$, until $t_{k+1}$, and keeps the rest of her wealth in
+the money market. As in \cref{ch:04-binomial}, her wealth satisfies
+\[
+  X^n_0=v(0,S_0),\qquad
+  X^n_{t_{k+1}}=\delta_kS_{t_{k+1}}+e^{rh}\big(X^n_{t_k}-\delta_kS_{t_k}\big),\quad0\le k\le n-1,
+\]
+and her \emph{discounted hedging error} is $e_n=e^{-rT}\big(X^n_T-g(S_T)\big)$. Write
+\[
+  \Gamma_k=\partial_{xx}v(t_k,S_{t_k}),\qquad
+  R_k=\frac{e^{-rt_{k+1}}S_{t_{k+1}}}{e^{-rt_k}S_{t_k}}-1
+\]
+for the gamma at the rebalancing date and the discounted return over the following period. We
+assume:
+\begin{enumerate}[label=(H),leftmargin=*]
+  \item $v$ is as in \cref{thm:dh-verification}, its partial derivatives
+    $\partial_t^i\partial_x^jv$ with $2i+j\le4$ exist and are continuous on
+    $[0,T]\times(0,\infty)$ (one-sided in $t$ at $0$ and $T$), and each of them is bounded by
+    $C(1+x^\kappa+x^{-\kappa})$ for some constants $C,\kappa\ge0$.
+\end{enumerate}
+The power claims of \cref{exa:dh-power} satisfy (H). The call does not: its gamma
+$N'(d_+)/(x\sigma\sqrt{T-t})$ (\cref{prop:bs-greeks}) is unbounded near $(T,K)$.
+
+\begin{proposition}[Discrete delta hedging]\label{prop:dh-hedging-error}
+Assume (H). There is a constant $C'$, depending on $v$, $S_0$, $\mu$, $r$, $\sigma$ and $T$ but
+not on $n$, such that:
+\begin{enumerate}[label=(\roman*)]
+  \item \emph{(gamma--theta decomposition)}
+    \begin{equation}\label{eq:dh-gamma-theta}
+      e_n=-\sum_{k=0}^{n-1}\frac12\,e^{-rt_k}\,\Gamma_kS_{t_k}^2\big(R_k^2-\sigma^2h\big)+\rho_n,
+      \qquad\E[\rho_n^2]\le C'h^2;
+    \end{equation}
+  \item $|\E[e_n]|\le C'h$, and $\E[e_n]=0$ if $\mu=r$;
+  \item as $n\to\infty$, with $\Gamma=\partial_{xx}v$,
+    \begin{equation}\label{eq:dh-error-variance}
+      \E\big[e_n^2\big]=\frac{\sigma^4h}{2}\int_0^T\E\Big[e^{-2ru}\,\Gamma(u,S_u)^2S_u^4\Big]\,\dd u+o(h).
+    \end{equation}
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+\emph{Discounted coordinates.} Let $Y_t=e^{-rt}S_t$ and
+$\bar v(t,y)=e^{-rt}v(t,e^{rt}y)$, so that $\bar v(t,Y_t)=e^{-rt}v(t,S_t)$. By the chain rule,
+$\partial_y\bar v(t,y)=\partial_xv(t,e^{rt}y)$ and $\partial_{yy}\bar v(t,y)=e^{rt}\partial_{xx}v(t,e^{rt}y)$,
+and \eqref{eq:dh-pde}, which extends to $t=T$ by continuity, becomes
+\begin{equation}\label{eq:dh-pde-discounted}
+  \partial_t\bar v+\frac{\sigma^2y^2}{2}\,\partial_{yy}\bar v=0\qquad\text{on }[0,T]\times(0,\infty).
+\end{equation}
+Time decay of the discounted price is set by its convexity: \emph{theta pays for gamma}. By (H)
+and the chain rule, the derivatives $\partial_t^i\partial_y^j\bar v$ with $2i+j\le4$ are
+continuous and bounded by $C_1(1+y^q+y^{-q})$ for some constants $C_1,q$.
+
+\emph{The error as a sum.} The discounted wealth changes by $\delta_k(Y_{t_{k+1}}-Y_{t_k})$ over
+$[t_k,t_{k+1}]$, and $\bar v(0,Y_0)=X^n_0$, $\bar v(T,Y_T)=e^{-rT}g(S_T)$. Telescoping,
+\begin{equation}\label{eq:dh-error-sum}
+  e_n=-\sum_{k=0}^{n-1}P_k,\qquad
+  P_k=\bar v(t_{k+1},Y_{t_{k+1}})-\bar v(t_k,Y_{t_k})-\delta_k\big(Y_{t_{k+1}}-Y_{t_k}\big),
+\end{equation}
+where $P_k$ is the discounted profit over $[t_k,t_{k+1}]$ of a long position in the claim, marked
+at $v$, hedged with $\delta_k$ shares.
+
+\emph{Taylor expansion.} Fix $k$, write $y=Y_{t_k}$ and $\eta=Y_{t_{k+1}}-y=yR_k$, and evaluate the
+derivatives of $\bar v$ at $(t_k,y)$ unless indicated. Expanding first in time at $y+\eta$, then
+$\partial_t\bar v(t_k,\cdot)$ and $\bar v(t_k,\cdot)$ in space around $y$, and using
+$\partial_y\bar v=\delta_k$ and \eqref{eq:dh-pde-discounted},
+\[
+  P_k=\frac12\,\partial_{yy}\bar v\,\big(\eta^2-\sigma^2y^2h\big)+A_k+B_k,\qquad
+  A_k=h\,\partial_{ty}\bar v\,\eta+\frac16\,\partial_{yyy}\bar v\,\eta^3,
+\]
+where the Taylor remainders satisfy
+$|B_k|\le\frac12h^2\sup|\partial_{tt}\bar v|+\frac12h\eta^2\sup|\partial_{tyy}\bar v|+\frac1{24}\eta^4\sup|\partial_{y}^4\bar v|$,
+the suprema being over $[t_k,t_{k+1}]\times\{y+\eta\}$ for the first and over $\{t_k\}\times[y,y+\eta]$ for
+the others. Since $\partial_{yy}\bar v\,y^2=e^{-rt_k}\Gamma_kS_{t_k}^2$ and $\eta^2=y^2R_k^2$, the first
+term is the summand of \eqref{eq:dh-gamma-theta}, and $\rho_n=-\sum_k(A_k+B_k)$.
+
+\emph{Moments.} $1+R_k=\exp\big(\sigma(W_{t_{k+1}}-W_{t_k})+(\mu-r-\frac{\sigma^2}{2})h\big)$ is
+independent of $\F_{t_k}$, with a law that does not depend on $k$. Expanding
+$\E[(1+R_k)^m]=\exp\big(m(\mu-r-\frac{\sigma^2}{2})h+\frac{m^2\sigma^2}{2}h\big)$ in powers of $h$
+gives, for $h\le T$ and constants $c_m$ not depending on $h$,
+\begin{gather*}
+  \E|R_k|^m\le c_mh^{m/2},\qquad |\E R_k|\le c_1|\mu-r|h,\qquad|\E R_k^3|\le c_3h^2,\\
+  \big|\E R_k^2-\sigma^2h\big|\le c_2h^2,\qquad\Var(R_k^2)=2\sigma^4h^2+O(h^3);
+\end{gather*}
+for the first, use $|e^z-1|\le|z|e^{|z|}$ and the Cauchy--Schwarz inequality. The points between
+$y$ and $y+\eta=y(1+R_k)$ lie in $[y\min(1,1+R_k),\,y\max(1,1+R_k)]$, so by the growth bounds and
+\eqref{eq:dh-moments} all the coefficients and suprema above have moments of every order,
+bounded uniformly in $k$ and $n$. With the Cauchy--Schwarz inequality this gives
+$\E[B_k^2]\le C_2h^4$ and $\E[A_k^2]\le C_2h^3$. Moreover the coefficients of $A_k$ are
+$\F_{t_k}$-measurable and $R_k$ is independent of $\F_{t_k}$, so
+$\E[A_k\mid\F_{t_k}]=h\,\partial_{ty}\bar v\,y\,\E R_k+\frac16\partial_{yyy}\bar v\,y^3\,\E R_k^3$
+(\cref{lem:pr-independence}), and $\E\big[\E[A_k\mid\F_{t_k}]^2\big]\le C_2h^4$.
+
+\emph{Proof of (i).} Let $a_k=A_k-\E[A_k\mid\F_{t_k}]$. For $j<k$, $a_j$ is
+$\F_{t_k}$-measurable, so $\E[a_ja_k]=\E\big[a_j\,\E[a_k\mid\F_{t_k}]\big]=0$, and
+$\E\big[(\sum_ka_k)^2\big]=\sum_k\E[a_k^2]\le\sum_k\E[A_k^2]\le nC_2h^3=C_2Th^2$. By the
+Cauchy--Schwarz inequality for sums,
+$\E\big[(\sum_k\E[A_k\mid\F_{t_k}])^2\big]\le n\sum_k C_2h^4=C_2T^2h^2$ and
+$\E\big[(\sum_kB_k)^2\big]\le C_2T^2h^2$. So $\E[\rho_n^2]\le C'h^2$.
+
+\emph{Proof of (ii) and (iii).} Write $G_k=e^{-rt_k}\Gamma_kS_{t_k}^2$, which is
+$\F_{t_k}$-measurable with $\E[G_k^2]$ bounded, and
+$R_k^2-\sigma^2h=\xi_k+m_h$ with $\xi_k=R_k^2-\E R_k^2$ and $m_h=\E R_k^2-\sigma^2h=O(h^2)$. The
+main term of \eqref{eq:dh-gamma-theta} is $N_n-\frac12m_h\sum_kG_k$ with
+$N_n=-\frac12\sum_kG_k\xi_k$. Since $\xi_k$ is independent of $\F_{t_k}$, $\E[N_n]=0$, and the
+second part has $L^2$-norm at most $\frac12|m_h|\,n\max_k\E[G_k^2]^{1/2}=O(h)$. With (i),
+$\|e_n-N_n\|_2=O(h)$, which gives $|\E e_n|\le C'h$. If $\mu=r$, then $\E R_k=0$, so
+$\E[\delta_k(Y_{t_{k+1}}-Y_{t_k})]=\E[\delta_kY_{t_k}]\,\E R_k=0$ and $\E[e^{-rT}X^n_T]=X^n_0$, while
+$\E[e^{-rT}g(S_T)]=v(0,S_0)=X^n_0$ by \cref{thm:dh-verification}(iii); so $\E[e_n]=0$.
+
+For (iii), the cross terms of $\E[N_n^2]$ vanish: for $j<k$, $G_j\xi_jG_k$ is
+$\F_{t_k}$-measurable and $\xi_k$ is independent of $\F_{t_k}$ with mean $0$. Hence
+\[
+  \E[N_n^2]=\frac14\sum_k\E[G_k^2]\,\E[\xi_k^2]=\frac{\sigma^4h}{2}\big(1+O(h)\big)\,h\sum_{k=0}^{n-1}\varphi(t_k),
+  \qquad\varphi(u)=\E\big[e^{-2ru}\Gamma(u,S_u)^2S_u^4\big].
+\]
+Writing $S_u=S_0\exp(\sigma\sqrt u\,Z+(\mu-\frac{\sigma^2}{2})u)$ with $Z\sim\mathcal N(0,1)$, the
+continuity and growth of $\Gamma$ and dominated convergence show that $\varphi$ is continuous on
+$[0,T]$, so the Riemann sums $h\sum_k\varphi(t_k)$ converge to $\int_0^T\varphi(u)\,\dd u$ and
+$\E[N_n^2]=\frac{\sigma^4h}{2}\int_0^T\varphi+o(h)$. Finally
+$\big|\|e_n\|_2^2-\|N_n\|_2^2\big|\le\|e_n-N_n\|_2\,\big(\|e_n\|_2+\|N_n\|_2\big)=O(h)\,O(\sqrt h)=o(h)$.
+\end{proof}
+
+\paragraph{Reading the proposition.} Over each period, a delta-hedged long position in the claim
+gains $\frac12\Gamma S^2R^2$ from the move of the stock and loses
+$\frac12\Gamma S^2\sigma^2h$ to the passage of time, by \eqref{eq:dh-pde-discounted}. For a
+claim with positive gamma it profits when the stock moves by more than $\sigma\sqrt h$ in
+either direction and loses otherwise (\cref{fig:dh-gamma-theta}, left); the seller who hedges
+has the opposite profit. In continuous time these gains and losses cancel exactly. In discrete
+time they cancel on average, by (ii), but not path by path: up to their small means, the terms
+of \eqref{eq:dh-gamma-theta} are uncorrelated, each of variance about
+$\frac12\sigma^4h^2\,\E[G_k^2]$, so their sum has a standard deviation of order $\sqrt h$. To
+halve the error, rebalance four times as often.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch10-hedging-error}
+  \caption{Discrete delta hedging of a call with $S_0=K=100$, $T=1$, $r=5\%$ and $\sigma=20\%$;
+    the call costs $10.45$. Left: the terminal error $X^n_T-(S_T-K)^+$ for monthly, weekly and
+    daily rebalancing, $20{,}000$ paths with drift $\mu=15\%$. Right: its root-mean-square
+    against the number $n$ of rebalancing dates, for three drifts ($6{,}000$ paths); the dashed
+    lines are $e^{rT}$ times the square root of the leading term of
+    \eqref{eq:dh-error-variance}.}
+  \label{fig:dh-hedging-error}
+\end{figure}
+
+\Cref{fig:dh-hedging-error} shows the hedge of a call, which (H) does not cover. The errors
+are centred and shrink like $n^{-1/2}$: with $\mu=15\%$, the root-mean-square error is $1.83$
+for monthly, $0.90$ for weekly and $0.41$ for daily rebalancing, against a premium of $10.45$.
+The leading term of \eqref{eq:dh-error-variance} predicts $1.91$, $0.92$ and $0.42$. For the call
+the integral in \eqref{eq:dh-error-variance} is still finite, because the gamma is large only
+within a distance of order $\sqrt{T-u}$ of the strike. But the proposition does not apply, and
+part of it fails: for the call, the remainder in (i) is only of order $h^{3/4}$ in $L^2$
+($\E[\rho_n^2]$ falls by a factor of about $8$, not $16$, when $n$ is multiplied by $4$). What
+survives is known. \textcite{zhang-thesis}, Theorem~2.4.1, showed that $\sqrt n\,\|e_n\|_2$
+converges for Lipschitz payoffs, so $\E[e_n^2]$ is still of order $h$; and
+\textcite{bertsimas-kogan-lo} showed that for calls and puts $\sqrt n\,e_n$ converges in law to a
+mixture of centred normal laws, which the leading term of \eqref{eq:dh-error-variance}
+describes. Convergence in law alone does not give the limit of $n\,\E[e_n^2]$; numerically, it is
+within $3\%$ of the leading term at $n=1024$ (\cref{fig:dh-hedging-error}, right). For less
+regular payoffs the rate changes: for a digital option $\E[e_n^2]$ is only of order $\sqrt h$
+(\textcite{gobet-temam}, Theorem~1, with the correction of \textcite{gobet-correction}, which
+leaves the rates unchanged; \exref{ex:dh-digital}). \textcite{geiss-gobet} survey these results;
+they state them for $\mu=r$ and note that they extend to $\mu\ne r$, the case of
+\cref{fig:dh-hedging-error}, where $\mu=15\%$.
+
+The drift enters only through the law of the path. With $\mu=-10\%$, $5\%$ and $30\%$, $\sqrt n$
+times the root-mean-square error tends to $6.78$, $7.02$ and $5.44$
+(\cref{fig:dh-hedging-error}, right): a large drift sends the stock away from the strike, where
+the gamma is small. The hedger does not earn the risk premium, and does not need it.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch10-gamma-theta}
+  \caption{The gamma--theta decomposition for the call of \cref{fig:dh-hedging-error}. Left:
+    the discounted profit over one week of a long call hedged with $N(d_+)$ shares at $S=K$,
+    one year before maturity, against the discounted return $R$ of the stock, and the
+    parabola $\frac12\Gamma S^2(R^2-\sigma^2h)$; the vertical lines are at $\pm\sigma\sqrt h$.
+    Right: the discounted error of a weekly hedge against the sum of the gamma--theta terms
+    of \eqref{eq:dh-gamma-theta}, along $3{,}000$ paths with $\mu=15\%$.}
+  \label{fig:dh-gamma-theta}
+\end{figure}
+
+Two practical points complete the picture. First, rebalancing is not free: with proportional
+transaction costs, the cost of trading $n$ times grows with $n$ while the hedging error
+shrinks, and \textcite{leland} shows how to compensate the costs, to first order, by hedging
+with an enlarged volatility. Second, the hedge uses $\sigma$, which must be estimated or
+implied from market prices (\cref{ch:15-volatility}); hedging with the wrong volatility leaves
+an error that does not vanish as $n\to\infty$, and \exref{ex:dh-robust} computes it. Positions
+in other options can reduce the gamma of a book, and with it the error of
+\eqref{eq:dh-gamma-theta} (\exref{ex:dh-book}).
+
+\demo{10-delta-hedging.ipynb}{rebalance a call hedge at $n$ dates of your choice, for any drift,
+volatility and strike; watch the error distribution narrow like $n^{-1/2}$, and the one-period
+profit follow the gamma--theta parabola.}
+
+\furtherreading
+\textcite{shreve2}, Section~4.5, derives the Black--Scholes--Merton equation by equating the
+evolutions of the portfolio and of the option value, as here, with the same notation for the
+hedge. The equation is due to \textcite{black-scholes}, and \textcite{merton1973} gave a more
+careful derivation and many extensions. \textcite{harrison-pliska} recast continuous-time
+hedging in terms of martingales and stochastic integrals, which is the route of
+\cref{ch:11-risk-neutral}. On discrete hedging, \textcite{bertsimas-kogan-lo} is a readable
+starting point and \textcite{geiss-gobet} a survey of the mathematics;
+\textcite{el-karoui-jeanblanc-shreve} study what happens when the volatility used to hedge is
+not the true one. \textcite{hull} discusses delta and gamma hedging as practised by traders.

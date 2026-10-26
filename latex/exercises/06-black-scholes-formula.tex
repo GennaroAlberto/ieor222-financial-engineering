@@ -1,0 +1,163 @@
+% Exercises for Chapter 6 (from the binomial model to Black--Scholes). Statements only:
+% solutions are kept privately.
+% Throughout, unless stated otherwise, we are in the setting of the notes: under Q the stock is
+% S_t = S_0 exp(sigma W_t + (r - sigma^2/2) t) with W a Q-Brownian motion, prices are given by
+% eq:bs-price, c and p are the call and put functions of thm:bs-formula, N and N' are the
+% standard normal distribution function and density, and tau = T - t.
+
+\begin{exercise}[Rules of thumb]\label{ex:bs-thumb}
+\easy A stock trades at $S_0=80$, the interest rate is $r=3\%$, the volatility is
+$\sigma=25\%$, and options expire in two months ($T=1/6$). A calculator or a few lines of
+code are enough.
+\begin{enumerate}[label=(\alph*)]
+  \item Compute the at-the-money-forward strike, and the exact price, delta and vega of the
+    call with this strike. Compare each with the approximation of \noteref{prop:bs-atm} that
+    uses $1/\sqrt{2\pi}$, and with the rounded rule that uses $0.4$ and $0.2$.
+  \item The volatility rises from $25\%$ to $26\%$. Estimate the change in the call price
+    with the vega and with the rule $0.4\,S_0\sqrt T$, and compare with the exact change.
+  \item Now take the strike $K=S_0$. Compute the call and put prices and compare both with
+    $0.4\,S_0\sigma\sqrt T$. Using the derivatives with respect to $K$ in
+    \noteref{prop:bs-greeks}, show that for every $r\ge0$ the call with strike $S_0$ costs at
+    least as much as the call with strike $S_0e^{rT}$, and at most $S_0(1-e^{-rT})$ more. State
+    and prove the corresponding statement for puts.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Power claims and a second martingale]\label{ex:bs-power}
+\easy Let $p\in\R$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that the price at time $t\le T$ of the claim paying $S_T^p$ at $T$ is
+    \[
+      V_t=S_t^p\exp\Big((p-1)\Big(r+\frac{p\sigma^2}{2}\Big)(T-t)\Big).
+    \]
+    Check the cases $p=0$ and $p=1$, and give the delta $\partial V_t/\partial S_t$.
+  \item Show that $(e^{-rt}S_t^p)_{t\ge0}$ is a $\Q$-martingale if and only if $p=1$ or
+    $p=-2r/\sigma^2$. What happens when $r=0$?
+  \item Let $r>0$ and $\beta=2r/\sigma^2$. Show that $v(x)=x^{-\beta}$ solves
+    $rv=rxv'+\frac{\sigma^2x^2}{2}v''$ on $(0,\infty)$, the equation \noteref{eq:bs-pde-identity}
+    for a price that does not depend on time, and relate this to (b). Which other power
+    of $x$ solves it?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Forward-start options]\label{ex:bs-forward-start}
+\medium Let $0<\theta<T$. A \emph{forward-start call} pays $(S_T-S_\theta)^+$ at time $T$: it
+is an at-the-money call whose strike is fixed at the future date $\theta$, as in some employee
+stock option plans.
+\begin{enumerate}[label=(\alph*)]
+  \item For $\theta\le t<T$, show that its price is $c(t,S_t)$ computed with the strike
+    $K=S_\theta$. \emph{Hint:} the strike is random; apply \noteref{lem:pr-independence}
+    with $X=(S_t,S_\theta)$.
+  \item Show that for every $x>0$ and $t<T$, the call function computed with strike $K=x$
+    and evaluated at $x$ is $x$ times its value at $x=K=1$. Deduce that for
+    $0\le t\le\theta$ the price is $V_t=\alpha S_t$, with
+    \[
+      \alpha=N(\hat d_+)-e^{-r(T-\theta)}N(\hat d_-),\qquad
+      \hat d_\pm=\frac{(r\pm\sigma^2/2)\sqrt{T-\theta}}{\sigma}.
+    \]
+  \item Give the delta and the gamma for $t<\theta$, and a hedge of the claim on $[0,\theta]$
+    that never needs rebalancing. Why is the gamma zero before $\theta$ and positive
+    after?
+  \item Take $S_0=100$, $r=5\%$, $\sigma=20\%$, $\theta=\frac12$ and $T=1$. Compute $V_0$ and
+    check it by Monte Carlo simulation of $(S_\theta,S_T)$.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Chooser options]\label{ex:bs-chooser}
+\medium Let $0<m<T$ and $K>0$. A \emph{chooser option} lets its holder decide at time $m$
+whether it becomes a call or a put, both with strike $K$ and maturity $T$. Let $C_t$ and
+$P_t$ be the prices of that call and that put.
+\begin{enumerate}[label=(\alph*)]
+  \item Explain why the chooser is worth $\max(C_m,P_m)$ at time $m$, so that its price at
+    time $0$ is that of a claim paying $\max(C_m,P_m)$ at time $m$.
+  \item Show that $\max(C_m,P_m)=C_m+\big(Ke^{-r(T-m)}-S_m\big)^+$.
+  \item Deduce that the chooser costs as much as a call with strike $K$ and maturity $T$
+    plus a put with strike $Ke^{-r(T-m)}$ and maturity $m$, and give its price, delta and
+    gamma at time $0$ in terms of $N$, $N'$ and the appropriate $d_\pm$.
+  \item Take $S_0=K=100$, $r=5\%$, $\sigma=20\%$, $T=1$ and $m=\frac12$. Compare the prices of
+    the chooser, of the call, and of a \emph{straddle} (a call plus a put, both with strike
+    $K$ and maturity $T$). Explain the ordering, and what happens as $m\downarrow0$ and as
+    $m\uparrow T$.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Hedging a digital option]\label{ex:bs-digital-greeks}
+\medium Let $K>0$ and let $D(t,x)=e^{-r\tau}N\big(d_-(\tau,x)\big)$ be the price function of
+the digital call of \noteref{prop:bs-digital}, for $\tau=T-t>0$.
+\begin{enumerate}[label=(\alph*)]
+  \item Compute the delta $\partial_xD$ and the gamma $\partial_{xx}D$. Show that the delta
+    is positive and that the gamma changes sign at $x^*=Ke^{-(r+\sigma^2/2)\tau}$.
+  \item Show that the largest delta over $x>0$ is $1/(K\sigma\sqrt{2\pi\tau})$. What happens
+    to the delta as $\tau\downarrow0$, at $x=K$ and at $x\ne K$? Compare with the gamma of a
+    call (\noteref{rem:bs-greeks-reading}).
+  \item A dealer has sold one million digital calls, each paying \$1, with $K=100$, on a
+    stock at $S_t=100$ with $\sigma=20\%$ and $r=0$. How many shares must she hold to be
+    delta-neutral one year before maturity? One day before ($\tau=1/365$)? Compare the
+    value of these shares with the largest possible payout, and explain why a move of the
+    stock by \$1 in either direction changes her position so much.
+  \item How does the call spread of \exref{ex:arb-digital}(e) avoid the problem?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Long maturities and negative rates]\label{ex:bs-maturity}
+\medium Fix $x>0$, $K>0$ and $\sigma>0$, and let $C(T)=c(0,x)$ be the price at time $0$ of the
+call with maturity $T$ when the stock is at $x$. You may use the bound
+$N(y)\le N'(y)/|y|$ for $y<0$.
+\begin{enumerate}[label=(\alph*)]
+  \item Let $r\ge0$, so that $C$ is strictly increasing in $T$
+    (\noteref{rem:bs-greeks-reading}(a)). Find its limits as $T\downarrow0$ and as $T\to\infty$.
+  \item Let $r<0$. Show that $C'(T)<0$ for $x$ large enough, with $T$ fixed.
+  \item Let $r<0$. Show that $\lim_{T\to\infty}C(T)$ is $x$, $x/2$ or $0$ according as
+    $r>-\sigma^2/2$, $r=-\sigma^2/2$ or $r<-\sigma^2/2$. \emph{Hint:} first show that
+    $Ke^{-rT}N(d_-)\to0$, using \noteref{eq:bs-identity}.
+  \item Show that when $r<0$ a European call can be worth strictly less than its exercise
+    value $x-K$. Which hypothesis of \noteref{thm:bin-american}(iv) does this example
+    violate, and what does it suggest about American calls when rates are negative?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[The binomial hedge converges to the Black--Scholes delta]\label{ex:bs-delta-limit}
+\hard Consider the trees \noteref{eq:bs-crr} for $n>r^2T/\sigma^2$, a call with strike $K>0$ and
+maturity $T$, and let $\Delta^{(n)}_0$ be the number of shares held at time $0$ in its
+replicating portfolio, given by \noteref{eq:bin-delta}.
+\begin{enumerate}[label=(\alph*)]
+  \item Let $F_n(y)$ be the price of the call at time $\delta_n$ in the $n$-period tree, as a
+    function of the stock price $y$ at that time; it is the price in an $(n-1)$-period tree
+    with the same $u_n$, $d_n$ and $r_n$, started at $y$. Show that
+    $\Delta^{(n)}_0=\big(F_n(u_nS_0)-F_n(d_nS_0)\big)/\big((u_n-d_n)S_0\big)$ and that $F_n$ is
+    convex on $(0,\infty)$.
+  \item Show that $F_n(y)\to c(0,y)$ for every $y>0$, where $c(0,\cdot)$ is the
+    Black--Scholes call function with maturity $T$. \emph{Hint:} \noteref{lem:bs-clt} with
+    $k_n=n-1$, and the proof of \noteref{thm:bs-limit}.
+  \item Let $f_n$ and $f$ be convex functions on an open interval $I$ with $f_n\to f$
+    pointwise on $I$, let $f$ be differentiable at $x\in I$, and let $a_n\le x\le b_n$ with
+    $a_n<b_n$ and $a_n,b_n\to x$. Show that
+    $\big(f_n(b_n)-f_n(a_n)\big)/(b_n-a_n)\to f'(x)$. You may use that the slope of a chord
+    of a convex function does not decrease when either end point moves to the right.
+  \item Conclude that $\Delta^{(n)}_0\to N\big(d_+(T,S_0)\big)$.
+  \item For $S_0=K=100$, $T=1$, $r=5\%$ and $\sigma=20\%$, compute $\Delta^{(n)}_0$ for
+    $n=10$, $11$, $100$, $101$, $1000$ and $1001$, and compare with $N(d_+)$.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Speeding up the tree]\label{ex:bs-rate}
+\medium This is a computational exercise. Take $S_0=100$, $T=1$, $r=5\%$, $\sigma=20\%$, and
+let $C_n$ be the call price in the $n$-period tree \noteref{eq:bs-crr} and $C$ the
+Black--Scholes price. You may use \texttt{binomial\_call} and \texttt{call} from
+\coderef{code/src/ieor222/blackscholes.py}.
+\begin{enumerate}[label=(\alph*)]
+  \item For $K=100$ and $K=110$, tabulate $e_n=C_n-C$ for $n=50,51,100,101,\dots,800,801$.
+    For $K=100$, estimate the rate of convergence separately for even and odd $n$. What do
+    you observe for $K=110$?
+  \item Average consecutive trees: $\bar C_n=\frac12(C_n+C_{n+1})$. How much does this help for
+    $K=100$, and for $K=110$? Explain with \noteref{rem:bs-oscillation}.
+  \item \emph{Richardson extrapolation.} If $e_n=a/n+o(1/n)$ along a sequence of $n$, then
+    $2C_{2n}-C_n$ has error $o(1/n)$. Try it along even $n$ for $K=100$ and for $K=110$. When
+    does it work, and why?
+  \item \emph{Smoothing.} Replace the payoff at the last step by the Black--Scholes price
+    over one period: set $\tilde V_{n-1}=c(T-\delta_n,S_{n-1})$ at each node at time $n-1$ and
+    run the backward induction \noteref{eq:bin-backward} from there. Show that the
+    resulting price $\tilde C_n$ is the expectation under $\Q_n$ of a discounted
+    \emph{smooth} function of $S_{n-1}$, repeat (a) and (c) for $\tilde C_n$, and comment.
+\end{enumerate}
+\end{exercise}

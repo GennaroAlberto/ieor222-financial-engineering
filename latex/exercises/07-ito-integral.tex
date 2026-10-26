@@ -1,0 +1,139 @@
+% Exercises for Chapter 7 (The Ito integral). Statements only: solutions are kept privately.
+% Throughout, W is a Brownian motion, (F_t) a filtration for W whose F_0 contains the null
+% events, T > 0, and ||.|| is the norm of H^2[0,T].
+
+\begin{exercise}[Using the isometry]\label{ex:ito-isometry}
+\easy
+\begin{enumerate}[label=(\alph*)]
+  \item Let $p>0$, and let $H_t=|W_t|^{-p}$ if $W_t\neq0$ and $H_t=0$ otherwise. For which
+    values of $p$ is $H$ in $\mathbb H^2$?
+  \item Compute $\Var\big(\int_0^Te^{W_t}\,\dd W_t\big)$ and
+    $\Cov\big(W_T,\int_0^Te^{W_t}\,\dd W_t\big)$.
+  \item Let $I_t=\int_0^tW_s\,\dd W_s$. Compute $\E\big[[I,I]_T\big]$, $\Var(I_T)$ and
+    $\Var\big([I,I]_T\big)$. You may use $\E[W_s^2W_t^2]=2s^2+st$ for $s\le t$
+    (\exref{ex:bm-moments}). What would $\Var([I,I]_T)$ be for a deterministic integrand?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Adaptedness cannot be dropped]\label{ex:ito-adapted}
+\easy Let $\Pi=\{t_j\}$ be partitions of $[0,T]$ with $\|\Pi\|\to0$, and
+$\Delta_j=W_{t_{j+1}}-W_{t_j}$.
+\begin{enumerate}[label=(\alph*)]
+  \item Compute $\sum_jW_T\Delta_j$. If the integral of the process $H_t=W_T$, which is not
+    adapted, were defined as the limit of these sums, what would its mean and its second
+    moment be? Which statements of \noteref{thm:ito-integral} would fail?
+  \item Let $R^\Pi$ be the process equal to $W_{t_{j+1}}$ on $[t_j,t_{j+1})$. Show that
+    $\|R^\Pi-W\|\to0$, although the sums $\sum_jW_{t_{j+1}}\Delta_j$ do not converge to
+    $\int_0^TW_t\,\dd W_t$ (\noteref{prop:ito-wdw}). Why does this not contradict
+    \noteref{eq:ito-uniform}? Compare
+    $\E\big[\big(\sum_j(W_{t_{j+1}}-W_{t_j})\Delta_j\big)^2\big]$ with $\|R^\Pi-W^\Pi\|^2$, where
+    $W^\Pi$ equals $W_{t_j}$ on $[t_j,t_{j+1})$.
+  \item Interpret (a) and (b) for a trader.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Integration by parts for deterministic integrands]\label{ex:ito-parts}
+\medium Let $f:[0,T]\to\R$ be continuously differentiable.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that for each $t\in[0,T]$, almost surely,
+    \[
+      \int_0^tf(s)\,\dd W_s=f(t)W_t-\int_0^tf'(s)W_s\,\dd s,
+    \]
+    where the last integral is an ordinary Riemann integral, computed path by path.
+    \emph{Hint:} \noteref{cor:ito-riemann}, and summation by parts.
+  \item Deduce that $\int_0^TW_s\,\dd s$ has law $\mathcal N(0,T^3/3)$, and compute its
+    covariance with $W_T$.
+  \item In a Gaussian short-rate model (a special case of the Ho--Lee model of
+    \noteref{ch:14-rates}), the short rate is $r_t=r_0+\theta t+\sigma W_t$ with constants
+    $r_0,\theta\in\R$ and $\sigma>0$, where $W$ is a Brownian motion under the risk-neutral
+    measure $\Q$. The price at time $0$ of a zero-coupon bond paying $1$ at time $T$ is
+    $P(0,T)=\EQ\big[\exp\big(-\int_0^Tr_t\,\dd t\big)\big]$. Compute $P(0,T)$ and the yield
+    $y(T)=-\frac1T\log P(0,T)$. What happens to $y(T)$ as $T\to\infty$, and why?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[$\int W^2\,\dd W$ by hand]\label{ex:ito-w2dw}
+\medium Let $\Pi=\{t_j\}$ be partitions of $[0,T]$ with $\|\Pi\|\to0$,
+$\Delta_j=W_{t_{j+1}}-W_{t_j}$ and $h_j=t_{j+1}-t_j$.
+\begin{enumerate}[label=(\alph*)]
+  \item Check that $H_t=W_t^2$ satisfies the hypotheses of \noteref{lem:ito-riemann}.
+  \item Show that
+    $\sum_jW_{t_j}^2\Delta_j=\frac13W_T^3-\sum_jW_{t_j}\Delta_j^2-\frac13\sum_j\Delta_j^3$.
+  \item Show that $\sum_j\Delta_j^3\to0$ and $\sum_jW_{t_j}\Delta_j^2\to\int_0^TW_t\,\dd t$ in
+    $L^2$. You may use $\E[N^6]=15$ for $N\sim\mathcal N(0,1)$.
+  \item Conclude that $\int_0^TW_t^2\,\dd W_t=\frac13W_T^3-\int_0^TW_t\,\dd t$. Using
+    \exref{ex:bm-hermite}, deduce that $tW_t-\int_0^tW_s\,\dd s$ is a martingale, and write it
+    as a Wiener integral (\exref{ex:ito-parts}).
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[A random integrand with a Gaussian integral]\label{ex:ito-sign}
+\medium Let $\operatorname{sgn}(x)=1$ for $x>0$ and $\operatorname{sgn}(x)=-1$ for $x\le0$,
+and let $I_t=\int_0^t\operatorname{sgn}(W_s)\,\dd W_s$ for $t\ge0$ (computed on any horizon
+$T\ge t$; by \noteref{rem:ito-notation} the horizon does not matter).
+\begin{enumerate}[label=(\alph*)]
+  \item Check that the integral is defined, and compute $\Cov(I_s,I_t)$ and $[I,I]_t$.
+  \item L\'evy's characterization (\noteref{thm:itf-levy}) states that a martingale
+    $(M_t)_{t\ge0}$ with continuous paths, $M_0=0$ and $[M,M]_t=t$ for every $t\ge0$ is a
+    Brownian motion. Deduce that $I$ is a Brownian motion.
+  \item Show that $\E[I_tW_t]=0$, and compute $\E[I_tW_t^2]$ with the help of
+    \noteref{prop:ito-wdw}. Are $I_t$ and $W_t$ independent? Is $(I_t,W_t)$ a Gaussian
+    vector?
+  \item Does this contradict \noteref{prop:ito-deterministic}?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Simple processes are dense]\label{ex:ito-density}
+\hard This exercise proves \noteref{lem:ito-density}. Let $H\in\mathbb H^2$. You may use two
+facts: (F) if $f\in L^2([0,T])$ and $f_n(t)=n\int_{(t-1/n)\vee0}^tf(s)\,\dd s$, then
+$\int_0^T(f_n-f)^2\,\dd t\to0$; and adapted processes with continuous paths are progressively
+measurable.
+\begin{enumerate}[label=(\alph*)]
+  \item Let $H^{(N)}=\max(-N,\min(N,H))$. Show that $H^{(N)}\in\mathbb H^2$ and
+    $\|H^{(N)}-H\|\to0$ as $N\to\infty$.
+  \item Suppose that $|H|\le N$, and let $G^n_t=n\int_{(t-1/n)\vee0}^tH_s\,\dd s$. Show that
+    $G^n$ is adapted, has continuous paths and is bounded by $N$, and that
+    $\|G^n-H\|\to0$. Where do you use that $H$ is progressively measurable, and not only
+    adapted?
+  \item Conclude, with \noteref{lem:ito-riemann}.
+  \item Why would the averages $n\int_t^{(t+1/n)\wedge T}H_s\,\dd s$ over the near future not
+    do?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Wald's identities for Brownian motion]\label{ex:ito-stopping}
+\medium Stopping times are as in \noteref{sec:ito-local}.
+\begin{enumerate}[label=(\alph*)]
+  \item Let $\tau$ be a stopping time with values in $[0,T]$. Deduce from
+    \noteref{prop:ito-stopping} that $W_\tau=\int_0^T\1_{[0,\tau]}(s)\,\dd W_s$, and then Wald's
+    identities $\E[W_\tau]=0$ and $\E[W_\tau^2]=\E[\tau]$. Show also that
+    $\E[(W_\tau-W_\rho)^2]=\E[\tau-\rho]$ for stopping times $\rho\le\tau$.
+  \item Let $\sigma=\inf\{t\ge0:W_t=1\}$, which is finite almost surely (Brownian motion reaches
+    every level: let $a\to-\infty$ in \exref{ex:bm-exit}). For every $T>0$, $\sigma\wedge T$ is a
+    stopping time with values in $[0,T]$. Show that $\E[W_{\sigma\wedge T}]=0$ for every $T$,
+    while $W_\sigma=1$, and that $\E[\sigma]=\infty$.
+  \item Interpret (b) for a trader who holds one unit of an asset with price $W$ until her gain
+    reaches $1$, and compare with \noteref{cor:mg-hitting}.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Holding the asset when its price is positive]\label{ex:ito-positive}
+\medium This is a computational exercise. Take $T=1$. A trader holds one unit of an asset with
+price $W_t$ when $W_t>0$, and none otherwise: $H_t=\1_{\{W_t>0\}}$, with gains
+$I=\int_0^1H_t\,\dd W_t$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $H\in\mathbb H^2$, and compute $\E[I]$, $\E[I^2]$ and $\E[IW_1]$.
+  \item $H$ is not continuous in mean square at $t=0$, so \noteref{lem:ito-riemann} does not
+    apply as stated. Let $\Pi$ be the uniform partition with step $h=1/n$, and $H^\Pi$ as in
+    the lemma. Using $\Prob(W_s>0,W_t\le0)=\frac1{2\pi}\arccos\sqrt{s/t}$ for $0<s<t$, show
+    that $\|H^\Pi-H\|^2\le h/2+\sqrt h$, so that the It\^o sums still converge to $I$ in
+    $L^2$.
+  \item Simulate $10^5$ paths on uniform grids with $n=10$, $100$ and $1000$ steps. Estimate
+    $\E[I]$, $\E[I^2]$ and $\E[IW_1]$ from the It\^o sums, with $95\%$ confidence intervals,
+    and compare with (a). Explain any discrepancy at $n=10$.
+  \item Compute $\E[W_1^+]$, and estimate $\E[W_1^+-I]$ from your simulation. Since the
+    derivative of $x\mapsto x^+$ is $\1_{\{x>0\}}$ for $x\neq0$, ordinary calculus would
+    suggest $W_1^+=\int_0^1\1_{\{W_t>0\}}\,\dd W_t$. Why can this not hold? Compare with
+    \noteref{prop:ito-wdw}.
+\end{enumerate}
+\end{exercise}

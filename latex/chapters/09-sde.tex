@@ -1,5 +1,689 @@
-\begin{planned}
-  \item existence and uniqueness under Lipschitz conditions
-  \item geometric Brownian motion, Ornstein--Uhlenbeck, CEV and local volatility
-  \item the Euler--Maruyama scheme: strong and weak convergence
-\end{planned}
+% Chapter 9: Stochastic differential equations.
+
+The Black--Scholes stock satisfies $\dd S_t=\mu S_t\,\dd t+\sigma S_t\,\dd W_t$: over a short
+interval its relative change is a deterministic drift plus a Gaussian shock
+(\cref{prop:itf-gbm}). Most continuous-time models in finance have this shape, with
+coefficients that depend on the current state: a short rate is pulled back towards a
+long-run level, the volatility of a stock rises when its price falls. Such a model is a
+\emph{stochastic differential equation}
+$\dd X_t=b(t,X_t)\,\dd t+\sigma(t,X_t)\,\dd W_t$. When does it have a solution, and only one?
+Which equations can be solved in closed form? How do we simulate the others? On the way we
+meet the Markov property and the generator, which lead to the pricing equations of
+\cref{ch:10-delta-hedging,ch:12-feynman-kac}.
+
+Throughout, $T>0$ is a fixed horizon, $W$ is a Brownian motion and $(\F_t)$ a filtration for
+$W$ (\cref{def:bm-filtration}). We assume that every event of probability zero belongs to
+$\F_0$, so that changing a process on a null event does not affect adaptedness. Stochastic
+integrals are those of \cref{ch:07-ito-integral}, for integrands in $\mathbb H^2$
+(\cref{def:ito-h2}) or in $\mathbb H^2_{\mathrm{loc}}$ (\cref{rem:ito-local}); It\^o
+processes and It\^o's formula are those of \cref{ch:08-ito-formula}, where the starting value
+of an It\^o process may be any $\F_0$-measurable random variable (\cref{def:itf-process}).
+
+\section{Stochastic differential equations}\label{sec:sde-def}
+
+Let $b,\sigma:[0,T]\times\R\to\R$ be Borel functions, the \emph{drift} and the
+\emph{diffusion coefficient}, and let $\xi$ be an $\F_0$-measurable random variable, the
+initial condition.
+
+\begin{definition}[Strong solution]\label{def:sde-solution}
+A \emph{(strong) solution} of
+\begin{equation}\label{eq:sde}
+  \dd X_t=b(t,X_t)\,\dd t+\sigma(t,X_t)\,\dd W_t,\qquad X_0=\xi,
+\end{equation}
+on $[0,T]$ is a process $X=(X_t)_{t\in[0,T]}$ such that
+\begin{enumerate}[label=(\roman*)]
+  \item $X$ is adapted to $(\F_t)$ and every path $t\mapsto X_t(\omega)$ is continuous;
+  \item almost surely, $\int_0^T\big(|b(s,X_s)|+\sigma(s,X_s)^2\big)\,\dd s<\infty$;
+  \item almost surely, for every $t\in[0,T]$,
+    $X_t=\xi+\int_0^tb(s,X_s)\,\dd s+\int_0^t\sigma(s,X_s)\,\dd W_s$.
+\end{enumerate}
+\end{definition}
+
+Condition (ii) is what (iii) needs. Since $X$ is continuous and adapted, it is
+progressively measurable (\textcite{karatzas-shreve}, Proposition~1.1.13), hence so are
+$b(s,X_s)$ and $\sigma(s,X_s)$; by (ii), the first is integrable along almost every path and
+the second lies in $\mathbb H^2_{\mathrm{loc}}$. A solution is thus an It\^o process
+(\cref{def:itf-process}) whose coefficients at time $t$ depend only on $t$ and $X_t$.
+\emph{Strong} means that $W$ and $(\F_t)$ are given in advance; in a \emph{weak} solution
+they are part of the answer (see the further reading).
+
+The equation is a recipe for the next move. Over a short interval $[t,t+h]$,
+\[
+  X_{t+h}-X_t\approx b(t,X_t)\,h+\sigma(t,X_t)\,(W_{t+h}-W_t):
+\]
+given $\F_t$, the increment has mean about $b(t,X_t)h$ and variance about
+$\sigma(t,X_t)^2h$. Iterating this approximation on a grid is the Euler--Maruyama scheme of
+\cref{sec:sde-euler}.
+
+Geometric Brownian motion is the case $b(t,x)=\mu x$, $\sigma(t,x)=\sigma x$; the
+Ornstein--Uhlenbeck and CEV models of \cref{sec:sde-ou,sec:sde-local-vol} are two more.
+
+Even without noise, an equation of this kind can fail to have a solution, or have many.
+
+\begin{example}[What can go wrong]\label{exa:sde-failures}
+Take $\sigma=0$, so that \eqref{eq:sde} is an ordinary differential equation.
+\begin{enumerate}[label=(\alph*)]
+  \item \emph{Explosion.} $x'=x^2$, $x(0)=1$, is solved by $x(t)=1/(1-t)$, which explodes
+    at $t=1$; the drift grows faster than linearly.
+  \item \emph{Branching.} $x'=3|x|^{2/3}$, $x(0)=0$, is solved by $x\equiv0$ and, for every
+    $a\ge0$, by $x(t)=((t-a)^+)^3$; the drift is not Lipschitz at $0$.
+\end{enumerate}
+The next theorem rules these out with a linear-growth bound and a Lipschitz condition.
+\end{example}
+
+\section{Existence and uniqueness}\label{sec:sde-existence}
+
+The proofs below bound a mean square distance $\varphi(t)$ by an integral inequality, which
+Gronwall's lemma turns into a bound.
+
+\begin{lemma}[Gronwall]\label{lem:sde-gronwall}
+Let $\varphi:[0,T]\to[0,\infty)$ be Borel and integrable, and let $a,c\ge0$ be such that
+$\varphi(t)\le a+c\int_0^t\varphi(s)\,\dd s$ for every $t\in[0,T]$. Then
+$\varphi(t)\le a\,e^{ct}$ for every $t\in[0,T]$. In particular, if $a=0$ then $\varphi\equiv0$.
+\end{lemma}
+
+\begin{proof}
+We show by induction that, for every $n\ge1$ and $t\in[0,T]$,
+\begin{equation}\label{eq:sde-gronwall-n}
+  \varphi(t)\le a\sum_{k=0}^{n-1}\frac{(ct)^k}{k!}
+  +c^n\int_0^t\frac{(t-s)^{n-1}}{(n-1)!}\,\varphi(s)\,\dd s .
+\end{equation}
+For $n=1$ this is the hypothesis. If it holds for $n$, bound $\varphi(s)$ in the last
+integral by $a+c\int_0^s\varphi(u)\,\dd u$, and exchange the order of integration (Tonelli):
+\[
+  c^n\int_0^t\frac{(t-s)^{n-1}}{(n-1)!}\Big(a+c\int_0^s\varphi(u)\,\dd u\Big)\dd s
+  =a\frac{(ct)^n}{n!}+c^{n+1}\int_0^t\frac{(t-u)^n}{n!}\,\varphi(u)\,\dd u ,
+\]
+which gives \eqref{eq:sde-gronwall-n} for $n+1$. The last term of
+\eqref{eq:sde-gronwall-n} is at most $c^nT^{n-1}\int_0^T\varphi/(n-1)!$, which tends to $0$,
+and the sum tends to $ae^{ct}$.
+\end{proof}
+
+\begin{lemma}[Maximal estimates]\label{lem:sde-estimates}
+Let $t\in[0,T]$ and let $H$ be progressively measurable with
+$\E\int_0^tH_s^2\,\dd s<\infty$. Then
+\[
+  \E\Big[\sup_{u\le t}\Big|\int_0^uH_s\,\dd s\Big|^2\Big]\le t\,\E\int_0^tH_s^2\,\dd s,
+  \qquad
+  \E\Big[\sup_{u\le t}\Big|\int_0^uH_s\,\dd W_s\Big|^2\Big]\le 4\,\E\int_0^tH_s^2\,\dd s .
+\]
+\end{lemma}
+
+\begin{proof}
+The first bound is the Cauchy--Schwarz inequality,
+$|\int_0^uH_s\,\dd s|^2\le u\int_0^uH_s^2\,\dd s\le t\int_0^tH_s^2\,\dd s$. For the second,
+$I_u=\int_0^uH_s\,\dd W_s$ is a continuous martingale on $[0,t]$ with
+$\E[I_t^2]=\E\int_0^tH_s^2\,\dd s$ (\cref{thm:ito-integral}). Doob's maximal inequality for
+continuous square-integrable martingales gives $\E[\sup_{u\le t}I_u^2]\le4\,\E[I_t^2]$
+(\textcite{karatzas-shreve}, Theorem~1.3.8(iv)).
+\end{proof}
+
+\begin{theorem}[Existence and uniqueness]\label{thm:sde-existence}
+Suppose that there is a constant $K$ such that, for all $t\in[0,T]$ and $x,y\in\R$,
+\begin{align}
+  |b(t,x)-b(t,y)|+|\sigma(t,x)-\sigma(t,y)|&\le K|x-y|,\label{eq:sde-lipschitz}\\
+  |b(t,x)|+|\sigma(t,x)|&\le K(1+|x|).\label{eq:sde-growth}
+\end{align}
+\begin{enumerate}[label=(\alph*)]
+  \item \emph{Pathwise uniqueness.} If $X$ and $Y$ are solutions of \eqref{eq:sde} with the
+    same initial condition $\xi$, then $\Prob(X_t=Y_t\text{ for all }t\in[0,T])=1$. Only
+    \eqref{eq:sde-lipschitz} is needed for this.
+  \item \emph{Existence.} If $\E[\xi^2]<\infty$, then \eqref{eq:sde} has a solution $X$, and
+    $\E\big[\sup_{t\le T}X_t^2\big]\le C\big(1+\E[\xi^2]\big)$ for a constant $C$ that
+    depends only on $K$ and $T$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+(a) Let $D=X-Y$. Subtracting the two integral equations,
+$D_t=\int_0^t\beta_s\,\dd s+\int_0^t\gamma_s\,\dd W_s$ with
+$\beta_s=b(s,X_s)-b(s,Y_s)$ and $\gamma_s=\sigma(s,X_s)-\sigma(s,Y_s)$, and
+\eqref{eq:sde-lipschitz} gives $|\beta_s|\le K|D_s|$ and $|\gamma_s|\le K|D_s|$. We know
+nothing about the moments of $D$, so we do not apply It\^o's formula to $D^2$ but to a
+bounded function of $D$: $f(x)=x^2/(1+x^2)$, which takes values in $[0,1)$, vanishes only at
+$0$, and has $f'(x)=2x/(1+x^2)^2$ and $f''(x)=(2-6x^2)/(1+x^2)^3$, so that
+$|xf'(x)|\le\min(2f(x),\frac12)$ and $x^2|f''(x)|\le6f(x)$.
+By It\^o's formula (\cref{thm:itf-process}, with the stochastic integral understood as in
+\cref{rem:ito-local}),
+\[
+  f(D_t)=\int_0^t\Big(f'(D_s)\beta_s+\tfrac12f''(D_s)\gamma_s^2\Big)\dd s
+  +\int_0^tf'(D_s)\gamma_s\,\dd W_s .
+\]
+The integrand of the stochastic integral is bounded by $K|D_sf'(D_s)|\le K/2$, so the
+integral is a martingale with mean zero (\cref{thm:ito-integral}). The $\dd s$ integrand is
+bounded by $(2K+3K^2)f(D_s)\le2K+3K^2$. Taking expectations and using Fubini,
+$\varphi(t)=\E[f(D_t)]$ satisfies $\varphi(t)\le(2K+3K^2)\int_0^t\varphi(s)\,\dd s$. The
+function $\varphi$ is bounded by $1$ and continuous (bounded convergence and continuity of
+$D$), so Gronwall's lemma with $a=0$ gives $\varphi\equiv0$. Hence, for each $t$, $D_t=0$
+almost surely. A countable intersection of almost sure events is almost sure, so almost
+surely $D_t=0$ for every rational $t$, and then for every $t$ by continuity.
+
+(b) We construct the solution by \emph{Picard iteration}, as for ordinary differential
+equations. For a process $Z$ write $\|Z\|_t^2=\E[\sup_{u\le t}Z_u^2]$. Set $X^0_t=\xi$ and
+\[
+  X^{n+1}_t=\xi+\int_0^tb(s,X^n_s)\,\dd s+\int_0^t\sigma(s,X^n_s)\,\dd W_s,\qquad t\in[0,T].
+\]
+
+\emph{Step 1: the iterates are well defined.} Suppose $X^n$ is continuous, adapted and
+$\|X^n\|_T<\infty$ (true for $n=0$). By \eqref{eq:sde-growth},
+$b^2+\sigma^2\le(|b|+|\sigma|)^2\le2K^2(1+x^2)$, so
+$\E\int_0^T(b^2+\sigma^2)(s,X^n_s)\,\dd s\le2K^2T(1+\|X^n\|_T^2)<\infty$. Hence $X^{n+1}$ is
+defined, continuous and adapted, and by \cref{lem:sde-estimates} and
+$(u+v+w)^2\le3(u^2+v^2+w^2)$,
+$\|X^{n+1}\|_T^2\le3\E[\xi^2]+3(T+4)\E\int_0^T(b^2+\sigma^2)(s,X^n_s)\,\dd s<\infty$.
+
+\emph{Step 2: contraction.} Let $\Delta_n(t)=\|X^{n+1}-X^n\|_t^2$. The difference
+$X^{n+1}-X^n$ has drift $b(s,X^n_s)-b(s,X^{n-1}_s)$ and diffusion
+$\sigma(s,X^n_s)-\sigma(s,X^{n-1}_s)$, both bounded by $K|X^n_s-X^{n-1}_s|$. By
+$(u+v)^2\le2u^2+2v^2$ and \cref{lem:sde-estimates},
+\[
+  \Delta_n(t)\le2(t+4)K^2\,\E\int_0^t|X^n_s-X^{n-1}_s|^2\,\dd s\le L\int_0^t\Delta_{n-1}(s)\,\dd s,
+  \qquad L=2K^2(T+4).
+\]
+($\Delta_{n-1}$ is nondecreasing, hence Borel.) Since $\Delta_0(t)\le M:=\Delta_0(T)<\infty$,
+induction gives $\Delta_n(t)\le M(Lt)^n/n!$.
+
+\emph{Step 3: convergence.} By Chebyshev's inequality,
+$\Prob\big(\sup_{t\le T}|X^{n+1}_t-X^n_t|>2^{-n}\big)\le4^nM(LT)^n/n!$, which is summable.
+By the Borel--Cantelli lemma, almost surely $\sup_t|X^{n+1}_t-X^n_t|\le2^{-n}$ for all large
+$n$, and on this event $X^n$ converges uniformly on $[0,T]$ to a continuous limit $X$. Set
+$X=0$ on the exceptional null event, which lies in $\F_0$; then $X$ is adapted. By Fatou's
+lemma and the triangle inequality for $\|\cdot\|_T$,
+$\|X-X^n\|_T\le\sum_{k\ge n}\sqrt{\Delta_k(T)}\to0$; in particular $\|X\|_T<\infty$.
+
+\emph{Step 4: $X$ solves the equation.} By \eqref{eq:sde-lipschitz} and
+\cref{lem:sde-estimates}, as in Step 2,
+\[
+  \E\Big[\sup_{t\le T}\Big|\int_0^t\big(b(s,X^n_s)-b(s,X_s)\big)\dd s
+  +\int_0^t\big(\sigma(s,X^n_s)-\sigma(s,X_s)\big)\dd W_s\Big|^2\Big]\le LT\,\|X^n-X\|_T^2\to0 .
+\]
+So the right-hand side of the recursion converges, uniformly in $t$ in mean square, to
+$\xi+\int_0^tb(s,X_s)\,\dd s+\int_0^t\sigma(s,X_s)\,\dd W_s$, while the left-hand side
+$X^{n+1}$ converges to $X$. The two limits agree almost surely for each $t$, and, both being
+continuous in $t$, for all $t$ at once. Condition (ii) of \cref{def:sde-solution} holds
+because $\E\int_0^T(b^2+\sigma^2)(s,X_s)\,\dd s<\infty$.
+
+\emph{Step 5: the moment bound.} As in Step 1, $\varphi(t)=\|X\|_t^2$ satisfies
+$\varphi(t)\le3\E[\xi^2]+6K^2T(T+4)+6K^2(T+4)\int_0^t\varphi(s)\,\dd s$, and Gronwall's lemma
+gives $\varphi(T)\le\big(3\E[\xi^2]+6K^2T(T+4)\big)e^{6K^2T(T+4)}$.
+\end{proof}
+
+Part (a) is a special case of \textcite{karatzas-shreve}, Theorem~5.2.5, and part (b) is
+their Theorem~5.2.9 (which bounds $\sup_t\E[X_t^2]$; the bound on $\E[\sup_tX_t^2]$ is
+Step 5). Their theorem also shows that $X_t$ is measurable with respect to
+$\sigma(\xi,W_s:s\le t)$ augmented by the null events.
+
+\begin{remark}[On the hypotheses]\label{rem:sde-hypotheses}
+\leavevmode
+\begin{enumerate}[label=(\alph*)]
+  \item The Lipschitz constant must be uniform in $t\in[0,T]$. Given
+    \eqref{eq:sde-lipschitz}, the growth bound \eqref{eq:sde-growth} holds, with a possibly larger constant, if and only if
+    $|b(t,0)|+|\sigma(t,0)|$ is bounded on $[0,T]$, because
+    $|b(t,x)|\le|b(t,0)|+K|x|$. The proof uses \eqref{eq:sde-growth} only in Steps 1, 4 and
+    5, and with small changes there it goes through under the weaker condition
+    $\int_0^T\big(|b(t,0)|+\sigma(t,0)^2\big)\,\dd t<\infty$; the constant $C$ then also
+    depends on this integral.
+  \item The Lipschitz condition can be weakened in two useful ways. If $b$ and $\sigma$ are
+    only \emph{locally} Lipschitz in $x$ (Lipschitz on every bounded set, with constants
+    uniform in $t$), pathwise uniqueness still holds (\textcite{karatzas-shreve},
+    Theorem~5.2.5), although a solution on $[0,T]$ need not exist
+    (\cref{exa:sde-failures}(a)). In dimension one, it is enough that $b$ be Lipschitz and
+    that $|\sigma(t,x)-\sigma(t,y)|\le h(|x-y|)$ for a strictly increasing $h$ with
+    $h(0)=0$ and $\int_0^\varepsilon h(u)^{-2}\,\dd u=\infty$ for every $\varepsilon>0$, for
+    instance $h(u)=c\sqrt u$, for pathwise uniqueness (not existence): this is the
+    Yamada--Watanabe criterion (\textcite{karatzas-shreve}, Proposition~5.2.13), which covers the square-root
+    diffusions of \cref{sec:sde-local-vol} and \cref{ch:14-rates}.
+\end{enumerate}
+\end{remark}
+
+\section{Linear equations}\label{sec:sde-linear}
+
+When the coefficients are affine in $x$, the equation can be solved explicitly, as a linear
+ordinary differential equation is solved with an integrating factor.
+
+\begin{proposition}[Linear SDEs]\label{prop:sde-linear}
+Let $\mu_0,\mu_1,\sigma_0,\sigma_1:[0,T]\to\R$ be bounded Borel functions and $\xi$ an
+$\F_0$-measurable random variable. Let
+\[
+  Z_t=\exp\Big(\int_0^t\sigma_1(s)\,\dd W_s+\int_0^t\big(\mu_1(s)-\tfrac12\sigma_1(s)^2\big)\dd s\Big).
+\]
+The equation
+\begin{equation}\label{eq:sde-linear}
+  \dd X_t=\big(\mu_0(t)+\mu_1(t)X_t\big)\dd t+\big(\sigma_0(t)+\sigma_1(t)X_t\big)\dd W_t,
+  \qquad X_0=\xi,
+\end{equation}
+has the unique solution
+\begin{equation}\label{eq:sde-linear-solution}
+  X_t=Z_t\Big(\xi+\int_0^t\frac{\mu_0(s)-\sigma_0(s)\sigma_1(s)}{Z_s}\,\dd s
+  +\int_0^t\frac{\sigma_0(s)}{Z_s}\,\dd W_s\Big).
+\end{equation}
+In particular:
+\begin{enumerate}[label=(\alph*)]
+  \item ($\mu_0=\sigma_0=0$, $\mu_1=\mu$, $\sigma_1=\sigma$ constant) geometric Brownian
+    motion $S_t=S_0\exp\big(\sigma W_t+(\mu-\frac{\sigma^2}2)t\big)$ is the unique solution of
+    $\dd S_t=\mu S_t\,\dd t+\sigma S_t\,\dd W_t$;
+  \item ($\sigma_1=0$, additive noise) with $B(t)=\int_0^t\mu_1(s)\,\dd s$,
+    \[
+      X_t=e^{B(t)}\xi+\int_0^te^{B(t)-B(s)}\mu_0(s)\,\dd s+\int_0^te^{B(t)-B(s)}\sigma_0(s)\,\dd W_s ;
+    \]
+    if $\xi=x_0$ is a constant, $X_t$ is normal with mean
+    $e^{B(t)}x_0+\int_0^te^{B(t)-B(s)}\mu_0(s)\,\dd s$ and variance
+    $\int_0^te^{2(B(t)-B(s))}\sigma_0(s)^2\,\dd s$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+\emph{Uniqueness.} The coefficients $(t,x)\mapsto\mu_0(t)+\mu_1(t)x$ and
+$\sigma_0(t)+\sigma_1(t)x$ satisfy \eqref{eq:sde-lipschitz} with
+$K=\sup|\mu_1|+\sup|\sigma_1|$, so \cref{thm:sde-existence}(a) applies. It requires no
+moment of $\xi$.
+
+\emph{The formula is a solution.} By It\^o's formula for the exponential of the It\^o
+process $\int_0^t\sigma_1\,\dd W+\int_0^t(\mu_1-\frac12\sigma_1^2)\,\dd s$ (\cref{thm:itf-process}),
+$\dd Z_t=Z_t\big(\mu_1(t)\,\dd t+\sigma_1(t)\,\dd W_t\big)$ with $Z_0=1$. Let $U_t$ be the
+bracket in \eqref{eq:sde-linear-solution}, so that
+$\dd U_t=Z_t^{-1}\big((\mu_0-\sigma_0\sigma_1)\,\dd t+\sigma_0\,\dd W_t\big)$. Since
+$\int_0^s\sigma_1\,\dd W$ is normal (\cref{prop:ito-deterministic}) and the coefficients are
+bounded, $\E[Z_s^2]$ and $\E[Z_s^{-2}]$ are bounded on $[0,T]$; so $Z$ and $U$ are It\^o
+processes with integrands in $\mathbb H^2$. By the product rule
+(\cref{cor:itf-product}), with $\dd[Z,U]_t=Z_t\sigma_1(t)\cdot Z_t^{-1}\sigma_0(t)\,\dd t$
+(\cref{prop:itf-decomposition}),
+\[
+  \dd(Z_tU_t)=Z_t\,\dd U_t+U_t\,\dd Z_t+\dd[Z,U]_t
+  =\big(\mu_0+\mu_1Z_tU_t\big)\dd t+\big(\sigma_0+\sigma_1Z_tU_t\big)\dd W_t ,
+\]
+and $Z_0U_0=\xi$. So $X=ZU$ solves \eqref{eq:sde-linear}.
+
+\emph{Special cases.} (a) is the case $Z_t=S_t/S_0$, $U\equiv S_0$. In (b), $Z_t=e^{B(t)}$ is
+deterministic and can be moved inside the integrals. The stochastic integral of the
+deterministic integrand $e^{B(t)-B(s)}\sigma_0(s)$, $s\le t$, is normal with mean $0$ and
+variance $\int_0^te^{2(B(t)-B(s))}\sigma_0(s)^2\,\dd s$ (\cref{prop:ito-deterministic}); the
+other two terms are constants.
+\end{proof}
+
+The formula comes from the integrating factor $Z^{-1}$:
+$\dd(Z_t^{-1}X_t)=Z_t^{-1}\big((\mu_0-\sigma_0\sigma_1)\,\dd t+\sigma_0\,\dd W_t\big)$ no
+longer involves $X$; the term $-\sigma_0\sigma_1$ comes from the covariation of $Z^{-1}$ and $X$.
+
+\section{The Ornstein--Uhlenbeck process and the Vasicek model}\label{sec:sde-ou}
+
+\begin{proposition}[Ornstein--Uhlenbeck process]\label{prop:sde-ou}
+Let $\kappa>0$, $\theta\in\R$, $\sigma>0$, let $\xi$ be $\F_0$-measurable, and write
+$v(t)=\sigma^2(1-e^{-2\kappa t})/(2\kappa)$. The equation
+$\dd X_t=\kappa(\theta-X_t)\,\dd t+\sigma\,\dd W_t$, $X_0=\xi$, has the unique solution
+\begin{equation}\label{eq:sde-ou}
+  X_t=\theta+(\xi-\theta)e^{-\kappa t}+\sigma\int_0^te^{-\kappa(t-s)}\,\dd W_s .
+\end{equation}
+\begin{enumerate}[label=(\roman*)]
+  \item For $0\le t\le u$,
+    $X_u=\theta+(X_t-\theta)e^{-\kappa(u-t)}+\sigma\int_t^ue^{-\kappa(u-s)}\,\dd W_s$, and
+    the last term is normal with mean $0$ and variance $v(u-t)$, and independent of $\F_t$.
+  \item If $\xi=x_0$ is a constant, $X_t$ is normal with mean $\theta+(x_0-\theta)e^{-\kappa t}$
+    and variance $v(t)$. As $t\to\infty$, its law converges to
+    $\mathcal N\big(\theta,\frac{\sigma^2}{2\kappa}\big)$, whatever $x_0$.
+  \item If $\xi\sim\mathcal N\big(\theta,\frac{\sigma^2}{2\kappa}\big)$, then
+    $X_t\sim\mathcal N\big(\theta,\frac{\sigma^2}{2\kappa}\big)$ for every $t\ge0$: this is the
+    \emph{stationary law}.
+\end{enumerate}
+\end{proposition}
+
+Formula \eqref{eq:sde-ou} gives the solution on every horizon at once, which gives a meaning
+to $t\to\infty$ in (ii).
+
+\begin{proof}
+This is \cref{prop:sde-linear} with $\mu_0=\kappa\theta$, $\mu_1=-\kappa$,
+$\sigma_0=\sigma$, $\sigma_1=0$: then $Z_t=e^{-\kappa t}$ and
+\eqref{eq:sde-linear-solution} becomes \eqref{eq:sde-ou}, since
+$e^{-\kappa t}\int_0^te^{\kappa s}\kappa\theta\,\dd s=\theta(1-e^{-\kappa t})$.
+
+(i) Write $e^{-\kappa(u-s)}=e^{-\kappa(u-t)}e^{-\kappa(t-s)}$ in \eqref{eq:sde-ou} at time
+$u$ and split $\int_0^u=\int_0^t+\int_t^u$; the terms up to time $t$ recombine into
+$e^{-\kappa(u-t)}(X_t-\theta)$. Let $J=\int_t^ue^{-\kappa(u-s)}\,\dd W_s$ and, for a partition
+$t=s_0<\dots<s_m=u$, $J_m=\sum_je^{-\kappa(u-s_j)}(W_{s_{j+1}}-W_{s_j})$, the integral of a
+simple integrand (\cref{def:ito-simple}). Each increment $W_{s_{j+1}}-W_{s_j}$ is normal and
+independent of $\F_{s_j}$, which contains $\F_t$ and the earlier increments
+(\cref{def:bm-filtration}); so $J_m$ is normal and independent of $\F_t$. As the mesh goes
+to $0$, $J_m\to J$ in $L^2$ by the It\^o isometry (the integrands converge uniformly on
+$[t,u]$), so for $A\in\F_t$, $\lambda\in\R$, the identity
+$\E[\1_Ae^{i\lambda J_m}]=\Prob(A)e^{-\lambda^2\Var(J_m)/2}$ passes to the limit:
+$\E[\1_Ae^{i\lambda J}]=\Prob(A)e^{-\lambda^2w/2}$ with
+$w=\int_t^ue^{-2\kappa(u-s)}\,\dd s$. Taking $A=\Omega$ gives $J\sim\mathcal N(0,w)$, and
+$\sigma^2w=v(u-t)$; for $\Prob(A)>0$ the law of $J$ given $A$ is that of $J$, so $J$ is
+independent of $\F_t$.
+
+(ii) Take $t=0$ in (i). As $t\to\infty$, the mean tends to $\theta$ and $v(t)$ to
+$\sigma^2/(2\kappa)$; the characteristic functions of $X_t$ converge to that of
+$\mathcal N(\theta,\sigma^2/(2\kappa))$, which is convergence in law by Lévy's continuity
+theorem.
+
+(iii) By (i) with $t=0$, $X_t=\theta+(\xi-\theta)e^{-\kappa t}+\sigma J$ with $\sigma J$
+independent of $\F_0$, hence of $\xi$. A sum of independent normal variables is normal, with mean
+$\theta$ and variance $e^{-2\kappa t}\frac{\sigma^2}{2\kappa}+v(t)=\frac{\sigma^2}{2\kappa}$.
+\end{proof}
+
+The parameters read directly off the solution. The mean forgets the starting point at
+rate $\kappa$: the gap $\E[X_t]-\theta$ halves every $\log2/\kappa$ units of time. The
+variance does not grow without bound, as it would for $x_0+\sigma W_t$, but levels off at
+$\sigma^2/(2\kappa)$, where the pull towards $\theta$ balances the noise. Both features need
+$\kappa>0$: for $\kappa\le0$ the same computation writes $X_t$ as a function of $\xi$ plus an
+independent normal variable whose variance tends to infinity, so the characteristic function
+of $X_t$ tends to $0$ at every $\lambda\ne0$, and no law stays invariant.
+
+\paragraph{The Vasicek model.} \textcite{vasicek} models the short rate as an
+Ornstein--Uhlenbeck process $\dd r_t=\kappa(\theta-r_t)\,\dd t+\sigma\,\dd W_t$: rates are
+pulled towards a long-run level, and Gaussian rates make bond prices explicit
+(\cref{ch:14-rates}). The price of this tractability is that $\Prob(r_t<0)>0$ for every
+$t>0$, by (ii). With the parameters of \cref{fig:sde-ou}
+($\theta=4\%$, $\kappa=1.5$, $\sigma=2\%$), the stationary probability of a negative rate is
+$N\big(-\theta\sqrt{2\kappa}/\sigma\big)\approx2.7\times10^{-4}$.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch09-ou}
+  \caption{Left: Vasicek short rates with $\kappa=1.5$, $\theta=4\%$, $\sigma=2\%$, two paths
+    from each of three starting points, simulated exactly with the transition law of
+    \cref{prop:sde-ou}(i). Dashed: the means $\E[r_t]$; shaded: $\theta\pm2$ stationary
+    standard deviations. Right: the simulated law of $r_4$ started from $11\%$, against the
+    stationary law $\mathcal N(\theta,\sigma^2/(2\kappa))$.}
+  \label{fig:sde-ou}
+\end{figure}
+
+\demo{09-sde.ipynb}{Ornstein--Uhlenbeck paths and their law at any time, for any
+$\kappa$, $\theta$, $\sigma$ and starting point, against the stationary law.}
+
+\section{The Markov property and the generator}\label{sec:sde-markov}
+
+The coefficients of \eqref{eq:sde} depend on the present state only, not on the past of
+the path. Since the future increments of $W$ are independent of the past, the future of $X$
+should depend on the past only through the present value $X_t$.
+
+\begin{proposition}[Markov property]\label{prop:sde-markov}
+Assume the hypotheses of \cref{thm:sde-existence}, and let $X$ be the solution of
+\eqref{eq:sde} with $\E[\xi^2]<\infty$. For $t\in[0,T]$ and $x\in\R$, let $X^{t,x}$ be the
+solution on $[t,T]$ of the same equation started at time $t$ from $x$:
+$X^{t,x}_u=x+\int_t^ub(s,X^{t,x}_s)\,\dd s+\int_t^u\sigma(s,X^{t,x}_s)\,\dd W_s$. Then for
+every bounded Borel $h:\R\to\R$,
+\[
+  \E\big[h(X_T)\,\big|\,\F_t\big]=g(t,X_t),\qquad\text{where } g(t,x)=\E\big[h(X^{t,x}_T)\big].
+\]
+In particular $\E[h(X_T)\mid\F_t]=\E[h(X_T)\mid X_t]$: given the present state, the rest of
+the information available at time $t$ does not help to predict $h(X_T)$.
+\end{proposition}
+
+The process $\tilde W_s=W_{t+s}-W_t$ is a Brownian motion (\cref{prop:bm-invariance}(c)), and
+$(\F_{t+s})_{s\ge0}$ is a filtration for it by \cref{def:bm-filtration}(iii). An integral
+$\int_t^uH\,\dd W$ equals $\int_0^{u-t}H_{t+s}\,\dd\tilde W_s$: both are limits of the same
+sums for simple integrands. So $X^{t,x}$ exists by \cref{thm:sde-existence} on $[t,T]$. The
+last statement follows from the first by the tower property. For the general case we cite the
+result: it is stated without proof in \textcite{shreve2}, Theorem~6.3.1, and proved for
+coefficients that do not depend on $t$, with the Brownian filtration, in
+\textcite{oksendal}, Theorem~7.1.2. The difficulty is to show that $X^{t,x}_T$ depends
+measurably on $x$, so that $x$ can be replaced by $X_t$. For the equations solved in closed
+form, the solution shows the structure directly.
+
+\begin{proof}[Proof for geometric Brownian motion and the Ornstein--Uhlenbeck process]
+For geometric Brownian motion,
+$S_T=S_t\exp\big(\sigma(W_T-W_t)+(\mu-\frac{\sigma^2}2)(T-t)\big)$, where $S_t$ is
+$\F_t$-measurable and $W_T-W_t$ is independent of $\F_t$. The independence lemma
+(\cref{lem:pr-independence}) gives $\E[h(S_T)\mid\F_t]=g(t,S_t)$ with
+$g(t,x)=\E\big[h\big(x\exp(\sigma(W_T-W_t)+(\mu-\frac{\sigma^2}2)(T-t))\big)\big]$. The
+variable inside $h$ is $S^{t,x}_T$, by \cref{prop:sde-linear}(a) applied on $[t,T]$.
+
+For the Ornstein--Uhlenbeck process, \cref{prop:sde-ou}(i) gives
+$X_T=\theta+(X_t-\theta)e^{-\kappa(T-t)}+\sigma J$ with $J=\int_t^Te^{-\kappa(T-s)}\,\dd W_s$
+independent of $\F_t$, and the same formula with $X_t$ replaced by $x$ is $X^{t,x}_T$. The
+independence lemma concludes as before.
+\end{proof}
+
+By the Markov property, prices at time $t$ of payoffs $h(S_T)$ are functions $v(t,S_t)$
+(\cref{ch:10-delta-hedging} onwards), which solve equations built from the following operator.
+
+\begin{definition}[Generator]\label{def:sde-generator}
+The \emph{generator} of \eqref{eq:sde} at time $t$ is the operator that maps
+$f\in C^2(\R)$ to the function
+\[
+  (\mathcal L_tf)(x)=\tfrac12\sigma(t,x)^2f''(x)+b(t,x)f'(x).
+\]
+When $b$ and $\sigma$ do not depend on $t$ we write $\mathcal L$. The process
+$M^f_t=f(X_t)-f(X_0)-\int_0^t(\mathcal L_sf)(X_s)\,\dd s$ is the \emph{local martingale
+associated with $f$}; it is a martingale under the integrability condition below.
+\end{definition}
+
+\begin{proposition}[Martingales of a diffusion]\label{prop:sde-dynkin}
+Let $X$ be a solution of \eqref{eq:sde} and $f\in C^2(\R)$.
+\begin{enumerate}[label=(\alph*)]
+  \item $M^f_t=\int_0^tf'(X_s)\sigma(s,X_s)\,\dd W_s$, a local martingale, and a martingale if
+    $\E\int_0^Tf'(X_s)^2\sigma(s,X_s)^2\,\dd s<\infty$. This holds, for instance, under the
+    hypotheses of \cref{thm:sde-existence} with $\E[\xi^2]<\infty$ when $f'$ is bounded.
+  \item If $M^f$ is a martingale and $\E|f(X_0)|<\infty$, then
+    $\E[f(X_t)]=\E[f(X_0)]+\int_0^t\E[(\mathcal L_sf)(X_s)]\,\dd s$ whenever
+    $\int_0^T\E|(\mathcal L_sf)(X_s)|\,\dd s<\infty$ (\emph{Dynkin's formula}).
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(a) Since $\dd[X,X]_t=\sigma(t,X_t)^2\,\dd t$ (\cref{prop:itf-decomposition}), It\^o's
+formula (\cref{thm:itf-process}) gives
+$\dd f(X_t)=f'(X_t)\big(b\,\dd t+\sigma\,\dd W_t\big)+\frac12f''(X_t)\sigma^2\,\dd t
+=(\mathcal L_tf)(X_t)\,\dd t+f'(X_t)\sigma(t,X_t)\,\dd W_t$. The integrand $f'(X)\sigma(\cdot,X)$
+is progressively measurable and, since $f'(X)$ is continuous, square integrable along almost
+every path by \cref{def:sde-solution}(ii); so $M^f$ is a local martingale
+(\cref{rem:ito-local}), and a martingale when the integrand is in $\mathbb H^2$
+(\cref{thm:ito-integral}). If $|f'|\le c$, then by \eqref{eq:sde-growth}
+$\E\int_0^Tf'(X_s)^2\sigma(s,X_s)^2\,\dd s\le2c^2K^2\big(T+\int_0^T\E[X_s^2]\,\dd s\big)<\infty$
+by \cref{thm:sde-existence}(b).
+
+(b) Take expectations in the definition of $M^f$, using $\E[M^f_t]=0$ and Fubini.
+\end{proof}
+
+For example, with $f(x)=x$ the Ornstein--Uhlenbeck generator gives
+$\mathcal Lf(x)=\kappa(\theta-x)$, so $m(t)=\E[X_t]$ satisfies
+$m(t)=x_0+\int_0^t\kappa(\theta-m(s))\,\dd s$, that is $m'=\kappa(\theta-m)$: the mean
+found in \cref{prop:sde-ou} without solving the equation. Dynkin's formula reads: the drift
+moves the mean of $f(X_t)$ at rate $bf'$, and the noise adds $\frac12\sigma^2f''$, through the
+convexity of $f$.
+
+\begin{remark}[Towards the pricing equations]\label{rem:sde-pde}
+Let $u\in C^{1,2}([0,T]\times\R)$ solve $\partial_tu+\mathcal L_tu=0$ with $u(T,x)=h(x)$.
+By It\^o's formula, $\dd u(t,X_t)=\partial_xu\,\sigma(t,X_t)\,\dd W_t$; if this local
+martingale is a martingale, $u(t,X_t)=\E[h(X_T)\mid\F_t]=g(t,X_t)$ in the notation of
+\cref{prop:sde-markov}. This is the Feynman--Kac formula of
+\cref{ch:12-feynman-kac}; with discounting and the Black--Scholes generator it becomes the
+Black--Scholes equation of \cref{ch:10-delta-hedging}.
+\end{remark}
+
+\section{Local volatility and the CEV model}\label{sec:sde-local-vol}
+
+In the Black--Scholes model the volatility of returns is constant, but implied volatilities
+depend on the strike (\cref{ch:15-volatility}). The simplest models that reproduce such
+prices let the volatility depend on time and on the current price.
+
+\begin{definition}[Local volatility model]\label{def:sde-local-vol}
+Let $\mu\in\R$ and let $\sigma:[0,T]\times(0,\infty)\to[0,\infty)$ be Borel. A \emph{local
+volatility model} for a stock price is a positive solution $S$, with $S_0>0$, of
+\[
+  \dd S_t=\mu S_t\,\dd t+\sigma(t,S_t)S_t\,\dd W_t .
+\]
+In this section $\sigma(t,x)$ is a \emph{relative} volatility, the volatility of returns
+$\dd S_t/S_t$; the diffusion coefficient in the sense of \cref{def:sde-solution} is
+$x\sigma(t,x)$. The \emph{CEV model} is the case $\sigma(t,x)=\sigma x^{\gamma-1}$, with
+constants $\sigma>0$ and $\gamma\ge0$.
+\end{definition}
+
+Under a risk-neutral measure $\mu$ becomes the interest rate $r$ (\cref{ch:11-risk-neutral}),
+and $\sigma(t,x)$ can be read off call prices by Dupire's formula (\cref{ch:15-volatility}).
+If $\sigma$ is bounded and Lipschitz in $\log x$, the model is well posed.
+
+\begin{proposition}[Bounded local volatility]\label{prop:sde-lv}
+Suppose that there are constants $M$ and $K$ such that $\sigma(t,x)\le M$ and
+$|\sigma(t,x)-\sigma(t,x')|\le K|\log x-\log x'|$ for all $t\in[0,T]$ and $x,x'>0$. Then
+for every $S_0>0$ there is exactly one positive solution, and it satisfies
+\begin{equation}\label{eq:sde-lv-exp}
+  S_t=S_0\exp\Big(\int_0^t\sigma(u,S_u)\,\dd W_u+\int_0^t\big(\mu-\tfrac12\sigma(u,S_u)^2\big)\dd u\Big).
+\end{equation}
+\end{proposition}
+
+\begin{proof}
+\emph{Uniqueness.} Set $a(t,x)=x\sigma(t,x)$ for $x>0$ and $a(t,x)=0$ for $x\le0$. For
+$0<x'\le x$, $|a(t,x)-a(t,x')|\le(x-x')\sigma(t,x)+x'K\log(x/x')\le(M+K)(x-x')$, since
+$\log y\le y-1$; and $|a(t,x)|\le M|x|$. So the equation with coefficients $\mu x$ and $a$ on
+$\R$, which every positive solution solves, satisfies \eqref{eq:sde-lipschitz} and
+\eqref{eq:sde-growth}, and has at most one solution by \cref{thm:sde-existence}(a).
+\emph{Existence.} The coefficients $\mu-\frac12\sigma(t,e^y)^2$ and $\sigma(t,e^y)$ are
+bounded and Lipschitz in $y$ (constants $MK$ and $K$), so \cref{thm:sde-existence} gives a
+solution $Y$ of $\dd Y_t=(\mu-\frac12\sigma(t,e^{Y_t})^2)\,\dd t+\sigma(t,e^{Y_t})\,\dd W_t$,
+$Y_0=\log S_0$. By It\^o's formula, $S=e^Y$ satisfies
+$\dd S_t=S_t\,\dd Y_t+\frac12S_t\,\dd[Y,Y]_t=\mu S_t\,\dd t+\sigma(t,S_t)S_t\,\dd W_t$, and
+\eqref{eq:sde-lv-exp} is $S=e^Y$ written out.
+\end{proof}
+
+Formula \eqref{eq:sde-lv-exp} is not a closed-form solution, since $S$ appears on both
+sides; it shows that $S$ stays positive. In practice such models are simulated or solved
+numerically (\cref{sec:sde-euler} and \cref{ch:16-numerics}).
+
+\begin{example}[The CEV model]\label{exa:sde-cev}
+In the CEV model, $\dd S_t=\mu S_t\,\dd t+\sigma S_t^\gamma\,\dd W_t$, introduced by Cox
+(1975), the volatility of returns $\sigma S^{\gamma-1}$ rises when the price falls if
+$\gamma<1$. This is the \emph{leverage effect} observed in equity markets. The volatility function is unbounded for
+$\gamma\ne1$, so \cref{prop:sde-lv} does not apply, and \cref{thm:sde-existence} applies only
+in two cases. Write the diffusion coefficient as $a(x)=\sigma(x^+)^\gamma$ for $\gamma>0$.
+\begin{enumerate}[label=(\alph*)]
+  \item $\gamma=1$ (geometric Brownian motion) and $\gamma=0$ (the linear equation
+    $\dd S_t=\mu S_t\,\dd t+\sigma\,\dd W_t$) satisfy both hypotheses. For $\gamma=0$ the
+    solution is normal (\cref{prop:sde-linear}(b)), hence negative with positive probability:
+    not a stock price in the sense of \cref{def:sde-local-vol}.
+  \item For $0<\gamma<1$, $a$ satisfies the growth bound ($x^\gamma\le1+x$) but is not
+    Lipschitz at $0$: $a(x)/x=\sigma x^{\gamma-1}\to\infty$ as $x\downarrow0$, so the
+    theorem does not apply. For $\frac12\le\gamma<1$, $|a(x)-a(y)|\le\sigma|x-y|^\gamma$,
+    and the Yamada--Watanabe criterion (\cref{rem:sde-hypotheses}(b)) gives pathwise
+    uniqueness. A solution exists. For $n\ge1$, the truncated coefficients $\mu(x^+\wedge n)$
+    and $\sigma(x^+\wedge n)^\gamma$ are bounded and continuous, so the truncated equation has
+    a weak solution (\textcite{karatzas-shreve}, Theorem~5.4.22); they satisfy the same
+    Lipschitz and H\"older bounds, so pathwise uniqueness holds and gives a strong solution
+    $S^n$ (their Proposition~5.2.13 and Corollary~5.3.23). For $m\ge n$ the coefficients agree
+    on $(-\infty,n]$, so pathwise uniqueness, applied to the processes stopped at their first
+    passage at $n$ (\cref{prop:ito-stopping}), gives $S^m=S^n$ up to that time. The growth
+    bounds are uniform in $n$, so the moment bound of Step 5 gives
+    $\E[\sup_{t\le T}(S^n_t)^2]\le C$ and $\Prob(\sup_{t\le T}S^n_t\ge n)\le C/n^2\to0$; hence
+    $S=\lim_nS^n$ exists on $[0,T]$ and solves the equation. Paths reach $0$ with positive
+    probability, by Feller's test (\textcite{karatzas-shreve}, Section~5.5.C;
+    \exref{ex:sde-feller} computes the probability for $\gamma=\frac12$, $\mu=0$). They
+    stay there: if $\tau$ is the first time $S$ hits $0$, then, since both coefficients vanish
+    at $0$ and $\int_0^{t\wedge\tau}H\,\dd W=\int_0^t\1_{\{s\le\tau\}}H_s\,\dd W_s$
+    (\cref{prop:ito-stopping}), the stopped process $S_{t\wedge\tau}$ solves the same
+    equation, and pathwise uniqueness gives $S_t=S_{t\wedge\tau}$: the firm has defaulted. For
+    $0<\gamma<\frac12$ the criterion fails, and the model is completed by declaring $0$
+    absorbing, as in the figure.
+  \item For $\gamma>1$, $a$ is continuously differentiable, hence locally Lipschitz, and
+    pathwise uniqueness holds (\cref{rem:sde-hypotheses}(b)); but $a$ grows faster than
+    linearly, so the theorem does not apply. For $\gamma=2$ and $\mu=0$,
+    \exref{ex:sde-strict} constructs a positive process that solves the equation with
+    respect to a suitable Brownian motion, and shows that it is not a martingale, although
+    it has no drift.
+\end{enumerate}
+\end{example}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch09-cev}
+  \caption{The CEV model with $S_0=1$, $\mu=0$, $\sigma=0.6$ (so that the volatility of
+    returns is $60\%$ at $S=1$), simulated by the Euler scheme with step $10^{-3}$ and
+    absorption at $0$. Left: $14$ paths for $\gamma=\frac12$; five reach $0$ before $T=5$.
+    Right: the fraction of $4000$ paths absorbed by time $t$. The smaller $\gamma$, the
+    faster the volatility of returns rises as the price falls, and the more paths default.}
+  \label{fig:sde-cev}
+\end{figure}
+
+\demo{09-sde.ipynb}{CEV paths near zero for any elasticity $\gamma$, and how the probability
+of reaching zero depends on $\gamma$ and $\sigma$.}
+
+\section{The Euler--Maruyama scheme}\label{sec:sde-euler}
+
+Most equations have no closed-form solution, and are solved by simulation. Fix $n\ge1$, the
+step $h=T/n$ and the grid $t_k=kh$. The \emph{Euler--Maruyama scheme} iterates the
+short-time approximation of \cref{sec:sde-def}:
+\begin{equation}\label{eq:sde-euler}
+  X^h_0=\xi,\qquad
+  X^h_{k+1}=X^h_k+b(t_k,X^h_k)\,h+\sigma(t_k,X^h_k)\,(W_{t_{k+1}}-W_{t_k}),\quad k<n .
+\end{equation}
+To simulate it, the increments $W_{t_{k+1}}-W_{t_k}$ are drawn as independent
+$\mathcal N(0,h)$ variables, which is their exact joint law. Two notions of error measure
+how well $X^h_n$ approximates $X_T$. The \emph{strong error} $\E|X_T-X^h_n|$ compares the
+two on the same Brownian path; it matters when the path itself is used, for example to
+follow a hedge along a scenario. The \emph{weak error} $|\E f(X_T)-\E f(X^h_n)|$, for a
+function $f$, compares only laws; it is the bias of a Monte Carlo price.
+
+\begin{theorem}[Convergence of the Euler--Maruyama scheme]\label{thm:sde-euler}
+\leavevmode
+\begin{enumerate}[label=(\alph*)]
+  \item \emph{Strong order $\frac12$.} Assume \eqref{eq:sde-lipschitz}, \eqref{eq:sde-growth},
+    $\E[\xi^2]<\infty$, and
+    $|b(s,x)-b(t,x)|+|\sigma(s,x)-\sigma(t,x)|\le K(1+|x|)|s-t|^{1/2}$ for $s,t\in[0,T]$,
+    $x\in\R$. Then there is a constant $C$ such that $\E|X_T-X^h_n|\le C\,h^{1/2}$ for every
+    $n$.
+  \item \emph{Weak order $1$.} Assume that $b$ and $\sigma$ do not depend on $t$, are four
+    times continuously differentiable with bounded first derivatives and derivatives up to
+    order four of polynomial growth, and that $\xi=x_0$ is a constant. Let $f\in C^4(\R)$,
+    with $f$ and its first four derivatives of polynomial growth. Then there is a constant
+    $C_f$ such that $|\E f(X_T)-\E f(X^h_n)|\le C_f\,h$ for every $n$.
+\end{enumerate}
+\end{theorem}
+
+Part (a) is \textcite{kloeden-platen}, Theorem~10.2.2, and part (b) is a special case of
+their Theorem~14.1.5. The proof of (a) follows the pattern of \cref{thm:sde-existence}:
+compare $X$ with the continuous-time interpolation
+$Y_t=\xi+\int_0^tb(\eta_s,Y_{\eta_s})\,\dd s+\int_0^t\sigma(\eta_s,Y_{\eta_s})\,\dd W_s$ of the
+scheme, where $\eta_s=t_k$ for $s\in[t_k,t_{k+1})$, and apply Gronwall's lemma to
+$\E[\sup_{u\le t}|X_u-Y_u|^2]$. The order comes from the one-step bound
+$\E|Y_s-Y_{\eta_s}|^2\le Ch$: over a step the path moves by about $\sqrt h$.
+
+\begin{example}[Euler--Maruyama for geometric Brownian motion]\label{exa:sde-euler-gbm}
+For $\dd S_t=\mu S_t\,\dd t+\sigma S_t\,\dd W_t$, the scheme multiplies the price at each step
+by $1+\mu h+\sigma(W_{t_{k+1}}-W_{t_k})$, so
+$S^h_n=S_0\prod_{k<n}\big(1+\mu h+\sigma(W_{t_{k+1}}-W_{t_k})\big)$. The factors are
+independent with mean $1+\mu h$, hence $\E[S^h_n]=S_0(1+\mu h)^n$, while
+$\E[S_T]=S_0e^{\mu T}$. With $n=T/h$ and $\log(1+\mu h)=\mu h-\frac12\mu^2h^2+O(h^3)$,
+\[
+  \E[S_T]-\E[S^h_n]=S_0e^{\mu T}\Big(1-e^{-\mu^2Th/2+O(h^2)}\Big)
+  =\tfrac12S_0e^{\mu T}\mu^2T\,h+O(h^2) .
+\]
+For $\mu\ne0$ the weak error for $f(x)=x$ is of order exactly $h$; for $\mu=0$ it vanishes,
+since both means equal $S_0$. Note also that a factor $1+\mu h+\sigma(W_{t_{k+1}}-W_{t_k})$
+is negative with positive probability: the scheme can produce negative prices, which the
+exact solution never does. Applying the scheme to $\log S$, which is a Brownian motion with
+drift, avoids both problems for this model.
+\end{example}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.62\textwidth]{ch09-euler}
+  \caption{Errors of the Euler--Maruyama scheme for geometric Brownian motion with $S_0=1$,
+    $\mu=0.8$, $\sigma=0.5$, $T=1$, for $h=2^{-1},\dots,2^{-10}$. Each scheme runs on the
+    same $10^5$ Brownian paths as the exact solution; bars are $95\%$ confidence intervals.
+    The weak error, estimated as the mean of $S^h_T-S_T$ over these coupled paths, agrees
+    with the exact value of \cref{exa:sde-euler-gbm}. On log--log axes the strong error has
+    slope $\frac12$ and the weak error slope $1$ (\cref{thm:sde-euler}).}
+  \label{fig:sde-euler}
+\end{figure}
+
+Heuristically, the one-step error has a part of root-mean-square size $h$ and mean close
+to $0$, and a part of size $h^2$: path by path, $n=T/h$ roughly independent errors of size
+$h$ add up to $\sqrt{Th}$, while in the mean only the $n$ terms of size $h^2$ survive. For pricing, the weak order is
+the relevant one: a Monte Carlo price has a bias of order $h$ and a statistical error of
+order $M^{-1/2}$ for $M$ paths (\cref{ch:16-numerics}). The strong order matters for path-dependent uses and for
+multilevel Monte Carlo (Giles, 2008), which couples simulations with different steps. Higher-order schemes add terms from the It\^o--Taylor expansion of the coefficients;
+the first of them, the Milstein scheme, has strong order $1$ (\exref{ex:sde-milstein}).
+
+\demo{09-sde.ipynb}{Picard iterates converging along one Brownian path, and the
+Euler--Maruyama scheme against the exact solution of geometric Brownian motion, with the
+strong and weak errors measured for the step sizes and parameters you choose.}
+
+\furtherreading
+\textcite{shreve2}, Sections~6.2--6.3, is at the level of these notes, without the
+existence proof. \textcite{oksendal}, Chapters~5 and~7, proves it and develops the Markov
+property and the generator; \textcite{steele}, Chapter~9, is a readable alternative.
+\textcite{karatzas-shreve}, Chapter~5, covers strong solutions (Section~5.2), weak
+solutions and Tanaka's equation, which has a weak solution but no strong one (Section~5.3),
+and linear equations (Section~5.6); \textcite{revuz-yor}, Chapter~IX, goes further. \textcite{kloeden-platen} is the standard reference
+on the numerical solution of stochastic differential equations: Chapters~9--10 for strong
+and Chapter~14 for weak approximation.

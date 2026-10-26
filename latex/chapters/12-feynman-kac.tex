@@ -1,5 +1,629 @@
-\begin{planned}
-  \item the Feynman--Kac formula: expectations as solutions of PDEs
-  \item binary options and the explosion of their delta
-  \item pay-later options
-\end{planned}
+% Chapter 12: The Feynman--Kac formula.
+
+There are two ways to price a European claim in a diffusion model. The probabilistic way
+writes the price as an expected discounted payoff under a risk-neutral measure
+(\cref{ch:06-black-scholes-formula,ch:11-risk-neutral}). The analytic way characterizes the
+price as the solution of a partial differential equation, obtained by hedging
+(\cref{ch:10-delta-hedging}). The \emph{Feynman--Kac formula} says that the two agree: for a
+diffusion $X$ with generator $\mathcal L_t$, the function
+$v(t,x)=\E\big[e^{-\int_t^Tk(u,X_u)\,\dd u}h(X_T)\,\big|\,X_t=x\big]$ solves
+$\partial_tv+\mathcal L_tv-kv=0$ with $v(T,\cdot)=h$, and, conversely, a solution of this
+equation with moderate growth is that expectation. The name joins Feynman's path integrals
+in quantum mechanics (\citealp{feynman-spacetime}) to \textcite{kac-wiener}, who proved the
+formula for Brownian motion with a potential $k$.
+
+The formula is used in both directions: prices in models without closed forms, such as the
+local volatility models of \cref{ch:09-sde}, are computed by solving equations on a grid
+(\cref{ch:16-numerics}), and solutions of equations by Monte Carlo. Along the way we reduce the
+Black--Scholes equation to the heat equation, find the equations satisfied by transition
+densities, which lead to Dupire's formula in \cref{ch:15-volatility}, and study two contracts:
+the digital option, whose hedge ratio explodes, and the pay-later option.
+
+\paragraph{Setting.} Throughout, $T>0$, $W$ is a Brownian motion with a filtration
+$(\F_t)$ (\cref{def:bm-filtration}), and, as in \cref{ch:09-sde}, every event of probability
+zero belongs to $\F_0$. The state space is an open interval $I=(\alpha,\beta)$, with
+$-\infty\le\alpha<\beta\le\infty$: $I=\R$ for most diffusions, $I=(0,\infty)$ for prices. Let
+$b,\sigma:[0,T]\times I\to\R$ be continuous, and consider
+\begin{equation}\label{eq:fk-sde}
+  \dd X_u=b(u,X_u)\,\dd u+\sigma(u,X_u)\,\dd W_u .
+\end{equation}
+For $t\in[0,T)$, a \emph{solution on $[t,T]$ with values in $I$} is defined as in
+\cref{def:sde-solution}, with $[t,T]$ in place of $[0,T]$ and an $\F_t$-measurable initial value
+$X_t$; under the hypotheses of \cref{thm:sde-existence} and with $\E[X_t^2]<\infty$ it exists and is
+unique, by the time shift $\widetilde W_s=W_{t+s}-W_t$, $\widetilde\F_s=\F_{t+s}$ described after
+\cref{prop:sde-markov}. When $X_t=x$ is a constant we write $X^{t,x}$. The generator
+$\mathcal L_t$ is that of \cref{def:sde-generator}, acting on functions on $I$:
+$(\mathcal L_tf)(x)=\frac12\sigma(t,x)^2f''(x)+b(t,x)f'(x)$. For a function $v(t,x)$,
+$\mathcal L_tv$ acts on $v(t,\cdot)$, and $v\in C^{1,2}([0,T)\times I)$ means, as in
+\cref{ch:08-ito-formula}, that $\partial_tv$, $\partial_xv$, $\partial_{xx}v$ exist and are continuous
+on $[0,T)\times I$.
+
+\section{From the Markov property to an equation}\label{sec:fk-heuristic}
+
+Here is why an equation should appear. Let $h$ be a bounded payoff and
+$g(t,x)=\E\big[h(X^{t,x}_T)\big]$. By the Markov property (\cref{prop:sde-markov}),
+$\E[h(X_T)\mid\F_t]=g(t,X_t)$ for a solution $X$ started at time $0$, so, by the tower property,
+$M_t=g(t,X_t)$ is a martingale. If $g$ is smooth, It\^o's formula
+(\cref{thm:itf-process}) writes it as
+\[
+  \dd M_t=\big(\partial_tg+\mathcal L_tg\big)(t,X_t)\,\dd t+\partial_xg(t,X_t)\,\sigma(t,X_t)\,\dd W_t .
+\]
+A martingale has no drift: over a short interval $[t,t+\delta]$, $\E[M_{t+\delta}-M_t\mid\F_t]=0$,
+while the $\dd t$-term contributes about $(\partial_tg+\mathcal L_tg)(t,X_t)\,\delta$. So
+$\partial_tg+\mathcal L_tg$ must vanish at $(t,X_t)$, and hence wherever the process can be:
+$g$ solves the \emph{backward equation} $\partial_tg+\mathcal L_tg=0$, with $g(T,\cdot)=h$. With
+discounting, $e^{-\int_0^tk(u,X_u)\,\dd u}g(t,X_t)$ is the martingale, and the product rule
+adds the term $-kg$. For $X=W$ the equation is the backward heat equation, and this is
+\cref{ch:08-ito-formula} read in reverse: there, a solution $f$ of
+$\partial_tf+\frac12\partial_{xx}f=0$ made $f(t,W_t)$ a martingale.
+
+The argument assumes that $g$ is smooth, which is the hard part. The direction proved below,
+which is what pricing uses, starts from a smooth solution and identifies it with the expectation.
+
+\section{The Feynman--Kac formula}\label{sec:fk-theorem}
+
+\begin{theorem}[Feynman--Kac]\label{thm:fk-feynman-kac}
+Let $k:[0,T]\times I\to\R$ be continuous and bounded below, $k\ge-k_0$ for a constant
+$k_0\ge0$, and let $h:I\to\R$ be Borel. Let $v\in C^{1,2}([0,T)\times I)$ solve
+\begin{equation}\label{eq:fk-pde}
+  \partial_tv(t,x)+(\mathcal L_tv)(t,x)-k(t,x)\,v(t,x)=0,\qquad(t,x)\in[0,T)\times I,
+\end{equation}
+and let $E\subseteq I$ be a Borel set such that
+\begin{equation}\label{eq:fk-terminal}
+  \lim_{(s,y)\to(T,y_0),\ s<T}v(s,y)=h(y_0)\qquad\text{for every }y_0\in I\setminus E .
+\end{equation}
+Let $t\in[0,T)$ and let $X$ be a solution of \eqref{eq:fk-sde} on $[t,T]$ with values in $I$, such
+that $\Prob(X_T\in E)=0$ and
+\begin{equation}\label{eq:fk-integrability}
+  \E\Big[\sup_{t\le u<T}|v(u,X_u)|\Big]<\infty .
+\end{equation}
+Then $e^{-\int_t^Tk(u,X_u)\,\dd u}h(X_T)$ is integrable and, almost surely,
+\begin{equation}\label{eq:fk-formula}
+  v(t,X_t)=\E\Big[\exp\Big(-\int_t^Tk(u,X_u)\,\dd u\Big)\,h(X_T)\,\Big|\,\F_t\Big].
+\end{equation}
+In particular, if $X_t=x\in I$ is a constant, then
+$v(t,x)=\E\big[\exp\big(-\int_t^Tk(u,X^{t,x}_u)\,\dd u\big)\,h(X^{t,x}_T)\big]$.
+\end{theorem}
+
+If $v$ is continuous on $[0,T]\times I$ with $v(T,\cdot)=h$, take $E=\emptyset$. The set $E$ is
+there for payoffs such as $\1_{\{x>K\}}$, at whose jump no solution can be continuous; it is
+harmless when $X_T$ has a density and $E$ is countable.
+
+\begin{proof}
+By the time shift of the setting, replacing $T$ by $T-t$ and $v$, $k$, $b$, $\sigma$ by
+$(s,y)\mapsto v(t+s,y)$ and so on, we may and do assume $t=0$. Let
+$G=\sup_{0\le u<T}|v(u,X_u)|$, a random variable since the supremum may be taken over rational
+$u$, and integrable by \eqref{eq:fk-integrability}.
+
+\emph{The discounted solution has no drift.} Let $A_u=\int_0^uk(s,X_s)\,\dd s$ and
+$Z_u=e^{-A_u}$. Then $Z$ is continuous and adapted, $0<Z_u\le e^{k_0T}$, and
+$\dd Z_u=-k(u,X_u)Z_u\,\dd u$ has no $\dd W$-term. Fix $T'<T$. It\^o's formula on $[0,T']$
+(\cref{thm:itf-multi} with one process and the open interval $I$; on $[0,T']$ it uses $v$ only
+on $[0,T']\times I$) gives
+$\dd v(u,X_u)=(\partial_tv+\mathcal L_uv)(u,X_u)\,\dd u+\partial_xv(u,X_u)\sigma(u,X_u)\,\dd W_u$.
+By the product rule (\cref{cor:itf-product}), with $[Z,v(\cdot,X)]=0$
+(\cref{prop:itf-decomposition}), and by \eqref{eq:fk-pde}, the process $Y_u=Z_uv(u,X_u)$
+satisfies
+\[
+  \dd Y_u=Z_u\big(\partial_tv+\mathcal L_uv-kv\big)(u,X_u)\,\dd u+H_u\,\dd W_u=H_u\,\dd W_u,
+  \qquad H_u=Z_u\,\partial_xv(u,X_u)\,\sigma(u,X_u).
+\]
+Since $T'$ is arbitrary, $Y_u=Y_0+\int_0^uH_s\,\dd W_s$ for all $u<T$, almost surely.
+
+\emph{Localization.} The integrand $H$ is continuous and adapted, but it may be unbounded, so
+the stochastic integral need not be a martingale (\cref{rem:ito-local}). Choose
+$\alpha<\alpha_n<\beta_n<\beta$ with $\alpha_n\downarrow\alpha$ and $\beta_n\uparrow\beta$, let
+$T_n=T-1/n$ (for $n>1/T$), and let $\theta_n$ be the first time $u\in[0,T_n]$ with
+$X_u\notin(\alpha_n,\beta_n)$, or $T_n$ if there is none. It is a stopping time: by continuity of
+the paths, for $u<T_n$ the event $\{\theta_n\le u\}$ is the event that the distance from $X_s$ to
+$\R\setminus(\alpha_n,\beta_n)$ has infimum $0$ over the rational $s\le u$ and $s=u$, which is in
+$\F_u$. If $0<s\le\theta_n$, then $X_s\in[\alpha_n,\beta_n]$, so $(s,X_s)$ lies in the compact set
+$[0,T_n]\times[\alpha_n,\beta_n]$, on which the continuous functions $\partial_xv$ and $\sigma$ are
+bounded, by $c_n$ say. Hence $\1_{\{0<s\le\theta_n\}}H_s$ is bounded by $e^{k_0T}c_n$, so it is
+in $\mathbb H^2$ and its integral is a martingale (\cref{thm:ito-integral}). Moreover
+$\int_0^{\theta_n}H_s\,\dd W_s=\int_0^T\1_{\{0<s\le\theta_n\}}H_s\,\dd W_s$ (the value of the
+integrand at the single time $s=0$ does not matter): apply \cref{prop:ito-stopping} on $[0,T_n]$ to
+$H\1_{[0,\tau_m]}\in\mathbb H^2$, with $\tau_m$ as in \cref{rem:ito-local}, and the stopping time
+$\theta_n$, and let $m\to\infty$, using the isometry on the right. Taking conditional expectations,
+\[
+  v(0,X_0)=Y_0=\E\big[Y_{\theta_n}\,\big|\,\F_0\big],
+\]
+where $Y_{\theta_n}$ is integrable because $|Y_{\theta_n}|\le e^{k_0T}G$.
+
+\emph{Passage to the limit.} Fix an outcome. The path $X$ maps $[0,T]$ onto a compact subset of
+$I$, contained in $(\alpha_n,\beta_n)$ for $n$ large, and then $\theta_n=T_n$. So
+$(\theta_n,X_{\theta_n})\to(T,X_T)$ with $\theta_n<T$, and on the event $\{X_T\notin E\}$,
+which has probability one, \eqref{eq:fk-terminal} and the continuity of $Z$ give
+$Y_{\theta_n}\to Z_Th(X_T)$. The limit satisfies $|Z_Th(X_T)|\le e^{k_0T}G$, so it is
+integrable, and $Y_{\theta_n}\to Z_Th(X_T)$ in $L^1$ by dominated convergence. Conditional
+expectation is a contraction in $L^1$, since
+$\E\big|\E[U\mid\F_0]\big|\le\E|U|$ by \cref{prop:pr-condexp-properties}(ii). Hence
+$\E[Y_{\theta_n}\mid\F_0]\to\E[Z_Th(X_T)\mid\F_0]$ in $L^1$, while the left side equals $v(0,X_0)$
+for every $n$. This is \eqref{eq:fk-formula}.
+\end{proof}
+
+\begin{remark}[On the hypotheses]\label{rem:fk-hypotheses}
+\leavevmode
+\begin{enumerate}[label=(\alph*),leftmargin=*]
+  \item \emph{Integrability.} Condition \eqref{eq:fk-integrability} holds if $v$ is bounded. It
+    also holds if $|v(u,y)|\le C(1+y^2)$ and $\E[\sup_{t\le u\le T}X_u^2]<\infty$; for $I=\R$ and
+    coefficients satisfying the hypotheses of \cref{thm:sde-existence}, the latter follows from
+    $\E[X_t^2]<\infty$ by part (b) of that theorem, after the time shift. For geometric Brownian
+    motion on $I=(0,\infty)$, $S_u=S_0e^{\sigma W_u+(\mu-\sigma^2/2)u}$, growth like a power of
+    $y$ or of $1/y$ is allowed: for every $q\in\R$, $\E[\sup_{u\le T}S_u^q]<\infty$. Indeed
+    $S_u^q\le S_0^qe^{c_qT}M_u$ with $c_q=|q(\mu-\frac{\sigma^2}2)|+\frac{q^2\sigma^2}{2}$ and
+    $M_u=e^{q\sigma W_u-q^2\sigma^2u/2}$, a continuous martingale with $\E[M_T^2]=e^{q^2\sigma^2T}$
+    (\cref{thm:bm-martingales}); Doob's maximal inequality (\cref{lem:ito-doob}) gives $\E[\sup_{u\le T}M_u]^2\le\E[\sup_{u\le T}M_u^2]\le4e^{q^2\sigma^2T}$.
+  \item \emph{Uniqueness.} If \eqref{eq:fk-integrability} and $\Prob(X^{t,x}_T\in E)=0$ hold for the
+    solutions from every starting point $(t,x)$, two solutions of \eqref{eq:fk-pde}--\eqref{eq:fk-terminal} are equal to
+    the same expectation, hence to each other. For $I=\R$ and coefficients as in
+    \cref{thm:sde-existence}, there is at most one solution with $|v(t,x)|\le C(1+x^2)$ (and
+    $E=\emptyset$, say). Some growth
+    condition is necessary: Tychonoff constructed a solution of the heat equation
+    $\partial_tv+\frac12\partial_{xx}v=0$ with $v(T,\cdot)=0$ that is not identically zero.
+    Uniqueness holds among solutions bounded by $Ce^{ax^2}$ (\textcite{karatzas-shreve},
+    Section~4.3), so Tychonoff's solution grows faster than that, for all constants $C$ and $a$.
+  \item \emph{The bound on $k$.} It makes the discount factor bounded, which is what the
+    domination in the proof needs. Without it the right side of \eqref{eq:fk-formula} can be
+    infinite: for $k(x)=-\lambda x^2$ with $\lambda>0$ and Brownian motion, it is infinite for
+    large $T$ (\exref{ex:fk-quadratic}).
+\end{enumerate}
+\end{remark}
+
+\begin{remark}[The converse]\label{rem:fk-converse}
+That the expectation is a smooth solution needs analysis beyond these notes.
+\textcite{karatzas-shreve}, Theorem~5.7.6, proves the representation \eqref{eq:fk-formula}, with a
+running payoff as well, for solutions of polynomial growth. For the converse, their Remark~5.7.8
+recalls conditions under which the equation has a solution of polynomial growth: $\sigma^2$
+bounded below by a positive constant, regular bounded coefficients, and a continuous payoff
+of polynomial growth; the solution is built by the parametrix method of \textcite{friedman-parabolic},
+Chapter~1, and by the theorem it is the expectation. \textcite{oksendal}, Theorem~8.2.1, proves
+the converse for coefficients that do not depend on $t$ and payoffs $h\in C^2$ with compact
+support; \textcite{shreve2}, Theorems~6.4.1 and~6.4.3, argue as in \cref{sec:fk-heuristic}. In the
+Black--Scholes model, \cref{prop:fk-heat} proves the converse for every payoff of polynomial growth.
+\end{remark}
+
+\section{Pricing equations for local volatility models}\label{sec:fk-local-vol}
+
+In this section, as in \cref{def:sde-local-vol}, $\sigma(t,x)$ is the volatility of returns:
+the diffusion coefficient of the stock is $x\sigma(t,x)$. We assume that $\sigma$ is continuous
+and that, for constants $M$ and $\ell$ and all $t\in[0,T]$, $x,x'>0$,
+\begin{equation}\label{eq:fk-lv}
+  0\le\sigma(t,x)\le M,\qquad|\sigma(t,x)-\sigma(t,x')|\le\ell\,|\log x-\log x'| .
+\end{equation}
+Then, for any probability measure, Brownian motion $B$ and $\rho\in\R$, the equation
+$\dd S_t=\rho S_t\,\dd t+\sigma(t,S_t)S_t\,\dd B_t$ with $S_0>0$ has exactly one positive
+solution (\cref{prop:sde-lv}), and $\E[\sup_{t\le T}S_t^2]<\infty$: as shown in the proof of \cref{prop:sde-lv},
+$a(t,x)=x\sigma(t,x)$ for $x>0$, $a(t,x)=0$ for $x\le0$, is Lipschitz on $\R$, so
+\cref{thm:sde-existence}(b) applies to $\dd S=\rho S\,\dd t+a(t,S)\,\dd B$, which $S$ solves.
+
+\begin{corollary}[Pricing equations for local volatility models]\label{cor:fk-pricing-pde}
+Assume \eqref{eq:fk-lv} and let $r\in\R$. Let $\Q$ be a probability measure and $\widetilde W$ a
+$\Q$-Brownian motion with filtration $(\F_t)$, and let $S$ be the positive solution of
+\[
+  \dd S_t=rS_t\,\dd t+\sigma(t,S_t)S_t\,\dd\widetilde W_t,\qquad S_0>0 .
+\]
+Let $g:(0,\infty)\to\R$ be Borel, and let $v\in C^{1,2}([0,T)\times(0,\infty))$ satisfy
+$|v(t,x)|\le C(1+x^2)$ and solve the \emph{pricing equation}
+\begin{equation}\label{eq:fk-pricing-pde}
+  \partial_tv+rx\,\partial_xv+\frac{\sigma(t,x)^2x^2}{2}\,\partial_{xx}v=rv\qquad\text{on }[0,T)\times(0,\infty),
+\end{equation}
+with the terminal condition \eqref{eq:fk-terminal} for $h=g$ and a Borel set $E$ such that
+$\Q(S_T\in E)=0$.
+\begin{enumerate}[label=(\alph*)]
+  \item \emph{Price.} For every $t\in[0,T)$, $v(t,S_t)=e^{-r(T-t)}\EQ[g(S_T)\mid\F_t]$ almost
+    surely; in particular $v(0,S_0)=e^{-rT}\EQ[g(S_T)]$.
+    \item \emph{Hedge.} Let $\Prob$ be a probability measure, $W$ a $\Prob$-Brownian motion for
+    $(\F_t)$, and $S$ a positive It\^o process with $\dd S_t=\mu_tS_t\,\dd t+\sigma(t,S_t)S_t\,\dd W_t$
+    and $S_0>0$, for some progressively measurable $\mu$ with $\int_0^T|\mu_t|\,\dd t<\infty$
+    almost surely. Fix $T'<T$, and let $X$ be the value of the self-financing strategy on $[0,T']$
+    (\cref{def:dh-self-financing}, extended in the obvious way to this $S$) that starts from
+    $X_0=v(0,S_0)$ and holds $\Delta_t=\partial_xv(t,S_t)$ shares:
+    $e^{-rt}X_t=v(0,S_0)+\int_0^t\Delta_u\,\dd(e^{-ru}S_u)$. Then, almost surely, $X_t=v(t,S_t)$
+    for every $t\le T'$; and $v(T',S_{T'})\to g(S_T)$ as $T'\uparrow T$ if $S_T\notin E$.
+\end{enumerate}
+\end{corollary}
+
+\begin{proof}
+(a) Apply \cref{thm:fk-feynman-kac} under $\Q$, with $I=(0,\infty)$, drift $b(t,x)=rx$, diffusion
+coefficient $x\sigma(t,x)$, $k\equiv r$ and $h=g$: then \eqref{eq:fk-pde} is \eqref{eq:fk-pricing-pde}.
+Condition \eqref{eq:fk-integrability} holds because $|v(u,S_u)|\le C(1+\sup_{s\le T}S_s^2)$, which is
+integrable by the paragraph before the corollary.
+
+(b) Fix $T'<T$. By It\^o's formula on $[0,T']$ (\cref{thm:itf-multi} on $(0,\infty)$), the product
+rule and \eqref{eq:fk-pricing-pde}, which says that
+$\partial_tv+\frac12\sigma^2x^2\partial_{xx}v-rv=-rx\,\partial_xv$,
+\begin{align*}
+  \dd\big(e^{-ru}v(u,S_u)\big)
+  &=e^{-ru}\Big(\partial_tv+\mu_uS_u\partial_xv+\frac{\sigma^2S_u^2}{2}\partial_{xx}v-rv\Big)\dd u
+   +e^{-ru}\partial_xv\,\sigma S_u\,\dd W_u\\
+  &=\Delta_u\,e^{-ru}S_u\big((\mu_u-r)\,\dd u+\sigma\,\dd W_u\big),
+\end{align*}
+with $\sigma=\sigma(u,S_u)$ and the derivatives of $v$ at $(u,S_u)$. The right side is
+$\Delta_u\,\dd(e^{-ru}S_u)$, by the product rule again. So $e^{-rt}v(t,S_t)$ and $e^{-rt}X_t$ have
+the same differential and the same initial value, so they are equal on $[0,T']$. As
+$T'\uparrow T$, $(T',S_{T'})\to(T,S_T)$, and \eqref{eq:fk-terminal} gives $v(T',S_{T'})\to g(S_T)$
+when $S_T\notin E$.
+\end{proof}
+
+Part (b) is the local volatility version of the replication argument of
+\cref{ch:10-delta-hedging}: the real-world drift $\mu$ drops out, as in \cref{rem:dh-mu}, and
+the price and the hedge depend on the model only through $r$ and the function $\sigma(t,x)$.
+Part (a) identifies the replication cost with the expectation under the risk-neutral measure
+(\cref{def:rn-measure}). For constant $\sigma$, the call
+function $c$ of \cref{thm:bs-formula} satisfies $0\le c(t,x)\le x$ and solves
+\eqref{eq:fk-pricing-pde} (\cref{prop:dh-bs-solution}), and the corollary recovers the formula
+from the equation.
+
+\begin{remark}[The hedge up to maturity]\label{rem:fk-admissible}
+Part (b) stops at $T'<T$ because a strategy on $[0,T]$ needs $\int_0^T\Delta_t^2\,\dd t<\infty$, which
+can fail: if the real-world drift turns $\log S$ into a bridge pinned at $\log K$, the delta of a
+digital satisfies $\Delta_t^2\asymp1/(T-t)$. It holds if $\sigma\ge\lambda>0$ and $\EQ[g(S_T)^2]<\infty$. By (a), $M_t=e^{-rt}v(t,S_t)=\EQ[e^{-rT}g(S_T)\mid\F_t]$
+is a square-integrable martingale, and by (b) under $\Q$, $M_t-M_0=\int_0^tH_u\,\dd\widetilde W_u$ for
+$t<T$, with $H_u=e^{-ru}\sigma(u,S_u)S_u\Delta_u$. Fix $T'<T$ and let $\tau_m$ be as in \cref{rem:ito-local}.
+The isometry gives $\EQ[(M_{T'\wedge\tau_m}-M_0)^2]=\EQ\int_0^{T'\wedge\tau_m}H_u^2\,\dd u$; as $m\to\infty$,
+dominated convergence on the left (by \cref{lem:ito-doob}, $\EQ[\sup_{t\le T'}M_t^2]<\infty$) and monotone
+convergence on the right give $\EQ\int_0^{T'}H_u^2\,\dd u=\EQ[M_{T'}^2]-M_0^2\le\EQ[M_T^2]-M_0^2$, by
+conditional Jensen. Letting $T'\uparrow T$, $\EQ\int_0^TH_u^2\,\dd u\le\Var^{\Q}(e^{-rT}g(S_T))<\infty$, as
+in \exref{ex:fk-digital-hedge}(b). Since $\sigma\ge\lambda$ and $S$ is continuous and positive,
+$\int_0^T\Delta_t^2\,\dd t<\infty$ $\Q$-almost surely, hence almost surely under every measure
+equivalent to $\Q$: the hedge is then a self-financing strategy on $[0,T]$, with value $g(S_T)$ at $T$.
+\end{remark}
+
+\begin{remark}[Solving the equation]\label{rem:fk-solving}
+If $\sigma$ is bounded below by a positive constant and regular enough, the equation, written in
+$y=\log x$, is uniformly parabolic with bounded coefficients, and the theory recalled in
+\cref{rem:fk-converse}, which allows continuous terminal data growing exponentially in $y$
+(\textcite{friedman-parabolic}, Chapter~1), gives a classical solution; for discontinuous payoffs
+such as digitals, it does not apply as stated (but see \cref{prop:fk-heat} for Black--Scholes). Apart
+from a few models it has no closed form, and it is solved by finite differences on a grid
+(\cref{ch:16-numerics}). One solve prices every initial state at once; Monte Carlo prices one,
+with a statistical error, but its cost does not grow exponentially with the number of state
+variables, as that of a grid does.
+\end{remark}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch12-mc-pde}
+  \caption{The price at time $0$ of a call ($K=100$, $T=1$, $r=3\%$) in the local volatility
+    model with $\sigma(t,x)=0.25-0.12\tanh(2\log(x/100))$, which satisfies \eqref{eq:fk-lv}. Left:
+    the time value $v(0,x)-(x-Ke^{-rT})^+$, from one solution of \eqref{eq:fk-pricing-pde}
+    (Crank--Nicolson in $\log x$, $1601$ points, $800$ time steps), and from Monte Carlo at eight
+    initial prices ($10^5$ paths each, Euler scheme for $\log S$ with $100$ steps); dashed: Black--Scholes
+    with the at-the-money volatility $25\%$. Right: Monte Carlo minus PDE, with $95\%$
+    confidence intervals (\coderef{code/src/ieor222/feynmankac.py}).}
+  \label{fig:fk-mc-pde}
+\end{figure}
+
+\Cref{fig:fk-mc-pde,fig:fk-local-vol} use a bounded local volatility with a downward skew, as in the
+CEV model of \cref{ch:09-sde}: $25\%$ at $x=100$, between $13\%$ and $37\%$. The two methods agree
+within the Monte Carlo error. Compared with Black--Scholes at $25\%$, the call is worth more when the
+stock is below the strike and less when it is above: what matters is the volatility between
+the current price and the strike, and the skew makes it higher below $100$ and lower above.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch12-local-vol}
+  \caption{The same local volatility model. Left: the price $v(t,x)$ of the call with $K=100$,
+    $T=1$, as a function of time and of the stock price, from one solution of
+    \eqref{eq:fk-pricing-pde} (contours every $4$). Right: its difference from the
+    Black--Scholes price with $\sigma=25\%$, for three times to maturity.}
+  \label{fig:fk-local-vol}
+\end{figure}
+
+\demo{12-feynman-kac.ipynb}{the same price by Monte Carlo and by finite differences, and the
+local volatility price surface, for the skew, the strike and the maturity you choose.}
+
+\section{The heat equation and the Black--Scholes equation}\label{sec:fk-heat}
+
+With constant coefficients, the Black--Scholes equation is the heat equation in disguise, and
+the heat equation can be solved explicitly. This gives the converse of the Feynman--Kac
+formula in the Black--Scholes model, for every payoff of polynomial growth, smooth or not. Let
+\[
+  G(s,z)=\frac{1}{\sqrt{2\pi s}}\,e^{-z^2/(2s)},\qquad s>0,\ z\in\R,
+\]
+be the \emph{heat kernel}: the density of $\mathcal N(0,s)$, which is also the transition density
+$p(t,x;t+s,x+z)$ of Brownian motion. A direct computation gives $\partial_zG=-\frac zsG$,
+$\partial_{zz}G=(\frac{z^2}{s^2}-\frac1s)G$ and $\partial_sG=(\frac{z^2}{2s^2}-\frac1{2s})G$, so
+$\partial_sG=\frac12\partial_{zz}G$.
+
+\begin{proposition}[The heat equation and the Black--Scholes equation]\label{prop:fk-heat}
+Let $r\in\R$ and $\sigma>0$.
+\begin{enumerate}[label=(\roman*)]
+  \item Let $v:[0,T)\times(0,\infty)\to\R$ and $u:(0,\sigma^2T]\times\R\to\R$ be related by
+    \begin{equation}\label{eq:fk-heat-change}
+      v(t,x)=e^{-r(T-t)}\,u\Big(\sigma^2(T-t),\ \log x+\Big(r-\frac{\sigma^2}2\Big)(T-t)\Big).
+    \end{equation}
+    Then $v\in C^{1,2}([0,T)\times(0,\infty))$ if and only if $u\in C^{1,2}((0,\sigma^2T]\times\R)$, and
+    then, with the derivatives of $u$ at the corresponding point $(s,z)$,
+    \[
+      \partial_tv+rx\,\partial_xv+\frac{\sigma^2x^2}{2}\,\partial_{xx}v-rv
+      =\sigma^2e^{-r(T-t)}\Big(\frac12\,\partial_{zz}u-\partial_su\Big).
+    \]
+    So $v$ solves the Black--Scholes equation if and only if $u$ solves the heat equation
+    $\partial_su=\frac12\partial_{zz}u$.
+  \item Let $\varphi:\R\to\R$ be Borel with $|\varphi(z)|\le ae^{p|z|}$ for constants $a,p\ge0$, and
+    for $s>0$ let
+    \[
+      u(s,z)=\int_\R\varphi(w)\,G(s,z-w)\,\dd w=\E\big[\varphi(z+\sqrt s\,Y)\big],\qquad Y\sim\mathcal N(0,1).
+    \]
+    Then $u$ is infinitely differentiable on $(0,\infty)\times\R$, solves the heat equation, and
+    $u(s,z)\to\varphi(z_0)$ as $(s,z)\to(0,z_0)$, at every point $z_0$ where $\varphi$ is continuous.
+  \item Let $g:(0,\infty)\to\R$ be Borel with $|g(x)|\le a(x^p+x^{-p})$, and let
+    \[
+      v(t,x)=e^{-r(T-t)}\,\E\Big[g\Big(x\exp\Big(\sigma\sqrt{T-t}\,Y+\Big(r-\frac{\sigma^2}2\Big)(T-t)\Big)\Big)\Big],
+    \]
+    the function such that $v(t,S_t)=e^{-r(T-t)}\EQ[g(S_T)\mid\F_t]$ in the Black--Scholes model
+    (by the independence lemma, \cref{lem:pr-independence}, as in \cref{thm:bs-formula}). Then $v$
+    is infinitely differentiable on $[0,T)\times(0,\infty)$, solves the Black--Scholes equation, and
+    $v(t,x)\to g(x_0)$ as $(t,x)\to(T,x_0)$, at every point $x_0$ where $g$ is continuous. If the
+    points of discontinuity of $g$ form a set of Lebesgue measure zero, $v$ is the only solution
+    with this terminal behaviour and $|v(t,x)|\le C(x^q+x^{-q})$ for some constants $C,q$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) Write $\tau=T-t$, $s=\sigma^2\tau$, $z=\log x+(r-\frac{\sigma^2}{2})\tau$. The map
+$(t,x)\mapsto(s,z)$ is a smooth bijection from $[0,T)\times(0,\infty)$ onto $(0,\sigma^2T]\times\R$, with
+smooth inverse $t=T-s/\sigma^2$, $x=\exp\big(z-(r-\frac{\sigma^2}2)s/\sigma^2\big)$, which gives the
+equivalence of the regularity. Since $\partial_t\tau=-1$, the chain rule gives
+\[
+  \partial_tv=e^{-r\tau}\Big(ru-\sigma^2\partial_su-\Big(r-\frac{\sigma^2}{2}\Big)\partial_zu\Big),\quad
+  x\,\partial_xv=e^{-r\tau}\partial_zu,\quad
+  x^2\partial_{xx}v=e^{-r\tau}\big(\partial_{zz}u-\partial_zu\big),
+\]
+and the terms in $u$ and $\partial_zu$ cancel in the combination.
+
+(ii) Let $0<s_1<s_2$ and $R>0$. Every partial derivative of $G(s,z)$ is a polynomial in $z$ and
+$s^{-1/2}$ times $G(s,z)$, so for $s\in[s_1,s_2]$ it is bounded by
+$c\,e^{-z^2/(4s_2)}$ for a constant $c$. For $|z|\le R$, $|\varphi(w)|\le ae^{pR}e^{p|z-w|}$, so the
+derivatives of $\varphi(w)G(s,z-w)$ with respect to $s$ and $z$ are bounded, uniformly on
+$[s_1,s_2]\times[-R,R]$, by $c\,ae^{pR}e^{p|y|-y^2/(4s_2)}$ with $y=z-w$, which is integrable in $w$.
+By dominated convergence and the mean value theorem, we may differentiate under the integral sign
+as often as we wish; so $u$ is smooth and $\partial_su-\frac12\partial_{zz}u=\int\varphi(w)
+\big(\partial_sG-\frac12\partial_{zz}G\big)(s,z-w)\,\dd w=0$. If $\varphi$ is continuous at $z_0$
+and $(s_n,z_n)\to(0,z_0)$, then $\varphi(z_n+\sqrt{s_n}\,Y)\to\varphi(z_0)$ for every value of $Y$, and
+for $s_n\le1$ and $|z_n-z_0|\le1$ these variables are bounded by the integrable
+$ae^{p(|z_0|+1)}e^{p|Y|}$: dominated convergence again.
+
+(iii) Let $\varphi(z)=g(e^z)$, so that $|\varphi(z)|\le a(e^{pz}+e^{-pz})\le2ae^{p|z|}$, and $\varphi$ is
+continuous at $\log x_0$ when $g$ is continuous at $x_0$. With the notation of (i),
+$x\exp(\sigma\sqrt\tau\,Y+(r-\frac{\sigma^2}{2})\tau)=\exp(z+\sqrt s\,Y)$, so $v$ and the function $u$ of
+(ii) are related by \eqref{eq:fk-heat-change}. Parts (i) and (ii) give the regularity and the
+equation, and $(t,x)\to(T,x_0)$ means $(s,z)\to(0,\log x_0)$. For uniqueness, let $E$ be the set of
+discontinuity points of $g$. It is a Borel set: it is the union over $n\ge1$ of the closed sets of
+points where the oscillation of $g$ is at least $1/n$. By assumption it has Lebesgue measure zero. Under $\Q$, $S_T$
+given $S_t=x$ has a density, so $\Q(S^{t,x}_T\in E)=0$, and \cref{rem:fk-hypotheses}(a) gives
+\eqref{eq:fk-integrability} for solutions with $|v(t,x)|\le C(x^q+x^{-q})$.
+\Cref{thm:fk-feynman-kac}, with $I=(0,\infty)$ and $k\equiv r$, identifies every such solution
+with $e^{-r(T-t)}\EQ[g(S^{t,x}_T)]$, which is $v(t,x)$; and $v$ itself satisfies the growth bound,
+by the moments of $S_T$.
+\end{proof}
+
+The heat kernel smooths whatever it is given: before maturity, the price of a digital option,
+whose payoff jumps, is as smooth as that of a call. The price of the irregularity is paid near
+maturity, where derivatives blow up: $u(s,z)=N(z/\sqrt s)$ solves the heat equation with
+$\varphi=\1_{(0,\infty)}$, and $\partial_zu(s,0)=1/\sqrt{2\pi s}\to\infty$ as $s\downarrow0$
+(\cref{sec:fk-digital}). For the call, $\varphi(z)=(e^z-K)^+$, and the Gaussian integral of (ii) is the one computed in
+\cref{thm:bs-formula}.
+
+\section{Transition densities and Kolmogorov's equations}\label{sec:fk-kolmogorov}
+
+In this section $I=\R$, and $b$ and $\sigma$ are continuous and satisfy the hypotheses of
+\cref{thm:sde-existence}. A \emph{transition density} of \eqref{eq:fk-sde} is a Borel function
+$p(t,x;s,y)$, for $0\le t<s\le T$ and $x,y\in\R$, such that
+\[
+  \Prob\big(X^{t,x}_s\in A\big)=\int_Ap(t,x;s,y)\,\dd y\qquad\text{for every Borel }A\subseteq\R .
+\]
+By the Markov property, $\E[h(X_s)\mid\F_t]=\int h(y)\,p(t,X_t;s,y)\,\dd y$ for bounded Borel $h$.
+The density satisfies an equation in the starting point $(t,x)$ and one in the arrival point $(s,y)$.
+
+\begin{theorem}[Kolmogorov's backward and forward equations]\label{thm:fk-kolmogorov}
+\leavevmode
+\begin{enumerate}[label=(\roman*)]
+  \item \emph{Backward equation.} Suppose that $\sigma^2\ge\lambda$ for a constant $\lambda>0$, and
+    that $b$ and $\sigma^2$ are bounded and uniformly H\"older continuous on $[0,T]\times\R$. Then there
+    is a transition density $p$ which, for fixed $(s,y)$, is in $C^{1,2}([0,s)\times\R)$ as a
+    function of $(t,x)$ and satisfies
+    \begin{equation}\label{eq:fk-backward}
+      \partial_tp(t,x;s,y)+\frac{\sigma(t,x)^2}{2}\,\partial_{xx}p(t,x;s,y)+b(t,x)\,\partial_xp(t,x;s,y)=0 .
+    \end{equation}
+  \item \emph{Forward equation.} Let $p$ be a transition density, and fix $(t,x)$. Suppose that
+    $b$ has a continuous partial derivative $\partial_yb$ and $a=\sigma^2$ has continuous partial
+    derivatives $\partial_ya$, $\partial_{yy}a$ on $[0,T]\times\R$, and that $(s,y)\mapsto p(t,x;s,y)$ is in
+    $C^{1,2}((t,T]\times\R)$. Then, for $(s,y)\in(t,T]\times\R$,
+    \begin{equation}\label{eq:fk-forward}
+      \partial_sp(t,x;s,y)=\frac12\,\partial_{yy}\big(a(s,y)\,p(t,x;s,y)\big)-\partial_y\big(b(s,y)\,p(t,x;s,y)\big).
+    \end{equation}
+\end{enumerate}
+\end{theorem}
+
+In (i) the density solves, in the starting point, the backward equation of
+\cref{sec:fk-heuristic}: formally, it is the Feynman--Kac solution with the payoff $h=\delta_y$.
+In (ii), it solves, in the arrival point, the equation of the formal adjoint
+$\mathcal L^*_sf=\frac12(af)''-(bf)'$, which moves probability mass forward in time. Equation
+\eqref{eq:fk-forward} is also called the \emph{Fokker--Planck equation}. The two equations are
+derived at the level of these notes, assuming the densities smooth, in
+\textcite{shreve2}, Exercises~6.8 and~6.9.
+
+\begin{proof}
+(i) Under these hypotheses the backward operator $\partial_t+\mathcal L_t$ has a fundamental
+solution $\Gamma(t,x;s,y)$: a function which, for fixed $(s,y)$, is in $C^{1,2}([0,s)\times\R)$ and
+solves \eqref{eq:fk-backward}, and such that for every bounded continuous $h$ the function
+$w(t,x)=\int\Gamma(t,x;s,y)h(y)\,\dd y$ is bounded, is in $C^{1,2}([0,s)\times\R)$, solves the backward
+equation, and tends to $h(x_0)$ as $(t,x)\to(s,x_0)$ (\textcite{friedman-parabolic}, Chapter~1,
+which constructs $\Gamma$ by the parametrix method). By \cref{thm:fk-feynman-kac}, with $s$ in place
+of $T$, $k=0$ and $E=\emptyset$, $w(t,x)=\E[h(X^{t,x}_s)]$. So the probability measure
+$\Prob(X^{t,x}_s\in\cdot)$ and the measure with density $\Gamma(t,x;s,\cdot)$ integrate every bounded
+continuous function to the same value. Applying this to continuous functions increasing to the
+indicator of an open interval, they agree on open intervals, a $\pi$-system that generates the Borel
+sets, hence on all Borel sets by Dynkin's $\pi$--$\lambda$ theorem. So $p=\Gamma$ is a transition
+density, and it satisfies \eqref{eq:fk-backward}.
+
+(ii) Let $f\in C^2(\R)$ vanish outside a bounded interval $J$. Then $f'$ is bounded, and
+$\mathcal L_uf$ is bounded on $[0,T]\times\R$, since it vanishes off $J$ and $b$, $\sigma$ are continuous.
+By Dynkin's formula (\cref{prop:sde-dynkin}, after the time shift), for $s\in(t,T]$,
+\[
+  \int f(y)\,p(t,x;s,y)\,\dd y=\E\big[f(X^{t,x}_s)\big]=f(x)+\int_t^s\psi(u)\,\dd u,\qquad
+  \psi(u)=\int(\mathcal L_uf)(y)\,p(t,x;u,y)\,\dd y .
+\]
+For $u$ in a compact subset of $(t,T]$, the integrand of $\psi$ is continuous and vanishes for
+$y\notin J$, so $\psi$ is continuous on $(t,T]$, and the right side is differentiable in $s$ with
+derivative $\psi(s)$. On the left we may differentiate under the integral sign, since
+$\partial_sp(t,x;\cdot,\cdot)$ is continuous, hence bounded on compact sets. Integrating by parts
+twice in $y$, with no boundary terms because $f$, $f'$ vanish off $J$,
+\[
+  \int f\,\partial_sp\,\dd y=\int\Big(\frac a2f''+bf'\Big)p\,\dd y
+  =\int f\,\Big(\frac12\partial_{yy}(ap)-\partial_y(bp)\Big)\,\dd y ,
+\]
+all functions being evaluated at $(s,y)$. The difference of the two sides of
+\eqref{eq:fk-forward} is therefore a continuous function of $y$ whose integral against every such
+$f$ vanishes. If it were positive (or negative) at some $y_0$, it would be so on an interval
+around $y_0$, and a nonnegative $f\ne0$ supported in that interval would give a nonzero integral.
+\end{proof}
+
+\begin{example}[Brownian motion and geometric Brownian motion]\label{exa:fk-kolmogorov}
+Write $\dot G$ for the derivative of the heat kernel $G$ in its first argument and $G'$, $G''$ for its
+derivatives in the second, so that $\dot G=\frac12G''$ (\cref{sec:fk-heat}).
+
+(a) For $X=W$, $p(t,x;s,y)=G(s-t,y-x)$, so $\partial_tp=-\dot G$, $\partial_{xx}p=G''$, $\partial_sp=\dot G$
+and $\partial_{yy}p=G''$: the identity $\dot G=\frac12G''$ is both \eqref{eq:fk-backward} and
+\eqref{eq:fk-forward}.
+
+(b) For geometric Brownian motion $\dd S=\mu S\,\dd t+\sigma S\,\dd W$, $\log S_s$ given $S_t=x$ is
+$\mathcal N(\log x+m\tau,\sigma^2\tau)$ with $m=\mu-\frac{\sigma^2}2$ and $\tau=s-t$ (\cref{def:bs-gbm}),
+so
+\[
+  p(t,x;s,y)=\frac1y\,G\big(\sigma^2\tau,\ \log y-\log x-m\tau\big),\qquad x,y>0 .
+\]
+The coefficients $\mu x$ and $\sigma x$ are unbounded, so (i) does not apply, but both equations hold,
+as a computation in logarithmic variables shows. Let $\xi=\log x$ and $\eta=\log y$, and evaluate $G$
+and its derivatives at $(\sigma^2\tau,\eta-\xi-m\tau)$. In $\xi$ the generator is
+$\mu x\partial_x+\frac12\sigma^2x^2\partial_{xx}=m\,\partial_\xi+\frac12\sigma^2\partial_{\xi\xi}$, and
+\[
+  \partial_tp+m\,\partial_\xi p+\frac{\sigma^2}{2}\,\partial_{\xi\xi}p
+  =\frac1y\Big(-\sigma^2\dot G+mG'-mG'+\frac{\sigma^2}{2}G''\Big)=0 .
+\]
+For the forward equation, $yp=G$ and $\partial_y=y^{-1}\partial_\eta$, so
+$\partial_y(\mu y\,p)=y^{-1}\mu G'$ and
+$\frac12\partial_{yy}(\sigma^2y^2p)=\frac{\sigma^2}2\partial_y\big(G+G'\big)=y^{-1}\frac{\sigma^2}2(G'+G'')$.
+Hence the right side of \eqref{eq:fk-forward} is
+$y^{-1}\big(\frac{\sigma^2}2G''-mG'\big)=y^{-1}\big(\sigma^2\dot G-mG'\big)=\partial_sp$.
+\end{example}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch12-kolmogorov}
+  \caption{The transition density of geometric Brownian motion with $\mu=8\%$, $\sigma=30\%$.
+    Left: as a function of the arrival point, $y\mapsto p(0,100;s,y)$ for three times $s$, with
+    histograms of $4\times10^4$ exact samples of $S_s$: a probability density, which spreads and
+    drifts as $s$ grows, as the forward equation says. Right: as a function of the starting point,
+    $x\mapsto p(t,x;1,100)$ for three times $t$: not a density in $x$, it solves the backward equation
+    and spreads as $t$ decreases.}
+  \label{fig:fk-kolmogorov}
+\end{figure}
+
+\begin{remark}[Two equations, two uses]\label{rem:fk-two-uses}
+One solve of the backward equation prices one payoff from every initial state; one solve of
+the forward equation gives the law of $X_s$ for all $s$, hence the prices of all payoffs at all
+maturities, from one initial state: the situation of a trader who sees calls of many strikes
+and maturities on one stock (\exref{ex:fk-forward-pde}). For a local volatility model under $\Q$,
+\eqref{eq:fk-forward} reads $\partial_sp=\frac12\partial_{yy}(\sigma(s,y)^2y^2p)-\partial_y(ryp)$;
+integrated twice against $(y-K)^+$ it becomes an equation for the call prices as functions of
+$(T,K)$, which is Dupire's formula (\cref{thm:iv-dupire}).
+\end{remark}
+
+\demo{12-feynman-kac.ipynb}{transition densities of Brownian motion and of geometric Brownian
+motion, with the residuals of both Kolmogorov equations computed by finite differences.}
+
+\section{Digital and pay-later options}\label{sec:fk-digital}
+
+\paragraph{Digital options.} In the Black--Scholes model, the digital call pays $\1_{\{S_T>K\}}$ and
+its price is $D(t,S_t)$ with $D(t,x)=e^{-r\tau}N(d_-)$, $\tau=T-t$ (\cref{prop:bs-digital}).
+By \cref{prop:fk-heat}(iii), $D$ is smooth on $[0,T)\times(0,\infty)$, solves the Black--Scholes
+equation, and tends to the payoff at every $x_0\ne K$; it is the only bounded solution with this
+behaviour (\cref{thm:fk-feynman-kac} with $E=\{K\}$). At $(T,K)$ it cannot be continuous. The
+hedge ratio sees this discontinuity.
+
+\begin{proposition}[The delta of a digital is a density]\label{prop:fk-digital-delta}
+In the Black--Scholes model, for $\tau=T-t>0$ and $x>0$,
+\[
+  \partial_xD(t,x)=e^{-r\tau}\,\frac Kx\,p(t,x;T,K)=\frac{e^{-r\tau}N'(d_-)}{\sigma x\sqrt\tau},
+\]
+where $p$ is the transition density of the stock under $\Q$, that of geometric Brownian motion
+with
+drift $r$ (\cref{exa:fk-kolmogorov}). Moreover $\partial_xD(t,x)\le1/(K\sigma\sqrt{2\pi\tau})$, with
+equality where $d_-=-\sigma\sqrt\tau$, and $\partial_xD(t,K)\sim1/(K\sigma\sqrt{2\pi\tau})\to\infty$ as
+$\tau\downarrow0$.
+\end{proposition}
+
+\begin{proof}
+Let $R=\exp(\sigma\sqrt\tau\,Y+(r-\frac{\sigma^2}2)\tau)$ with $Y\sim\mathcal N(0,1)$, and let $f_R$ be its
+density. Then $D(t,x)=e^{-r\tau}\Q(xR>K)=e^{-r\tau}\int_{K/x}^\infty f_R(z)\,\dd z$, so
+$\partial_xD=e^{-r\tau}f_R(K/x)\,K/x^2$. The law of $S_T$ given $S_t=x$ is that of $xR$, whose density at
+$y$ is $f_R(y/x)/x$; at $y=K$ this gives the first formula. The second is the expression of
+\cref{exa:fk-kolmogorov}(b) with $\mu=r$:
+$\log K-\log x-(r-\frac{\sigma^2}{2})\tau=-\sigma\sqrt\tau\,d_-$, so
+$p(t,x;T,K)=N'(d_-)/(K\sigma\sqrt\tau)$. By the identity $Ke^{-r\tau}N'(d_-)=xN'(d_+)$ of
+\cref{prop:bs-greeks}, $\partial_xD=N'(d_+)/(K\sigma\sqrt\tau)$, which is largest where $d_+=0$, that is
+$d_-=-\sigma\sqrt\tau$. At $x=K$, $d_-=(r-\frac{\sigma^2}2)\sqrt\tau/\sigma\to0$.
+\end{proof}
+
+The delta is how fast the probability of finishing above $K$ grows when the starting point
+moves up: the density of the terminal price at the strike. (Since $D$ depends on $x$ and $K$
+only through $x/K$, $x\,\partial_xD=-K\,\partial_KD$, and the identity is also
+\cref{prop:arb-breeden-litzenberger}.) Near maturity the density of $S_T$ concentrates around $S_t$
+(\cref{fig:fk-kolmogorov}), and so does the delta (\cref{fig:fk-digital}). For the call the same
+singularity sits one derivative higher, in the gamma. A trader hedging a digital close to the
+money just before maturity must hold a very large position, which reverses whenever the stock
+crosses the strike, and a discretely rebalanced hedge converges more slowly than for a call
+(\cref{ch:10-delta-hedging}). In practice the digital is replaced by a call spread, which
+super-replicates it with a bounded hedge (\exref{ex:arb-digital}).
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch12-digital}
+  \caption{The digital call with $K=100$, $r=5\%$, $\sigma=20\%$, for three times to maturity
+    $\tau$. Left: its price, which smooths the jump of the payoff over a range of width about
+    $K\sigma\sqrt\tau$. Right: its delta, the discounted transition density of the stock at the
+    strike (\cref{prop:fk-digital-delta}); at $\tau=0.01$ its maximum is
+    $1/(K\sigma\sqrt{2\pi\tau})\approx0.20$ shares per unit of payoff.}
+  \label{fig:fk-digital}
+\end{figure}
+
+\paragraph{Pay-later options.} A \emph{pay-later} (or \emph{contingent premium}) call with strike
+$K$ and maturity $T$ costs nothing at time $0$. At $T$, if $S_T>K$, the holder receives $S_T-K$ and
+pays a fee $P$ fixed at time $0$; otherwise nothing happens. The payoff to the holder is
+$(S_T-K-P)\1_{\{S_T>K\}}$: one call minus $P$ digital calls, a static replication. The fee must make
+the contract worth zero.
+
+\begin{proposition}[The pay-later fee]\label{prop:fk-pay-later}
+Let $\Q$ be a pricing measure (\cref{def:arb-pricing-measure}) for a market in which the bond, the
+stock, the call and the digital call with strike $K$ and maturity $T$ are traded, with discount
+factor $B=e^{-rT}$, and suppose $\Q(S_T>K)>0$. Let $C_0$ and $D_0$ be the prices of the call and
+the digital. The fee that makes the pay-later call worth zero is
+\[
+  P=\frac{C_0}{D_0}=\EQ\big[S_T-K\,\big|\,S_T>K\big]\ \ge\ e^{rT}C_0,
+\]
+with equality if and only if $\Q(S_T>K)=1$. In the Black--Scholes model,
+$P=S_0e^{rT}N(d_+)/N(d_-)-K$, with $d_\pm=d_\pm(T,S_0)$.
+\end{proposition}
+
+\begin{proof}
+The contract is worth $C_0-PD_0$. Since $C_0=e^{-rT}\EQ[(S_T-K)\1_{\{S_T>K\}}]>0$ and
+$D_0=e^{-rT}\Q(S_T>K)\le e^{-rT}$, with equality if and only if $\Q(S_T>K)=1$, the ratio is as stated.
+The Black--Scholes formula follows from \cref{thm:bs-formula,prop:bs-digital}.
+\end{proof}
+
+The fee is the average payoff of the call given that it pays. It exceeds the premium accrued at
+the riskless rate: the buyer is insured against paying for an option that expires worthless. It exceeds $C_0$
+itself if $r\ge0$, but not necessarily if $r<0$. With $S_0=K=100$, $r=5\%$, $\sigma=20\%$ and
+$T=1$: $C_0=10.45$, $D_0=0.532$, and $P=19.63$, about $1.8$ times $e^{rT}C_0=10.99$. The hedge of the
+holder's position $c-P\,D$, with delta $N(d_+)-P\,\partial_xD$, inherits the explosion of the digital's
+delta (\exref{ex:fk-pay-later}).
+
+\furtherreading
+\textcite{shreve2}, Chapter~6, is at the level of these notes, with multidimensional versions.
+\textcite{karatzas-shreve}, Sections~4.3--4.4 and~5.7, \textcite{oksendal}, Chapter~8, and
+\textcite{steele}, Chapters~11 and~15, give more; \textcite{friedman-parabolic} is the classical
+source on parabolic equations and their fundamental solutions.
