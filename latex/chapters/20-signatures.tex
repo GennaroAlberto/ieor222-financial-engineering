@@ -1,5 +1,595 @@
-\begin{planned}
-  \item the signature of a path: iterated integrals, Chen's identity, the shuffle product, and uniqueness up to tree-like equivalence
-  \item universal approximation by linear functionals of the signature; computing signatures in practice
-  \item signature-based models and their joint calibration to SPX and VIX options (Cuchiero, Gazzani, M\"oller and Svaluto-Ferro)
-\end{planned}
+% Chapter 20: Signatures and signature-based models.
+\providecommand{\sigSig}{\operatorname{Sig}}
+\providecommand{\sigsh}{\mathbin{\sqcup\mkern-3mu\sqcup}}
+\providecommand{\sigX}{\mathbb X}
+\providecommand{\sigZ}{\mathbb Z}
+
+A path-dependent payoff, or the volatility of a model with memory, is a function of a whole path.
+This chapter is about a systematic set of coordinates for paths, the \emph{signature}: the collection
+of all iterated integrals of the path. \textcite{chen-1957,chen-1958} studied it in geometry, and it is the
+central object of the theory of rough paths of \textcite{lyons-1998}. Three facts make it useful in
+finance. The signature determines the path up to ``tree-like'' detours (\cref{thm:sig-uniqueness}).
+Products of its coordinates are linear combinations of coordinates (the shuffle identity,
+\cref{prop:sig-shuffle}). Together, they make linear functionals of the signature universal
+approximators of continuous functionals of paths (\cref{thm:sig-universal}).
+\textcite{cuchiero-gazzani-svaluto-ferro-2023} use this to define \emph{signature-based models}, in which the
+price is a linear functional of the signature of a simple \emph{primary process}, such as a Brownian
+motion with time; calibration then splits into a simulation done once and an optimization over the
+coefficients. \textcite{cuchiero-gazzani-moller-svaluto-ferro-2025} model the volatility in the same way
+and fit S\&P~500 (SPX) and VIX options jointly.
+
+The algebra is proved for piecewise $C^1$ paths, where it is calculus. Brownian paths need
+stochastic integrals, and the choice between It\^o and Stratonovich of \cref{prop:ito-wdw} reappears:
+the signature is a Stratonovich object, and the conversion to It\^o integrals is what makes the models
+martingales and their prices computable (\cref{sec:sig-brownian,sec:sig-models}).
+
+\paragraph{Words and tensors.} Let $e_1,\dots,e_d$ be the standard basis of $\R^d$. A \emph{word} is a
+finite sequence $I=(i_1,\dots,i_k)$ of \emph{letters} $i_j\in\{1,\dots,d\}$, of length $|I|=k$; $\emptyset$
+is the empty word, $IJ$ the concatenation, and $I=I'i$ means that $i$ is the last letter of $I$. The
+tensors $e_I=e_{i_1}\otimes\dots\otimes e_{i_k}$ with $|I|=k$ form a basis of $(\R^d)^{\otimes k}\cong\R^{d^k}$,
+and $e_\emptyset=1$. A \emph{tensor series} is a formal sum $a=\sum_Ia^Ie_I$ over all words, that is, a
+sequence $(a_0,a_1,\dots)$ with $a_k\in(\R^d)^{\otimes k}$; their space $T((\R^d))$ is an algebra for
+\[
+  a\otimes b=\sum_{I,J}a^Ib^J\,e_{IJ},\qquad\text{that is,}\qquad(a\otimes b)^K=\sum_{K=IJ}a^Ib^J,
+\]
+the sum running over the $|K|+1$ ways of cutting $K$ in two. The \emph{truncation} $T^N$ keeps the words
+of length at most $N$. Finite sums $\ell=\sum_I\ell_Ie_I$ form the space $T(\R^d)$ and act on series by
+$\langle\ell,a\rangle=\sum_I\ell_Ia^I$, so that $\langle e_I,a\rangle=a^I$. On $(\R^d)^{\otimes k}$ we use the
+Euclidean norm $|a_k|=(\sum_{|I|=k}(a^I)^2)^{1/2}$, for which $|u\otimes v|=|u|\,|v|$. For $a$ with
+$a^\emptyset=0$, $\exp(a)=\sum_{k\ge0}a^{\otimes k}/k!$ is a finite sum at each level.
+
+\section{The signature of a path}\label{sec:sig-signature}
+
+A path $X:[0,T]\to\R^d$ is \emph{piecewise $C^1$} if it is continuous and there is a partition
+$0=\tau_0<\dots<\tau_p=T$ such that $X$ is continuously differentiable on each $[\tau_j,\tau_{j+1}]$, with
+one-sided derivatives at the ends. Piecewise linear paths are the main example. For such $X$ and $f$
+continuous (or piecewise continuous), $\int_s^tf(u)\,\dd X^i_u=\int_s^tf(u)\dot X^i_u\,\dd u$, and
+$L(X;s,t)=\int_s^t|\dot X_u|\,\dd u$ is the length of $X$ on $[s,t]$.
+
+\begin{definition}[Signature]\label{def:sig-signature}
+Let $X:[0,T]\to\R^d$ be piecewise $C^1$ and $0\le s\le t\le T$. The \emph{signature} of $X$ on $[s,t]$ is
+the series $\sigSig(X)_{s,t}=\sum_I\sigSig(X)^I_{s,t}\,e_I$ with $\sigSig(X)^\emptyset_{s,t}=1$ and, for
+$I=(i_1,\dots,i_k)$,
+\[
+  \sigSig(X)^I_{s,t}=\int_{s<u_1<\dots<u_k<t}\dd X^{i_1}_{u_1}\cdots\dd X^{i_k}_{u_k}
+  =\int_{s<u_1<\dots<u_k<t}\dot X^{i_1}_{u_1}\cdots\dot X^{i_k}_{u_k}\,\dd u_1\cdots\dd u_k .
+\]
+Equivalently, by Fubini's theorem, $\sigSig(X)^{Ii}_{s,t}=\int_s^t\sigSig(X)^I_{s,u}\,\dd X^i_u$. Its
+\emph{level} $k$ is $\sum_{|I|=k}\sigSig(X)^I_{s,t}e_I=\int_{s<u_1<\dots<u_k<t}\dd X_{u_1}\otimes\dots\otimes\dd X_{u_k}$,
+and the \emph{truncated signature} $\sigSig^N(X)_{s,t}$ keeps the levels $0,\dots,N$.
+\end{definition}
+
+Level~$1$ is the increment, $\sigSig(X)^i_{s,t}=X^i_t-X^i_s$. At level~$2$,
+$\sigSig(X)^{ij}_{s,t}=\int_s^t(X^i_u-X^i_s)\,\dd X^j_u$, and by integration by parts
+$\sigSig(X)^{ij}_{s,t}+\sigSig(X)^{ji}_{s,t}=(X^i_t-X^i_s)(X^j_t-X^j_s)$: the symmetric part is known from
+level~$1$. The new information is the \emph{L\'evy area}
+$A^{ij}_{s,t}=\frac12(\sigSig(X)^{ij}_{s,t}-\sigSig(X)^{ji}_{s,t})$. For a planar path, Green's theorem shows that
+$A^{12}_{s,t}$ is the signed area enclosed by the path and the chord from $X_t$ back to $X_s$ (on which
+$x\,\dd y-y\,\dd x=0$ in coordinates centred at $X_s$), positive when this loop turns anticlockwise
+(\cref{fig:sig-levy-area}).
+
+\begin{lemma}[Factorial decay]\label{lem:sig-decay}
+For $X$ piecewise $C^1$ and $k\ge1$, the level $k$ of $\sigSig(X)_{s,t}$ has norm at most $L(X;s,t)^k/k!$.
+\end{lemma}
+
+\begin{proof}
+Level $k$ is the integral of $\dot X_{u_1}\otimes\dots\otimes\dot X_{u_k}$ over the simplex
+$\Delta_k=\{s<u_1<\dots<u_k<t\}$, so its norm is at most
+$\int_{\Delta_k}|\dot X_{u_1}|\cdots|\dot X_{u_k}|\,\dd u$. The $k!$ orderings of the coordinates split the
+cube $[s,t]^k$, up to a null set, into $k!$ copies of $\Delta_k$ on which this symmetric integrand has the
+same integral, so the bound is $\frac1{k!}\big(\int_s^t|\dot X_u|\,\dd u\big)^k$.
+\end{proof}
+
+\begin{proposition}[A straight segment]\label{prop:sig-segment}
+If $X_u=X_s+\frac{u-s}{t-s}\,v$ on $[s,t]$ for some $v\in\R^d$, then $\sigSig(X)_{s,t}=\exp(v)$, that is,
+$\sigSig(X)^I_{s,t}=v^{i_1}\cdots v^{i_k}/k!$ for $I=(i_1,\dots,i_k)$.
+\end{proposition}
+
+\begin{proof}
+$\dot X=v/(t-s)$ is constant, so the integrand is $v^{i_1}\cdots v^{i_k}/(t-s)^k$, and $\Delta_k$ has volume
+$(t-s)^k/k!$.
+\end{proof}
+
+\begin{proposition}[Invariances]\label{prop:sig-invariance}
+Let $X$ be piecewise $C^1$ on $[s,t]$.
+\begin{enumerate}[label=(\roman*)]
+  \item (\emph{Translation.}) $\sigSig(X+c)_{s,t}=\sigSig(X)_{s,t}$ for every $c\in\R^d$.
+  \item (\emph{Reparametrization.}) If $\varphi:[s',t']\to[s,t]$ is nondecreasing, onto and piecewise $C^1$,
+    then $\sigSig(X\circ\varphi)_{s',t'}=\sigSig(X)_{s,t}$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) Only $\dot X$ enters. (ii) $Y=X\circ\varphi$ is piecewise $C^1$ (the preimage of each breakpoint of $X$ is a
+point or an interval), with $\dot Y_r=\dot X_{\varphi(r)}\varphi'(r)$. We show
+$\sigSig(Y)^I_{s',r}=\sigSig(X)^I_{s,\varphi(r)}$ for all $r$ by induction on $|I|$. It holds for $I=\emptyset$, and
+if it holds for $I$, the substitution $u=\varphi(r)$, on intervals where $\varphi$ is $C^1$ and $X$ is $C^1$ on
+$\varphi$'s range, gives
+\[
+  \sigSig(Y)^{Ii}_{s',r}=\int_{s'}^r\sigSig(X)^I_{s,\varphi(q)}\dot X^i_{\varphi(q)}\varphi'(q)\,\dd q
+  =\int_s^{\varphi(r)}\sigSig(X)^I_{s,u}\dot X^i_u\,\dd u=\sigSig(X)^{Ii}_{s,\varphi(r)} .\qedhere
+\]
+\end{proof}
+
+The signature records the order of the increments, not the speed. When the speed matters, as for
+prices observed in calendar time, we add time as a coordinate (\cref{prop:sig-time-injective}).
+
+\begin{theorem}[Chen's identity]\label{thm:sig-chen}
+For $X$ piecewise $C^1$ and $s\le u\le t$,
+\[
+  \sigSig(X)_{s,t}=\sigSig(X)_{s,u}\otimes\sigSig(X)_{u,t},\qquad\text{that is,}\qquad
+  \sigSig(X)^K_{s,t}=\sum_{K=IJ}\sigSig(X)^I_{s,u}\,\sigSig(X)^J_{u,t}
+\]
+for every word $K$.
+In particular, the signature of the concatenation of two paths is the product of their signatures.
+\end{theorem}
+
+\begin{proof}
+By induction on $|K|$; for $K=\emptyset$ both sides are $1$. Let $K=K'i$. Splitting the integral at $u$
+and applying the induction hypothesis to $\sigSig(X)^{K'}_{s,r}$, $r\ge u$,
+\[
+  \sigSig(X)^K_{s,t}=\sigSig(X)^K_{s,u}+\int_u^t\sigSig(X)^{K'}_{s,r}\,\dd X^i_r
+  =\sigSig(X)^K_{s,u}+\sum_{K'=IJ'}\sigSig(X)^I_{s,u}\int_u^t\sigSig(X)^{J'}_{u,r}\,\dd X^i_r .
+\]
+The last integral is $\sigSig(X)^{J'i}_{u,t}$. The cuts of $K$ are $(K,\emptyset)$, which gives the first term,
+and $(I,J'i)$ for the cuts $(I,J')$ of $K'$, which give the sum.
+\end{proof}
+
+\begin{corollary}[Piecewise linear paths]\label{cor:sig-piecewise-linear}
+If $X$ is linear on each $[t_j,t_{j+1}]$, $0=t_0<\dots<t_m=T$, with increments $v_j=X_{t_{j+1}}-X_{t_j}$, then
+$\sigSig(X)_{0,T}=\exp(v_0)\otimes\exp(v_1)\otimes\dots\otimes\exp(v_{m-1})$.
+\end{corollary}
+
+\begin{proof}
+\Cref{thm:sig-chen} at $t_1,\dots,t_{m-1}$, and \cref{prop:sig-segment} on each piece.
+\end{proof}
+
+\begin{incode}
+\coderef{code/src/ieor222/signatures.py} stores level $k$ of a truncated series as a vector of length
+$d^k$, the word $(i_1,\dots,i_k)$ at position $i_1d^{k-1}+\dots+i_k$, with letters numbered from $0$ (for a
+time-augmented path, letter $0$ is time, as in the notes). \texttt{signature(path, depth)} applies
+\cref{cor:sig-piecewise-linear}, one segment at a time: $S\leftarrow S\otimes\exp(v)$, whose level $n$ is
+evaluated by Horner's scheme
+$\big(\cdots\big((S_0\otimes\tfrac vn+S_1)\otimes\tfrac v{n-1}+S_2\big)\cdots\big)\otimes\tfrac v1+S_n$, at a
+cost of order $d^N$ per segment ($d\ge2$). The truncated signature has $(d^{N+1}-1)/(d-1)$ coordinates: $40$ for
+$d=N=3$, $127$ for $d=2$, $N=6$. The tests check \cref{prop:sig-segment,thm:sig-chen,prop:sig-shuffle,prop:sig-invariance,lem:sig-decay}
+on random paths.
+\end{incode}
+
+\paragraph{Shuffles.} A \emph{shuffle} of the words $I$ and $J$ is a word of length $|I|+|J|$ obtained by
+interleaving them, keeping the order of the letters of each. The \emph{shuffle product}
+$e_I\sigsh e_J$ is the sum of the $\binom{|I|+|J|}{|I|}$ shuffles, counted with multiplicity (one for each choice
+of the positions of the letters of $I$); recursively, $e_I\sigsh e_\emptyset=e_\emptyset\sigsh e_I=e_I$ and
+\[
+  e_{Ii}\sigsh e_{Jj}=(e_I\sigsh e_{Jj})\otimes e_i+(e_{Ii}\sigsh e_J)\otimes e_j,
+\]
+according to the word that provides the last letter. It extends bilinearly to $T(\R^d)$. For example,
+$e_1\sigsh e_2=e_{12}+e_{21}$, $e_1\sigsh e_1=2e_{11}$ and $e_{12}\sigsh e_3=e_{123}+e_{132}+e_{312}$.
+
+\begin{proposition}[Shuffle identity]\label{prop:sig-shuffle}
+For $X$ piecewise $C^1$, words $I,J$ and $s\le t$,
+$\sigSig(X)^I_{s,t}\,\sigSig(X)^J_{s,t}=\langle e_I\sigsh e_J,\sigSig(X)_{s,t}\rangle$. Hence
+$\langle\ell,\sigSig(X)_{s,t}\rangle\,\langle m,\sigSig(X)_{s,t}\rangle=\langle\ell\sigsh m,\sigSig(X)_{s,t}\rangle$ for all
+$\ell,m\in T(\R^d)$, and $\sigSig(X)^{(i,\dots,i)}_{s,t}=(X^i_t-X^i_s)^k/k!$ for the word of $k$ letters $i$.
+\end{proposition}
+
+\begin{proof}
+By induction on $|I|+|J|$; the case $I=\emptyset$ or $J=\emptyset$ is trivial. Let $I=I'i$, $J=J'j$,
+$f(r)=\sigSig(X)^I_{s,r}$ and $g(r)=\sigSig(X)^J_{s,r}$. These are piecewise $C^1$, vanish at $s$, and
+$\dd f=\sigSig(X)^{I'}_{s,\cdot}\,\dd X^i$, $\dd g=\sigSig(X)^{J'}_{s,\cdot}\,\dd X^j$. Integration by parts on each piece
+and the induction hypothesis give
+\[
+  f(t)g(t)=\int_s^tf\,\dd g+\int_s^tg\,\dd f
+  =\int_s^t\big\langle e_I\sigsh e_{J'},\sigSig(X)_{s,r}\big\rangle\dd X^j_r+\int_s^t\big\langle e_{I'}\sigsh e_J,\sigSig(X)_{s,r}\big\rangle\dd X^i_r .
+\]
+Since $\int_s^t\langle\ell,\sigSig(X)_{s,r}\rangle\,\dd X^j_r=\langle\ell\otimes e_j,\sigSig(X)_{s,t}\rangle$ by
+\cref{def:sig-signature}, the right side is $\langle(e_I\sigsh e_{J'})\otimes e_j+(e_{I'}\sigsh e_J)\otimes e_i,\sigSig(X)_{s,t}\rangle$,
+which is the recursion for $e_I\sigsh e_J$. For the last claim, $e_i\sigsh\dots\sigsh e_i$ ($k$ factors) is
+$k!$ times the word $(i,\dots,i)$.
+\end{proof}
+
+Algebraically, \textcite{ree-1958} showed that the formal series whose coefficients multiply by the shuffle
+rule are exactly the exponentials of Lie series; with \cref{prop:sig-shuffle}, the logarithm of a signature is
+a Lie series, as \textcite{chen-1957} had shown. The coordinates of a truncated signature are therefore far from
+independent: by \cref{prop:sig-shuffle}, products of coordinates of level at most $N$ are linear combinations
+of coordinates of level at most $2N$.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch20-levy-area}
+  \caption{Left: a planar path and its chord; the L\'evy area $\frac12(\sigSig^{12}-\sigSig^{21})$ is the
+    shaded signed area. Right: the same path with a detour that goes out along a zig-zag branch and comes
+    back along it; its signature agrees with that of the path in every coordinate up to level $4$, to
+    rounding error (\cref{thm:sig-uniqueness}).}
+  \label{fig:sig-levy-area}
+\end{figure}
+
+\paragraph{What the signature determines.} A continuous path $X:[0,T]\to\R^d$ is \emph{tree-like} if there
+is a continuous $h:[0,T]\to[0,\infty)$ with $h(0)=h(T)=0$ and
+\[
+  |X_t-X_s|\le h(s)+h(t)-2\inf_{u\in[s,t]}h(u)\qquad\text{for all }s\le t
+\]
+\citep[Definition~1.3]{hambly-lyons-2010}. A path followed by its reversal is tree-like (take for $h(u)$
+the distance travelled from the start up to $u$ on the way out, and the distance left to travel on the
+way back), and so is the detour in \cref{fig:sig-levy-area}.
+
+\begin{theorem}[Uniqueness of the signature, \textcite{hambly-lyons-2010}]\label{thm:sig-uniqueness}
+Let $X$ be a continuous path of bounded variation in $\R^d$. Then $\sigSig(X)_{0,T}=1$ if and only if $X$ is
+tree-like (their Theorem~1). Consequently, two such paths $X$ and $Y$ have the same signature if and only if
+$X$ followed by the reversal of $Y$, translated to start at $X_T$, is tree-like (their Corollary~1.5, which says
+``Lipschitz tree-like'', the same thing here by their Theorem~1 and Chen's identity); and among the paths with a
+given signature there is, up to translation and reparametrization, a unique one of minimal length (their
+Corollary~1.7).
+\end{theorem}
+
+For paths of bounded variation the signature is defined with Riemann--Stieltjes integrals, which agree
+with ours for piecewise $C^1$ paths. \textcite{chen-1958} had proved the uniqueness for piecewise regular
+paths without back-tracking (irreducible paths). Adding time removes all ambiguity, with an elementary proof.
+
+\begin{proposition}[Time-augmented paths]\label{prop:sig-time-injective}
+Let $X:[0,T]\to\R^d$ be piecewise $C^1$, and $\widehat X_t=(t,X_t)\in\R^{1+d}$, with letter $0$ for the time
+coordinate. For $i\in\{1,\dots,d\}$ and $k\ge1$, writing $i0^k$ for the word $(i,0,\dots,0)$ with $k$ zeros,
+\[
+  \big\langle e_{i0^k},\sigSig(\widehat X)_{0,T}\big\rangle=\int_0^T(X^i_u-X^i_0)\,\frac{(T-u)^{k-1}}{(k-1)!}\,\dd u .
+\]
+Hence, if $Y$ is another piecewise $C^1$ path and $\sigSig(\widehat X)_{0,T}=\sigSig(\widehat Y)_{0,T}$, then
+$X-X_0=Y-Y_0$ on $[0,T]$.
+\end{proposition}
+
+\begin{proof}
+Let $F_k(t)=\langle e_{i0^k},\sigSig(\widehat X)_{0,t}\rangle$. Then $F_0(t)=X^i_t-X^i_0$ and, as the letter $0$
+integrates against $\dd t$, $F_k(t)=\int_0^tF_{k-1}(u)\,\dd u$. The formula follows by induction, exchanging
+the integrals: $\int_0^T\!\int_0^vF_0(u)\frac{(v-u)^{k-2}}{(k-2)!}\dd u\,\dd v=\int_0^TF_0(u)\frac{(T-u)^{k-1}}{(k-1)!}\dd u$.
+If the signatures agree, then $D=(X^i-X^i_0)-(Y^i-Y^i_0)$ is continuous and $\int_0^TD(u)p(u)\,\dd u=0$ for
+every polynomial $p$, since the polynomials $(T-u)^{k-1}$, $k\ge1$, span them all. By the Weierstrass
+theorem (\textcite{rudin-pma}, Theorem~7.26) there are polynomials $p_n\to D$ uniformly, so
+$\int_0^TD^2=\lim_n\int_0^TDp_n=0$, and $D=0$.
+\end{proof}
+
+\begin{theorem}[Universal approximation]\label{thm:sig-universal}
+Let $\mathcal P$ be the set of piecewise $C^1$ paths $X:[0,T]\to\R^d$ with $X_0=0$, with the distance
+$\delta(X,Y)=\int_0^T|\dot X_u-\dot Y_u|\,\dd u$. Let $K\subset\mathcal P$ be compact and $f:K\to\R$
+continuous. For every $\varepsilon>0$ there is $\ell\in T(\R^{1+d})$, a finite combination of words, with
+\[
+  \sup_{X\in K}\big|f(X)-\langle\ell,\sigSig(\widehat X)_{0,T}\rangle\big|<\varepsilon .
+\]
+\end{theorem}
+
+\begin{proof}
+Let $\mathcal A$ be the set of functions $X\mapsto\langle\ell,\sigSig(\widehat X)_{0,T}\rangle$ on $K$,
+$\ell\in T(\R^{1+d})$. \emph{They are continuous.} Let $a=\dot{\widehat X}$, $b=\dot{\widehat Y}$, so that
+$|a-b|=|\dot X-\dot Y|$ and $\int_0^T|a|\le T+L(X;0,T)$. Writing
+$a^{\otimes k}-b^{\otimes k}=\sum_{j=1}^ka^{\otimes(j-1)}\otimes(a-b)\otimes b^{\otimes(k-j)}$ (with the variables
+$u_1<\dots<u_k$) and bounding the integral over the simplex by that over $[0,T]^k$, every coordinate of
+level $k$ changes by at most $k\big(T+\max(L(X),L(Y))\big)^{k-1}\delta(X,Y)$, and $L(Y)\le L(X)+\delta(X,Y)$.
+\emph{$\mathcal A$ is an algebra containing the constants} by \cref{prop:sig-shuffle}, with $\ell=e_\emptyset$
+for the constants. \emph{$\mathcal A$ separates the points of $K$} by \cref{prop:sig-time-injective}, since all
+paths start at $0$. By the Stone--Weierstrass theorem (\textcite{rudin-pma}, Theorem~7.32), $\mathcal A$ is
+dense in the continuous functions on the compact metric space $K$ for the uniform norm.
+\end{proof}
+
+This Stone--Weierstrass argument is standard in the signature literature (see the primer of
+\textcite{chevyrev-kormilitzin-primer} and, for semimartingale lifts, the theorem of Cuchiero et al.\ below). Time matters here: without it, the signature of a one-dimensional path is $\exp(X_T-X_0)$
+(\cref{prop:sig-shuffle}) and sees only the increment (\exref{ex:sig-one-dimension}). Compact sets in $\delta$ are small, and Brownian paths have infinite length
+(\cref{cor:bm-fv}); the theory of rough paths \citep{lyons-1998,lyons-caruana-levy-2007} extends the
+signature, \cref{thm:sig-chen} and \cref{prop:sig-shuffle} to paths of finite $p$-variation enriched with
+their first iterated integrals, and \textcite{cuchiero-gazzani-svaluto-ferro-2023}, Theorem~2.12, prove the
+analogue of \cref{thm:sig-universal} on compact sets of time-extended continuous semimartingales lifted with
+their Stratonovich integrals, for a suitable distance on these lifts, such as a $p$-variation rough-path distance
+with $p\in(2,3)$ (their Remark~2.13). In practice the
+approximation is used statistically: regress the payoff on the truncated signature of simulated paths.
+\Cref{fig:sig-regression} does this for an Asian call and for the maximum of a Brownian path: on
+$4000$ test paths, $R^2$ rises from $0.52$ at depth $N=1$ to $0.99$ at $N=6$ for the Asian call, and from
+$0.69$ to $0.98$ for the maximum. The kink of the call and the non-smooth maximum slow the convergence.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch20-regression}
+  \caption{Least squares on $\sigSig^N(\widehat W)_{0,1}$, $\widehat W_t=(t,W_t)$, with $4000$ training and
+    $4000$ test paths on $100$ steps. Left: $1-R^2$ on the test paths for the Asian call
+    $(\int_0^1S_t\,\dd t-1)^+$ with $S_t=e^{0.3W_t-0.045t}$, and for $\max_{t\le1}W_t$. Right: Asian payoffs
+    against their linear predictor at $N=6$.}
+  \label{fig:sig-regression}
+\end{figure}
+
+\demo{20-signatures.ipynb}{signatures of planar paths, Chen and shuffle checks, and regression of path
+functionals on the signature, for any depth.}
+
+\section{Signatures of Brownian paths}\label{sec:sig-brownian}
+
+Throughout, $W=(W^1,\dots,W^d)=LB$ for a $d$-dimensional Brownian motion $B$ for $(\F_t)$ and a matrix $L$
+with $LL^\top=\rho$, a correlation matrix, as in \cref{ch:08-ito-formula}: $[W^i,W^j]_t=\rho_{ij}t$. Brownian
+paths are not of bounded variation, so \cref{def:sig-signature} does not apply; simulated paths are
+piecewise linear, and level~$2$ shows what their signatures converge to.
+
+\begin{proposition}[Level two of Brownian paths]\label{prop:sig-brownian-level2}
+Let $\Pi=\{0=t_0<\dots<t_m=T\}$, $W^\Pi$ the piecewise linear interpolation of $W$ on $\Pi$, and
+$i,j\in\{1,\dots,d\}$. For every outcome,
+\[
+  \sigSig(W^\Pi)^{ij}_{0,T}=\sum_{k=0}^{m-1}W^i_{t_k}\big(W^j_{t_{k+1}}-W^j_{t_k}\big)+\frac12C(W^i,W^j;\Pi),
+\]
+with $C$ the covariation sum of \cref{def:ito-covariation}, and $\E\big[(C(W^i,W^j;\Pi)-\rho_{ij}T)^2\big]=(1+\rho_{ij}^2)\sum_kh_k^2$,
+$h_k=t_{k+1}-t_k$. As $\|\Pi\|\to0$,
+$\sigSig(W^\Pi)^{ij}_{0,T}\to\int_0^TW^i_u\,\dd W^j_u+\frac12\rho_{ij}T$ in $L^2$. In particular
+$\sigSig(W^\Pi)^{ii}_{0,T}=\frac12(W^i_T)^2$, and the L\'evy area $A^{ij}$ of $W^\Pi$ converges to
+$\frac12\int_0^T(W^i\,\dd W^j-W^j\,\dd W^i)$.
+\end{proposition}
+
+\begin{proof}
+By \cref{cor:sig-piecewise-linear}, level~$2$ of $\exp(v_0)\otimes\dots\otimes\exp(v_{m-1})$ is
+$\sum_{k<l}v_k\otimes v_l+\frac12\sum_kv_k\otimes v_k=\sum_l(W_{t_l}-W_0)\otimes v_l+\frac12\sum_lv_l\otimes v_l$, with
+$v_l=W_{t_{l+1}}-W_{t_l}$; take the coordinate $ij$. The first sum converges in $L^2$ to the It\^o integral
+by \cref{cor:ito-riemann}. The vectors $v_k$ are independent and Gaussian with covariance $h_k\rho$, so the
+terms $v_k^iv_k^j$ are independent with mean $\rho_{ij}h_k$ and variance
+$\E[(v^i_k)^2]\E[(v^j_k)^2]+2\E[v^i_kv^j_k]^2-\rho_{ij}^2h_k^2=(1+\rho_{ij}^2)h_k^2$ (write
+$v^j_k=\rho_{ij}v^i_k+z$ with $z$ Gaussian and independent of $v^i_k$, and use $\E[(v^i_k)^4]=3h_k^2$), which gives the
+variance of $C$, at most $(1+\rho_{ij}^2)T\|\Pi\|$. The diagonal
+case is \cref{prop:sig-shuffle} with $k=2$. The It\^o and covariation parts of the L\'evy area cancel, as
+$C(W^i,W^j;\Pi)=C(W^j,W^i;\Pi)$.
+\end{proof}
+
+So the piecewise linear signature computes \emph{Stratonovich} integrals: for $\rho_{ij}=1$ this is the
+midpoint limit $\frac12W_T^2$ of \cref{prop:ito-wdw}, not the It\^o integral (\cref{fig:sig-brownian-level2}).
+The same holds at every level (a Wong--Zakai theorem; \textcite{friz-victoir-2010}, Chapter~13). We take
+the Stratonovich signature as the definition. For It\^o processes $Y,Z$ driven by $B$, let
+\[
+  \int_s^tY_u\circ\dd Z_u=\int_s^tY_u\,\dd Z_u+\frac12\big([Y,Z]_t-[Y,Z]_s\big),
+\]
+so that, by the product rule (\cref{cor:itf-product}), $Y_tZ_t-Y_sZ_s=\int_s^tY\circ\dd Z+\int_s^tZ\circ\dd Y$:
+Stratonovich integrals follow the rules of ordinary calculus.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch20-brownian-level2}
+  \caption{Two Brownian motions with $\rho=0.5$, interpolated on $n$ equal intervals of $[0,1]$ (computed
+    with \coderef{code/src/ieor222/signatures.py}). Left: for one path, the level-$2$ coordinate
+    $\sigSig^{12}$, the It\^o sum, and their difference $\frac12C(W^1,W^2;\Pi_n)\to\rho/2$. Right: over $800$
+    paths, the root-mean-square distance of $\frac12C$ to $\frac\rho2$, against its exact value
+    $\frac12\sqrt{(1+\rho^2)/n}$ (\cref{prop:sig-brownian-level2}), and of $\sigSig^{12}(\Pi_n)$ to its value on the finest
+    grid $\Pi_N$, $N=2^{13}$. The symmetric parts agree, so the latter is the sum of the L\'evy areas of the fine path
+    over the $n$ intervals, of exact root-mean-square value $\frac12\sqrt{(1-\rho^2)(1/n-1/N)}$ (a computation as in
+    \exref{ex:sig-levy-area}).}
+  \label{fig:sig-brownian-level2}
+\end{figure}
+
+\begin{definition}[Signature of Brownian motion with time]\label{def:sig-brownian}
+Let $\widehat X_t=(t,W_t)$, with letters $0$ (time) and $1,\dots,d$, and write $\sigX_{s,t}=\sigSig(\widehat X)_{s,t}$
+for $0\le s\le t$: $\sigX^\emptyset_{s,t}=1$ and $\sigX^{Ii}_{s,t}=\int_s^t\sigX^I_{s,u}\circ\dd\widehat X^i_u$, with
+$\widehat X^0_u=u$ (an ordinary integral) and $\widehat X^i=W^i$ for $i\ge1$.
+\end{definition}
+
+By induction on $|I|$, each $\sigX^I_{s,\cdot}$ is an It\^o process on $[s,\infty)$, so the definition makes
+sense. Let $\rho_{0k}=\rho_{k0}=0$, and for a word $I=I'i$ and $k\in\{1,\dots,d\}$ let
+\begin{equation}\label{eq:sig-ito-letter}
+  \tilde e^k_I=e_{Ik}-\tfrac12\rho_{ik}\,e_{I'0},\qquad\tilde e^k_\emptyset=e_k,\qquad
+  A=e_0+\frac12\sum_{i,j=1}^d\rho_{ij}\,e_{ij} .
+\end{equation}
+
+\begin{proposition}[Brownian signatures]\label{prop:sig-brownian}
+For $0\le s\le u\le t$, words $I,J$ and $k\in\{1,\dots,d\}$:
+\begin{enumerate}[label=(\roman*)]
+  \item $\E\big[\sup_{s\le v\le t}|\sigX^I_{s,v}|^p\big]<\infty$ for every $p\ge1$;
+  \item almost surely, $\sigX_{s,t}=\sigX_{s,u}\otimes\sigX_{u,t}$ and
+    $\sigX^I_{s,t}\sigX^J_{s,t}=\langle e_I\sigsh e_J,\sigX_{s,t}\rangle$;
+  \item (\emph{It\^o integrals}) $\int_s^t\sigX^I_{s,v}\,\dd W^k_v=\langle\tilde e^k_I,\sigX_{s,t}\rangle$;
+  \item (\emph{expected signature}) $\E[\sigX_{s,t}\mid\F_s]=\exp((t-s)A)$, and
+    $\E[\sigX_{0,t}\mid\F_s]=\sigX_{0,s}\otimes\exp((t-s)A)$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(iii) By definition $\sigX^{Ik}=\int\sigX^I\,\dd W^k+\frac12[\sigX^I_{s,\cdot},W^k]$. If $I=I'i$ with $i\ge1$, the
+$\dd W$ part of $\sigX^I_{s,\cdot}$ is $\sigX^{I'}_{s,\cdot}\,\dd W^i$, so by
+\cref{prop:itf-decomposition} and \eqref{eq:itf-multi-cov} $[\sigX^I_{s,\cdot},W^k]_{s,t}=\rho_{ik}\int_s^t\sigX^{I'}_{s,v}\,\dd v=\rho_{ik}\sigX^{I'0}_{s,t}$;
+if $i=0$ or $I=\emptyset$, the covariation vanishes.
+(i) By induction on $|I|$, with (iii): $\sigX^{Ik}$ is an It\^o integral plus a time integral, and the
+Burkholder--Davis--Gundy inequality (\textcite{revuz-yor}, Chapter~IV, Section~4) bounds
+$\E\sup|\int H\,\dd W^k|^p$ by a constant times $\E(\int_s^tH^2\dd v)^{p/2}$.
+(ii) The proofs of \cref{thm:sig-chen,prop:sig-shuffle} use only the recursion of \cref{def:sig-brownian},
+the product rule, which holds for Stratonovich integrals, $\int_u^t\xi H\circ\dd\widehat X^i=\xi\int_u^tH\circ\dd\widehat X^i$
+for $\F_u$-measurable $\xi$, which holds for It\^o integrals (for simple integrands by definition, in general by
+approximation and localization) and for covariations, and the associativity
+$\int Y\circ\dd\big(\int H\circ\dd Z\big)=\int YH\circ\dd Z$, which follows from the same rule for It\^o integrals and
+$\dd[YH,Z]=Y\,\dd[H,Z]+H\,\dd[Y,Z]$. In Chen's induction, the identity for $\sigX^{K'}_{s,r}$ is needed for all $r\ge u$
+at once: it holds almost surely for each rational $r$, hence for all $r$, both sides being continuous in $r$.
+(iv) Fix $G\in\F_s$ and let $\psi^I(t)=\E[\1_G\sigX^I_{s,t}]$, finite by (i). The It\^o integrals in (iii) are
+martingales vanishing at $s$ (\cref{thm:ito-integral}), so, with Fubini's theorem,
+$\psi^{Ik}(t)=\frac12\rho_{ik}\int_s^t\psi^{I'}(v)\,\dd v$ for $I=I'i$, $\psi^k=0$, and $\psi^{I0}(t)=\int_s^t\psi^I(v)\,\dd v$.
+This is the system $\psi(t)=\Prob(G)+\int_s^t\psi(v)\otimes A\,\dd v$, which determines each coordinate from shorter
+words; its solution is $\Prob(G)\exp((t-s)A)$, since $\frac{\dd}{\dd t}\exp(tA)=\exp(tA)\otimes A$. As $G$ is
+arbitrary, $\E[\sigX_{s,t}\mid\F_s]=\exp((t-s)A)$. The last claim follows from (ii), taking out what is known
+(\cref{prop:pr-condexp-properties}).
+\end{proof}
+
+For a standard Brownian motion without time, (iv) reduces to $\E[\sigSig(W)_{0,t}]=\exp(\frac t2\sum_ie_{ii})$,
+computed by B.~Fawcett (Oxford thesis, 2003) and by T.~Lyons and N.~Victoir (\emph{Proc.\ R.\ Soc.\ A},
+2004). Examples: $\E[\sigX^{11}_{0,t}]=\E[\frac12(W^1_t)^2]=\frac t2$, $\E[\sigX^{1111}_{0,t}]=\frac{t^2}8=\E[(W^1_t)^4]/4!$, and
+$\E[\sigX^{12}_{0,t}]=\frac12\rho_{12}t$. The piecewise linear signature on a grid of step $h$ has expectation
+$(\E\exp(h\,e_0+v_0))^{\otimes T/h}$, by \cref{thm:sig-chen} and independence, within $O(h)$ of $\exp(TA)$
+(computed exactly in the code).
+
+\section{Signature-based models}\label{sec:sig-models}
+
+Prices are under a pricing measure $\Q$, with zero interest rate (or, equivalently, for discounted
+prices), and $W$ is as in \cref{sec:sig-brownian} under $\Q$. The primary process
+$\widehat X_t=(t,W_t)$ and its parameters are fixed; only the coefficients $\ell$ are fitted.
+\textcite{cuchiero-gazzani-svaluto-ferro-2023} allow general continuous semimartingales, and
+\textcite{cuchiero-gazzani-moller-svaluto-ferro-2025} polynomial diffusions, such as Ornstein--Uhlenbeck processes; we
+stay with Brownian motion, where every step can be proved here.
+
+\begin{definition}[Signature-based models]\label{def:sig-model}
+Let $n\ge1$ and $\ell=\sum_{|I|\le n}\ell_Ie_I$, with letters $0,\dots,d$.
+\begin{enumerate}[label=(\roman*)]
+  \item The \emph{linear signature model} of \textcite{cuchiero-gazzani-svaluto-ferro-2023}, Definition~3.3, is the
+    price $S_t=\langle\ell,\sigX_{0,t}\rangle=\ell_\emptyset+\sum_{0<|I|\le n}\ell_I\sigX^I_{0,t}$.
+  \item The \emph{signature volatility model} of \textcite{cuchiero-gazzani-moller-svaluto-ferro-2025}, equations
+    (3.1)--(3.2), is the price $S_t=S_0\exp\big(\int_0^t\sigma_u\,\dd W^{\mathrm B}_u-\frac12\int_0^t\sigma_u^2\,\dd u\big)$, that
+    is $\dd S_t=S_t\sigma_t\,\dd W^{\mathrm B}_t$, with volatility $\sigma_t=\langle\ell,\sigX_{0,t}\rangle$ and
+    $W^{\mathrm B}$ a further Brownian motion with $[W^i,W^{\mathrm B}]_t=\rho_{i\mathrm B}t$; the process
+    $(W,W^{\mathrm B})$ is again as in \cref{sec:sig-brownian}, and $\sigZ$ denotes the signature of
+    $(t,W_t,W^{\mathrm B}_t)$.
+\end{enumerate}
+\end{definition}
+
+In (ii), $S$ is a positive local martingale, hence a supermartingale; whether it is a martingale depends on
+$\ell$ and the correlations. In (i), the martingale property is a linear constraint on $\ell$.
+
+\begin{proposition}[Martingale linear models]\label{prop:sig-martingale}
+If $\ell=\ell_\emptyset+\sum_{k=1}^d\sum_{|I|\le n-1}\ell^k_I\,\tilde e^k_I$, then
+$S_t=\ell_\emptyset+\sum_{k=1}^d\int_0^t\langle\ell^k,\sigX_{0,u}\rangle\,\dd W^k_u$, with $\ell^k=\sum_I\ell^k_Ie_I$, is a
+square-integrable $\Q$-martingale with $S_0=\ell_\emptyset$. Conversely, if $S$ is a local martingale, then $S$ admits a
+representation of this form (\textcite{cuchiero-gazzani-svaluto-ferro-2023}, Corollary~3.12). The coefficients $\ell$
+themselves need not have this form when $\rho$ is singular: for $d=2$, $\rho_{12}=1$ and $n=2$, $\ell=e_{10}-e_{20}$ gives
+$S\equiv0$.
+\end{proposition}
+
+\begin{proof}
+\Cref{prop:sig-brownian}(iii) and linearity give the representation. The integrands are continuous, adapted
+and in $\mathbb H^2$ by \cref{prop:sig-brownian}(i), so the integrals are square-integrable martingales
+(\cref{thm:ito-integral}).
+\end{proof}
+
+Then $\Q$ is a risk-neutral measure for $S$ (\cref{def:rn-measure}), and European options priced by
+$\Q$-expectations admit no static arbitrage among themselves (\cref{lem:arb-pricing-measure}). The price is not
+kept positive, however: $S_T$ is a polynomial in iterated integrals of Brownian motion, which can be negative. \Cref{exa:sig-model} in
+\cref{sec:sig-calibration} has $\Q(S_T\le0)\approx4\times10^{-4}$ at one year. Black--Scholes itself is a
+linear signature model of infinite order (\exref{ex:sig-gbm}).
+
+\begin{proposition}[Prices through expected signatures]\label{prop:sig-calibration}
+Let $E_t=\exp(tA)$, with $A$ from \eqref{eq:sig-ito-letter}.
+\begin{enumerate}[label=(\roman*)]
+  \item In \cref{prop:sig-martingale}, $S_T=\langle\tilde\ell,\sigX_{0,T}\rangle$ with
+    $\tilde\ell=\ell_\emptyset+\sum_{k,I}\ell^k_I\tilde e^k_I$, and $\EQ[S_T^m]=\langle\tilde\ell^{\,\sigsh m},E_T\rangle$ for every
+    $m\ge1$. In particular, $\EQ[S_T^2]=\theta^\top M\theta$ for the vector $\theta$ of the coefficients
+    $(\ell_\emptyset,\ell^k_I)$ and the matrix $M$ of the numbers $\langle f\sigsh g,E_T\rangle$, $f,g\in\{e_\emptyset,\tilde e^k_I\}$: a quadratic form in the
+    parameters.
+  \item In \cref{def:sig-model}(ii), with $\tilde e^{\mathrm B}_I=e_{I\mathrm B}-\frac12\rho_{i\mathrm B}e_{I'0}$
+    ($I=I'i$) and $\tilde e^{\mathrm B}_\emptyset=e_{\mathrm B}$,
+    \[
+      \log\frac{S_T}{S_0}=\sum_{|I|\le n}\ell_I\langle\tilde e^{\mathrm B}_I,\sigZ_{0,T}\rangle-\frac12\,\ell^\top Q^0(T)\,\ell,
+    \]
+    where $Q^0_{IJ}(T)=\langle(e_I\sigsh e_J)\otimes e_0,\sigX_{0,T}\rangle=\int_0^T\sigX^I_{0,u}\sigX^J_{0,u}\,\dd u$.
+    The realized variance is $\int_0^T\sigma_u^2\,\dd u=\ell^\top Q^0(T)\ell$, and its expectation, the fair strike
+    of a variance swap on it, is $\frac1T\ell^\top\EQ[Q^0(T)]\ell$, with $\EQ[Q^0_{IJ}(T)]=\langle(e_I\sigsh e_J)\otimes e_0,E_T\rangle$.
+  \item For $\Delta>0$, $\EQ\big[\int_T^{T+\Delta}\sigma_u^2\,\dd u\bigm|\F_T\big]=\ell^\top Q(T)\ell$, with the
+    $\F_T$-measurable, positive semidefinite matrix
+    $Q_{IJ}(T)=\big\langle(e_I\sigsh e_J)\otimes e_0,\ \sigX_{0,T}\otimes(E_\Delta-1)\big\rangle$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) The representation is \cref{prop:sig-martingale}. By \cref{prop:sig-brownian}(ii),
+$S_T^m=\langle\tilde\ell^{\,\sigsh m},\sigX_{0,T}\rangle$; take expectations with \cref{prop:sig-brownian}(iv) at $s=0$,
+the coordinates being integrable by (i) of the same proposition.
+(ii) $\log(S_T/S_0)=\int_0^T\sigma\,\dd W^{\mathrm B}-\frac12\int_0^T\sigma^2\,\dd u$. Apply \cref{prop:sig-brownian}(iii)
+to the primary process $(W,W^{\mathrm B})$, whose signature restricted to words without the letter B is $\sigX$:
+$\int_0^T\sigX^I_{0,u}\,\dd W^{\mathrm B}_u=\langle\tilde e^{\mathrm B}_I,\sigZ_{0,T}\rangle$. By the shuffle identity,
+$\sigma_u^2=\langle\ell\sigsh\ell,\sigX_{0,u}\rangle=\sum_{I,J}\ell_I\ell_J\langle e_I\sigsh e_J,\sigX_{0,u}\rangle$, and
+$\int_0^T\langle a,\sigX_{0,u}\rangle\,\dd u=\langle a\otimes e_0,\sigX_{0,T}\rangle$ by \cref{def:sig-brownian}. The strike is
+the expectation of $\frac1T\ell^\top Q^0(T)\ell$, by \cref{prop:sig-brownian}(iv).
+(iii) As in (ii), $\int_T^{T+\Delta}\sigma_u^2\,\dd u=\langle(\ell\sigsh\ell)\otimes e_0,\sigX_{0,T+\Delta}-\sigX_{0,T}\rangle$, and
+$\EQ[\sigX_{0,T+\Delta}\mid\F_T]=\sigX_{0,T}\otimes E_\Delta$ by \cref{prop:sig-brownian}(iv). The quadratic form is a
+conditional expectation of a square, hence nonnegative.
+\end{proof}
+
+Here $\sigma$ is unbounded and $S$ may be a strict local martingale, so \cref{prop:iv-variance-swap} does not apply
+as it stands. But $\sigma\in\mathbb H^2$ by \cref{prop:sig-brownian}(i), so $\int\sigma\,\dd W^{\mathrm B}$ is a martingale and
+(ii) gives $\EQ[\int_T^{T+\Delta}\sigma_u^2\,\dd u\mid\F_T]=-2\,\EQ[\log(S_{T+\Delta}/S_T)\mid\F_T]$. We therefore define the model
+VIX through the log contract, as in \textcite{cuchiero-gazzani-moller-svaluto-ferro-2026}, equation~(24):
+$\mathrm{VIX}_T^2=-\frac{2\cdot100^2}{\Delta}\EQ[\log(S_{T+\Delta}/S_T)\mid\F_T]=\frac{100^2}{\Delta}\ell^\top Q(T)\ell$, with $\Delta=30$ days:
+by (iii), a quadratic form in $\ell$ whose matrix is a linear function of the signature at $T$, up to level $2n+1$.
+Its link with the CBOE formula of \cref{def:iv-vix}, through the strip of options that replicates the log contract,
+needs in addition that $S$ be a true martingale. This is
+\textcite{cuchiero-gazzani-moller-svaluto-ferro-2025}, Theorem~5.1, where the primary process is a polynomial
+diffusion and $\sigX_{0,T}\otimes E_\Delta$ is replaced by a matrix exponential of the generator of its truncated
+signature (their Theorem~4.4); (ii) is their Proposition~6.4. No Euler scheme is needed: $S_T$ and $\mathrm{VIX}_T$
+are explicit functions of $\ell$ and of the signature at $T$. More generally, the price of a \emph{sig-payoff}, a
+linear functional of the signature of $(t,S_t)$ up to level $m$, is linear in $E_T$ and a polynomial of degree $m$
+in the parameters (\textcite{cuchiero-gazzani-svaluto-ferro-2023}, Corollary~3.23 and Remark~3.24).
+
+\section{Calibration}\label{sec:sig-calibration}
+
+A call payoff is not a polynomial of $S_T$, so its price is computed by Monte Carlo; the point of the
+linearity is that the parameters enter last. The procedure of \textcite{cuchiero-gazzani-svaluto-ferro-2023},
+Section~4.2, and \textcite{cuchiero-gazzani-moller-svaluto-ferro-2025}, Sections~5.3 and~7, is the following.
+\begin{enumerate}[label=(\arabic*)]
+  \item Fix the primary process, its parameters and the truncation level $n$.
+  \item Simulate $N$ paths once, and store the signature coordinates needed at each maturity $T$: the
+    features $\langle\tilde e^k_I,\sigX_{0,T}(\omega_j)\rangle$ in model (i); $\sigX_{0,T}(\omega_j)$ up to level $2n+1$ and the
+    words of $\sigZ$ in model (ii).
+  \item The model price of the call $(T,K)$ is the function
+    $\pi(\ell;T,K)=\frac1N\sum_j\big(S_T(\ell,\omega_j)-K\big)^+$ of $\ell$, with
+    $S_T(\ell,\omega_j)=\ell_\emptyset+\sum_{k,I}\ell^k_I\langle\tilde e^k_I,\sigX_{0,T}(\omega_j)\rangle$ in model (i), or
+    \cref{prop:sig-calibration}(ii) in model (ii). VIX options are priced by the same average of
+    $(\mathrm{VIX}_T(\ell,\omega_j)-K)^+$, with $\mathrm{VIX}_T$ from \cref{prop:sig-calibration}(iii): no nested simulation.
+  \item Minimize a weighted least-squares loss such as
+    $\sum_i\big((\pi(\ell;T_i,K_i)-\pi_i^{\mathrm{mkt}})/\mathcal V_i\big)^2$ with the Black--Scholes vegas $\mathcal V_i$,
+    an approximation of the squared implied volatility errors (\cref{rem:iv-solver}); the second paper
+    penalizes implied volatilities outside the bid--ask spreads, and fits SPX and VIX jointly through
+    $\lambda L_{\mathrm{SPX}}+(1-\lambda)L_{\mathrm{VIX}}$, with BFGS from \texttt{scipy}.
+  \item Reduce the variance with control variates whose prices are known in closed form, such as
+    sig-payoffs (\cref{prop:sig-calibration}(i)).
+\end{enumerate}
+
+The survey of \textcite{cuchiero-gazzani-moller-svaluto-ferro-2026}, Section~3.5.3, which we follow for these figures,
+reports the linear model with
+two Brownian motions of correlation $-0.5$, $n=3$ (13 parameters) and $N=10^6$, fitted to synthetic Heston surfaces
+(seven maturities from $30$ days to two years, thirteen strikes from $80\%$ to $120\%$) and to S\&P~500 implied
+volatilities of 17~March~2021. On the market data, one set of parameters misses the steep short-maturity smiles;
+with a loss close to the maximal error, the largest relative implied-volatility errors beyond $60$ days are about
+$5.6\%$ for $n=3$ and $2.3\%$ for $n=4$, and fitting the shortest maturity separately does better;
+\textcite{cuchiero-gazzani-svaluto-ferro-2023}, Section~4.2.4, also let the parameters depend on time. In the SPX--VIX
+model, the same survey (Section~4.3, summarizing \textcite{cuchiero-gazzani-moller-svaluto-ferro-2025}) reports that the
+volatility is
+driven by a three-dimensional Ornstein--Uhlenbeck process with slow and fast mean reversion, $n=3$ ($85$
+parameters, the words of length at most $3$ in $4$ letters) and $N=80{,}000$, on the trading day 02/06/2021 (2~June),
+with SPX maturities of
+$14$, $44$ and $58$ days and VIX maturities of $14$ and $28$ days: the model implied volatilities of both fall within
+the bid--ask spreads, and the VIX futures are matched to relative errors below $10^{-5}$. A two-dimensional Brownian
+primary process fits poorly at this truncation level (Appendix~A of the paper, as cited there). The authors describe the result as a joint fit of SPX and VIX
+smiles without jumps or rough volatility.
+
+\begin{example}[Replication: Heston smiles by a linear signature model]\label{exa:sig-model}
+We fit model (i) of \cref{prop:sig-martingale}, driven by $W^1$, with primary process $(t,W^1,W^2)$, correlation
+$-0.5$ and $n=3$ (the $13$ words of length at most $2$ in letters $0,1,2$), to call prices of the Heston model of
+\cref{fig:iv-heston} with $r=0$ (\cref{prop:iv-heston}; $v_0=\theta=0.04$, $\kappa=2$, $\xi=0.5$, $\rho=-0.7$), at
+maturities $\frac1{12},\frac14,\frac12,1$ and strikes $K=S_0e^{0.2\sqrt T x}$, $x\in\{-2,-1.5,\dots,2\}$: $36$ quotes.
+We use $N=50{,}000$ antithetic paths on $120$ steps per year, the vega-weighted loss with its exact gradient
+(\texttt{scipy.optimize.least\_squares}), and price below $S_0$ through the put and parity, which is the control
+variate $S_T-S_0$, a sig-payoff of price $0$. Simulation and fit take a few seconds. The fit to the
+calibration sample has a root-mean-square implied-volatility error of $6.1$ basis points ($19$ at most). Repriced on
+$60{,}000$ independent paths, the error is $19.7$ basis points ($41.5$ at most), against a combined Monte Carlo standard
+error of $16.2$ basis points for the two samples (\cref{fig:sig-calibration}). Over the five seeds $7,9,\dots,15$ the
+in-sample error ranges from $2.7$ to $6.1$ basis points and the out-of-sample error from $11.6$ to $19.7$; the shift of
+about $+25$ basis points of the one-month smile in the figure is sampling noise, since its mean ranges from $-2$ to
+$+28$ basis points over these seeds. So the Monte Carlo error accounts for most of the out-of-sample error at these
+sample sizes; the papers use $N=10^6$. With $n=2$ ($4$ parameters, $30{,}000$ paths for the fit and for the check),
+the error is $64$ to $71$ basis points in sample and $64$ to $74$ out of sample. The grid discretization changes
+$\EQ[S_1]$ by $7\times10^{-5}$, computed exactly from the expected signature of the piecewise linear path.
+\end{example}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch20-calibration}
+  \caption{\Cref{exa:sig-model}. Left: Heston implied volatilities (markers) and the calibrated linear signature
+    model with $n=3$ (lines; $50{,}000$ and $60{,}000$ paths) and $n=2$ (dotted; $30{,}000$ and $30{,}000$), repriced on
+    independent paths. Right: errors of the $n=3$ model in
+    basis points against standardized log-strike, with twice the combined Monte Carlo standard error of the
+    calibration and repricing samples (grey).}
+  \label{fig:sig-calibration}
+\end{figure}
+
+\demo{20-signatures.ipynb}{calibrate the linear signature model to a Heston or Black--Scholes surface with any
+truncation level, number of paths and correlation, and compare in- and out-of-sample errors.}
+
+The appeal is a separation: the expensive part, simulating the primary process and its signature, is done once,
+and the optimization over $\ell$ is then cheap and smooth, while the universality results say that, on compact
+sets of paths, enough coordinates approximate any continuous functional. The costs are visible too: the number of parameters grows like
+$(d+1)^n$, the linear price may become negative, and the fit is only as good as the Monte Carlo sample.
+
+\furtherreading
+\textcite{chevyrev-kormilitzin-primer} is an accessible introduction to signatures, with the proofs of their
+basic properties and applications to learning; \textcite{lyons-caruana-levy-2007}, Chapter~2, and
+\textcite{friz-victoir-2010} develop the theory of rough paths. Signature-based models, their pricing formulas
+and their calibration are surveyed by \textcite{cuchiero-gazzani-moller-svaluto-ferro-2026}, in a volume on
+signature methods in finance.

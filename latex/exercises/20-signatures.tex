@@ -1,0 +1,126 @@
+% Exercises for Chapter 20 (signatures and signature-based models). Statements only: solutions are kept privately.
+% Notation as in the notes: Sig(X)_{s,t} is the signature, letters 1, ..., d (and 0 for time), e_I the
+% basis tensors, ⧢ the shuffle product, X̂_t = (t, X_t), and 𝕏 the signature of (t, W_t).
+\providecommand{\sigSig}{\operatorname{Sig}}
+\providecommand{\sigsh}{\mathbin{\sqcup\mkern-3mu\sqcup}}
+\providecommand{\sigX}{\mathbb X}
+
+\begin{exercise}[Two corners]\label{ex:sig-two-corners}
+\easy Let $X$ be the piecewise linear path $(0,0)\to(1,0)\to(1,1)$ in $\R^2$, and $Y$ the path
+$(0,0)\to(0,1)\to(1,1)$, each segment run in one unit of time.
+\begin{enumerate}[label=(\alph*)]
+  \item Compute levels $1$ and $2$ of $\sigSig(X)_{0,2}$ and $\sigSig(Y)_{0,2}$ with \noteref{cor:sig-piecewise-linear}.
+  \item Compute the two L\'evy areas and interpret their values and signs as areas.
+  \item Check the shuffle identity (\noteref{prop:sig-shuffle}) for $e_1\sigsh e_2$ and $e_1\sigsh e_1$ on both paths.
+  \item Show that no linear functional of the signature truncated at level $1$ distinguishes $X$ from $Y$, and
+    give one of level $2$ that does.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[One dimension, and why time is added]\label{ex:sig-one-dimension}
+\easy
+\begin{enumerate}[label=(\alph*)]
+  \item Let $X:[0,T]\to\R$ be piecewise $C^1$, so that $\sigSig(X)_{0,T}=\exp(X_T-X_0)$ by \noteref{prop:sig-shuffle}.
+    If $X_T=X_0$, show directly that $X$ is tree-like, with the height function $h(u)=|X_u-X_0|$, as
+    \noteref{thm:sig-uniqueness} predicts. Give two paths with the same signature but different time averages
+    $\frac1T\int_0^TX_t\,\dd t$, and two with different maxima.
+  \item Let $\widehat X_t=(t,X_t)$, with letters $0$ (time) and $1$. Show that
+    $\int_0^TX_t\,\dd t=TX_0+\langle e_{10},\sigSig(\widehat X)_{0,T}\rangle$, that
+    $\langle e_{01},\sigSig(\widehat X)_{0,T}\rangle=\int_0^Tt\,\dd X_t$, and that
+    $\langle e_{01}+e_{10},\sigSig(\widehat X)_{0,T}\rangle=T(X_T-X_0)$.
+  \item On the set $\mathcal P$ of \noteref{thm:sig-universal} with $d=1$, show that
+    $M(X)=\max_{t\le T}X_t$ satisfies $|M(X)-M(Y)|\le\delta(X,Y)$. What does \noteref{thm:sig-universal} then say
+    about $M$?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Reversal and inverses]\label{ex:sig-reversal}
+\medium
+\begin{enumerate}[label=(\alph*)]
+  \item Let $a\in T((\R^d))$ with $a^\emptyset=1$, and $x=a-1$. Show that $b=\sum_{k\ge0}(-x)^{\otimes k}$ is well defined
+    (each coordinate is a finite sum) and that $a\otimes b=b\otimes a=1$. Write levels $1$ and $2$ of $b$ in terms of
+    those of $a$.
+  \item Show that $\exp(v)\otimes\exp(-v)=1$ for $v\in\R^d$. Deduce that for a piecewise linear path $X$ on
+    $[0,T]$, its reversal $\overleftarrow X_u=X_{T-u}$ satisfies
+    $\sigSig(\overleftarrow X)_{0,T}=\sigSig(X)_{0,T}^{-1}$, and that $X$ followed by $\overleftarrow X$ has signature $1$.
+  \item Check (a) and (b) at level $2$ on the path $X$ of \exref{ex:sig-two-corners}, computing the signature of its
+    reversal directly.
+  \item Which statement of \noteref{thm:sig-uniqueness} does (b) illustrate? Give a height function $h$ showing that
+    $X$ followed by $\overleftarrow X$ is tree-like, for the path $X$ of \exref{ex:sig-two-corners}.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[L\'evy area of Brownian motion]\label{ex:sig-levy-area}
+\medium Let $W^1,W^2$ be independent Brownian motions, and
+$\mathcal A_T=\frac12\int_0^T\big(W^1_u\,\dd W^2_u-W^2_u\,\dd W^1_u\big)$ (It\^o integrals).
+\begin{enumerate}[label=(\alph*)]
+  \item Show that the same expression with Stratonovich integrals, defined as in \noteref{sec:sig-brownian}, is equal
+    to $\mathcal A_T$.
+  \item Show that $(\mathcal A_t)$ is a martingale with $\E[\mathcal A_T]=0$ and $\E[\mathcal A_T^2]=T^2/4$.
+    \emph{Hint:} compute $\E\big[\int_0^TW^1\,\dd W^2\int_0^TW^2\,\dd W^1\big]$ along the left-point sums of
+    \noteref{cor:ito-riemann}.
+  \item Using Brownian scaling (\noteref{prop:bm-invariance}) and the left-point sums of
+    \noteref{cor:ito-riemann}, show that $\mathcal A_T$ has the law of $T\mathcal A_1$. Check that this is consistent
+    with (b).
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[When is a linear signature model a martingale?]\label{ex:sig-martingale-n2}
+\medium Let $d=1$, $\widehat X_t=(t,W_t)$ with letters $0$ and $1$, $\sigX=\sigSig(\widehat X)$ as in
+\noteref{def:sig-brownian}, and $S_t=\ell_\emptyset+\sum_{0<|I|\le2}\ell_I\sigX^I_{0,t}$, the linear signature model with
+$n=2$ (words $0,1,00,01,10,11$).
+\begin{enumerate}[label=(\alph*)]
+  \item Express the six coordinates $\sigX^I_{0,t}$ in terms of $t$, $W_t$, $\int_0^tW_u\,\dd u$ and $\int_0^tu\,\dd W_u$.
+  \item Show that $S$ is a martingale if and only if $\ell_{00}=\ell_{10}=0$ and $\ell_0+\frac12\ell_{11}=0$. \emph{Hint:}
+    write $S$ as an It\^o process and compute $\E[S_t-S_s\mid\F_s]$. Check that this is the form of
+    \noteref{prop:sig-martingale}.
+  \item In the martingale case, write $S_T-S_0=\int_0^T(a+bu+cW_u)\,\dd W_u$ and compute $\Var(S_T)$ with the It\^o
+    isometry. Then compute it again as $\theta^\top M\theta-S_0^2$ with \noteref{prop:sig-calibration}(i), and
+    compare.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Variance swap and VIX in a signature volatility model]\label{ex:sig-vix}
+\medium Let $d=1$ and, in the signature volatility model of \noteref{def:sig-model}(ii), let
+$\sigma_t=a+bt+cW_t$, that is $\ell=a\,e_\emptyset+b\,e_0+c\,e_1$, with $b\ne0$.
+\begin{enumerate}[label=(\alph*)]
+  \item Write $\sigma_t^2=\langle\ell\sigsh\ell,\sigX_{0,t}\rangle$ explicitly as a combination of words.
+  \item Compute the variance-swap strike $\frac1T\EQ\int_0^T\sigma_t^2\,\dd t$ directly, and with
+    \noteref{prop:sig-calibration}(ii) and the expected signature of \noteref{prop:sig-brownian}(iv).
+  \item Compute $\EQ\big[\int_T^{T+\Delta}\sigma_u^2\,\dd u\mid\F_T\big]$ directly, writing
+    $W_u=W_T+(W_u-W_T)$.
+  \item Check the terms in $c^2$ of (c) against \noteref{prop:sig-calibration}(iii): compute
+    $Q_{11}(T)=\langle(e_1\sigsh e_1)\otimes e_0,\sigX_{0,T}\otimes(E_\Delta-1)\rangle$ with Chen's rule for products.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Black--Scholes as a signature model]\label{ex:sig-gbm}
+\hard Let $S_t=S_0\exp(\sigma W_t-\frac12\sigma^2t)$ with $S_0,\sigma>0$, and define iterated It\^o integrals by
+$J_0=1$ and $J_k(t)=\int_0^tJ_{k-1}(u)\,\dd W_u$. Let the polynomials $H_k(x,t)$ be defined by
+$\exp(\lambda x-\frac12\lambda^2t)=\sum_{k\ge0}\lambda^kH_k(x,t)/k!$ for all real $\lambda$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $\partial_xH_k=kH_{k-1}$ and $\partial_tH_k+\frac12\partial_{xx}H_k=0$, and deduce with It\^o's
+    formula that $J_k(t)=H_k(W_t,t)/k!$.
+  \item Show that $\E[J_k(t)J_l(t)]=\1_{\{k=l\}}\,t^k/k!$.
+  \item Show that $S_T=S_0\sum_{k\ge0}\sigma^kJ_k(T)$ in $L^2$, and that the truncation
+    $S^{(n)}_T=S_0\sum_{k\le n}\sigma^kJ_k(T)$ satisfies $\E[(S_T-S^{(n)}_T)^2]=S_0^2\sum_{k>n}\sigma^{2k}T^k/k!$.
+  \item With \noteref{prop:sig-brownian}(iii), write $J_1$, $J_2$, $J_3$ as linear functionals of
+    $\sigX_{0,t}$, letters $0$ and $1$. Explain why $S^{(n)}$ is a linear signature model in the martingale form of
+    \noteref{prop:sig-martingale}, and give its coefficients $\ell^1_I$ for $n=3$. For $\sigma=0.2$ and $T=1$, compute
+    the relative error $\|S_T-S^{(n)}_T\|_{L^2}/\|S_T\|_{L^2}$ for $n=1,2,3$.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Calibrating to a flat smile]\label{ex:sig-flat-smile}
+\medium This is a computational exercise; you may use \texttt{ieor222.signatures} and
+\texttt{ieor222.volatility}. Take Black--Scholes call prices with $\sigma=20\%$, $r=0$, $S_0=1$, maturities
+$T\in\{0.25,1\}$ and strikes $K=e^{0.2\sqrt T x}$, $x\in\{-1.5,-0.75,0,0.75,1.5\}$, and the linear signature model in
+martingale form driven by one Brownian motion, with primary process $(t,W_t)$.
+\begin{enumerate}[label=(\alph*)]
+  \item Calibrate the model with $n=1$, $S_t=1+\ell^1_\emptyset W_t$, on $40{,}000$ antithetic paths, and report the
+    implied-volatility errors. Explain their shape. (Compare with Bachelier's model, \noteref{rem:iv-bachelier}.)
+  \item Repeat with $n=2$ and $n=3$, reporting the errors on the calibration paths and on $40{,}000$ independent
+    paths. Compare the calibrated coefficients with the truncation of \exref{ex:sig-gbm}.
+  \item Which value of $n$ would you use, and why?
+\end{enumerate}
+\end{exercise}

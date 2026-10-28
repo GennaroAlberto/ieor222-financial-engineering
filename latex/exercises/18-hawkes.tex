@@ -1,0 +1,145 @@
+% Exercises for Chapter 18 (Hawkes processes and limit order books). Statements only: solutions are kept privately.
+% Notation as in the notes: lambda the conditional intensity, G the branching matrix, rho(G) its spectral radius,
+% exponential kernels phi(t) = alpha beta e^{-beta t}.
+
+\begin{exercise}[The exponential kernel]\label{ex:hk-exponential}
+\easy Let $d=1$, $\mu>0$ and $\varphi(t)=\alpha\beta e^{-\beta t}$ with $0\le\alpha<1$, $\beta>0$, and let
+$\Lambda=\mu/(1-\alpha)$.
+\begin{enumerate}[label=(\alph*)]
+  \item Using the renewal equation of \noteref{prop:hk-stationary}, show that $m(t)=\E[\lambda(t)]$ is
+    differentiable, with $m'=\beta(\mu-(1-\alpha)m)$ and $m(0)=\mu$, and deduce
+    $m(t)=\Lambda-(\Lambda-\mu)e^{-\beta(1-\alpha)t}$.
+  \item Compute $\E[N_t]$ and the limit of $\E[N_t]-\Lambda t$ as $t\to\infty$.
+  \item With time in seconds and $\beta=10$, how long does it take for $m(t)$ to come within $1\%$ of $\Lambda$ when
+    $\alpha=0.9$? When $\alpha=0.99$? Comment in the light of \noteref{rem:hk-exp}.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[The size of a cluster]\label{ex:hk-cluster}
+\medium Let $d=1$ with branching ratio $a=\|\varphi\|_1\in(0,1)$, and let $S$ be the number of events in the cluster
+of one event, itself included (\noteref{prop:hk-branching}). Let $e=\E[S]=1/(1-a)$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $\E[S^2]<\infty$ (consider the clusters truncated after $n$ generations) and that
+    $\Var(S)=a/(1-a)^3$. \emph{Hint:} the root has a Poisson$(a)$ number of children, each of which starts an
+    independent copy of the cluster.
+  \item You may use the \emph{hitting time theorem}: for a Galton--Watson tree whose offspring numbers are \iid
+    copies of $K$, $\Prob(S=n)=\frac1n\Prob(K_1+\dots+K_n=n-1)$ for $n\ge1$, with $K_1,K_2,\dots$ \iid copies of $K$.
+    Deduce that $S$ has the Borel law $\Prob(S=n)=e^{-an}(an)^{n-1}/n!$.
+  \item Show that the expected number of immigrants divided by the expected number of events in a cluster is
+    $1-a$, and that the expected number of generation-$g$ events divided by the expected size of a cluster is
+    $(1-a)a^g$. What are the exogenous fraction of the activity and the mean generation of an event when $a=0.9$?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Thinning with a delayed kernel]\label{ex:hk-thinning}
+\medium Let $d=1$, $\mu>0$ and $\varphi(t)=\alpha\beta^2te^{-\beta t}$ with $\alpha\in(0,1)$ and $\beta>0$: an event
+excites most strongly after a delay.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $\|\varphi\|_1=\alpha$ and that $\varphi$ attains its maximum $\alpha\beta/e$ at $t=1/\beta$.
+    Explain why the hypothesis of \noteref{prop:hk-ogata} fails, and what would go wrong if the algorithm were run
+    with $M=\lambda(s+)$ anyway.
+  \item Let $\tilde\varphi(x)=\sup_{v\ge x}\varphi(v)$. Show that $\tilde\varphi(x)=\varphi(\max(x,1/\beta))$, and that
+    for a history $h$ with events $s_1<\dots<s_k$ the function $M(s)=\mu+\sum_l\tilde\varphi(s-s_l)$ is
+    nonincreasing and satisfies $M(s)\ge\lambda(u\mid h)$ for all $u\ge s>s_k$.
+  \item Show that the proof of \noteref{prop:hk-ogata} goes through when, in step 1, $M=M(s)$ is any bound with
+    $M(s)\ge\bar\lambda(u\mid h)$ for all $u>s$ and $\sup_{s>s_k}M(s)<\infty$. Write the modified algorithm for
+    this kernel.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[The fitted compensator matches the count]\label{ex:hk-mle-identity}
+\medium Fix the decays $\beta_{ij}$ of a $d$-variate Hawkes process with exponential kernels observed on $[0,T]$. By
+\noteref{prop:hk-mle}, for each type $i$ the log-likelihood has the form
+$\ell^i(\theta)=\sum_{k:\,\kappa_k=i}\log(\theta^\top x_k)-\theta^\top c$ in $\theta=(\mu_i,\alpha_{i1},\dots,\alpha_{id})$,
+with vectors $x_k,c\in[0,\infty)^{d+1}$ that do not depend on $\theta$, and $\theta^\top c=\int_0^T\lambda^i$.
+\begin{enumerate}[label=(\alph*)]
+  \item Let $N^i_T\ge1$ and let $\hat\theta\in[0,\infty)^{d+1}$ maximize $\ell^i$, with $\hat\theta^\top x_k>0$ for all $k$.
+    By looking at $t\mapsto\ell^i(t\hat\theta)$, $t>0$, show that the fitted compensator satisfies
+    $\int_0^T\hat\lambda^i(s)\,\dd s=N^i_T$.
+  \item Deduce the maximum likelihood estimator of the rate of a Poisson process. For the transformed gaps
+    $\hat\tau_k$ of \noteref{thm:hk-time-change} under the fitted model ($d=1$), show that
+    $\sum_{k\le N_T}\hat\tau_k\le N_T$, with a difference equal to the compensator of the last incomplete gap.
+    Why does a goodness-of-fit test have to look at the shape of the distribution of the $\hat\tau_k$ rather than at
+    their mean?
+  \item For $d=1$ and $n=N_T\ge2$, show that $\ell^1$ is strictly concave on $(0,\infty)^2$, so that its maximizer
+    there, if it exists, is unique.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Volatility from order flow]\label{ex:hk-price-variance}
+\medium Let $(N^+,N^-)$ count upward and downward ticks of a price $P=N^+-N^-$, and let it be a bivariate Hawkes
+process with baseline $(\nu,\nu)$, $\nu>0$, self-excitation $\varphi_{++}=\varphi_{--}=\varphi_s$ and
+cross-excitation $\varphi_{+-}=\varphi_{-+}=\varphi_c$, with $g_s=\|\varphi_s\|_1$, $g_c=\|\varphi_c\|_1$ and
+$\int_0^\infty t^{1/2}(\varphi_s+\varphi_c)(t)\,\dd t<\infty$.
+\begin{enumerate}[label=(\alph*)]
+  \item Find the eigenvalues and eigenvectors of $G$, show that $\varrho(G)<1$ if and only if $g_s+g_c<1$, and
+    compute $\Lambda$.
+  \item Assume $g_s+g_c<1$. Using \noteref{thm:hk-fclt}, show that $P_{Tv}/\sqrt T$ converges in law to $\sigma W_v$ for
+    a Brownian motion $W$, with $\sigma^2=2\Lambda_+/(1-g_s+g_c)^2$, $\Lambda_+=\nu/(1-g_s-g_c)$.
+  \item Compare $\sigma^2$ with its value $2\nu$ without excitation, first for pure self-excitation ($g_c=0$), then for
+    pure cross-excitation ($g_s=0$, $g_c=x$). For which $x$ is the price less volatile than without excitation?
+    Interpret cross-excitation as mean reversion of the price.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[The CIR limit for the exponential kernel]\label{ex:hk-cir}
+\hard In the setting of \noteref{rem:hk-cir}, let $\varphi^T(t)=a_T\beta e^{-\beta t}$ with $a_T=1-\lambda/T$ for $T>\lambda>0$,
+$\mu>0$, $m=1/\beta$, and $C^T_t=(1-a_T)\lambda^T_{Tt}$.
+\begin{enumerate}[label=(\alph*)]
+  \item Explain why $C^T$ is a Markov process with generator
+    \[
+      L^Tf(c)=-T\beta\big(c-(1-a_T)\mu\big)f'(c)+\frac{Tc}{1-a_T}\Big(f\big(c+(1-a_T)a_T\beta\big)-f(c)\Big),
+    \]
+    and show that for every $f$ with bounded continuous derivatives up to order $3$ and every $K>0$,
+    $\sup_{0\le c\le K}|L^Tf(c)-Lf(c)|\to0$ as $T\to\infty$, where
+    $Lf(c)=\frac\lambda m(\mu-c)f'(c)+\frac\lambda{2m^2}c\,f''(c)$ is the generator of the CIR process of
+    \noteref{thm:hk-scaling-limit}(i).
+  \item For a fixed branching ratio $a<1$, you may use that $\frac{\dd}{\dd t}\E[f(\lambda_t)]=\E[\mathcal Lf(\lambda_t)]$
+    for polynomials $f$, where $\mathcal Lf(x)=-\beta(x-\mu)f'(x)+x\big(f(x+a\beta)-f(x)\big)$ is the generator of the
+    intensity. Write the linear differential equations solved by $\E[\lambda_t]$ and $\E[\lambda_t^2]$ for $t\ge0$ (they give
+    the exact first two moments of $C^T_1$), find their limits as $t\to\infty$, and deduce that the stationary mean and
+    variance of $C^T$ are $\mu$ and $\mu a_T^2\beta/2$.
+  \item Show that the Gamma law with shape $2\mu m$ and scale $1/(2m)$ is stationary for the CIR limit, in the sense
+    that its density $p$ satisfies $\frac12(\sigma^2xp)''-(\kappa(\mu-x)p)'=0$ with $\kappa=\lambda/m$ and
+    $\sigma^2=\lambda/m^2$, and compare its mean and variance with (b). When does the Feller condition of
+    \noteref{prop:ir-cir} hold?
+  \item Let $\kappa$, $\sigma$ be as in (c), $u\ge0$, $t>0$, and let $A,Q\ge0$ solve $A'=\kappa\mu Q$ and
+    $Q'=-\kappa Q-\frac12\sigma^2Q^2$ on $[0,t]$, with $A(0)=0$, $Q(0)=u$. Find $A$ and $Q$. For the CIR limit $X$ with
+    $X_0=0$, show that $M_s=\exp(-A(t-s)-Q(t-s)X_s)$, $s\le t$, is a martingale, and deduce
+    $\E[e^{-uX_t}]=\big(1+u\sigma^2(1-e^{-\kappa t})/(2\kappa)\big)^{-2\kappa\mu/\sigma^2}$. Conclude that $X_1$ has the Gamma law
+    with shape $2\mu m$ and scale $(1-e^{-\lambda/m})/(2m)$. You may use that $X\ge0$, that
+    $\E\int_0^tX_s\,\dd s<\infty$, and that Laplace transforms on $[0,\infty)$ determine laws.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Mittag-Leffler kernels]\label{ex:hk-mittag-leffler}
+\hard Let $0<\alpha<1$, $\lambda>0$, $k(t)=\lambda t^{\alpha-1}/\Gamma(\alpha)$, and let $f=f^{\alpha,\lambda}$ and
+$F=F^{\alpha,\lambda}$ be as in \noteref{thm:hk-scaling-limit}. You may use the Beta integral
+$\int_0^t(t-s)^{p-1}s^{q-1}\,\dd s=\frac{\Gamma(p)\Gamma(q)}{\Gamma(p+q)}t^{p+q-1}$ for $p,q>0$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $f(t)=\sum_{n\ge0}(-1)^n\lambda^{n+1}t^{\alpha(n+1)-1}/\Gamma(\alpha(n+1))$, that
+    $f(t)\sim k(t)$ as $t\downarrow0$, and that $f=k-k*f$: $f$ is the \emph{resolvent} of $k$. Justify the
+    termwise operations.
+  \item Show that $F(t)=\int_0^tf=1-E_\alpha(-\lambda t^\alpha)$ and that $F=k*(1-F)$.
+  \item Let $\sigma\ge0$ and let $Y\ge0$ be a continuous adapted process with
+    $Y_t=F(t)+\sigma\int_0^tf(t-s)\sqrt{Y_s}\,\dd B_s$ for all $t$. Assuming that stochastic and ordinary integrals may
+    be exchanged (a stochastic Fubini theorem), show that
+    $Y_t=\int_0^tk(t-s)(1-Y_s)\,\dd s+\sigma\int_0^tk(t-s)\sqrt{Y_s}\,\dd B_s$: the two forms of the rough CIR equation
+    in \noteref{sec:hk-scaling} agree.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Estimating the branching ratio from counts]\label{ex:hk-moment-estimator}
+\medium This is a computational exercise. Let $d=1$ and $\varphi(t)=a\beta e^{-\beta t}$ with $a\in(0,1)$.
+\begin{enumerate}[label=(\alph*)]
+  \item Assume that, for a window of length $w$ much longer than the memory of the process, the count $N_w$ of a
+    stationary process has the mean and variance that \noteref{thm:hk-fclt} suggests. Show that
+    $\Var(N_w)/\E[N_w]\approx(1-a)^{-2}$, and propose an estimator $\hat a$ of $a$ from the counts $n_1,\dots,n_K$ of a
+    path in $K$ disjoint windows of length $w$.
+  \item Simulate a path with $(\mu,a,\beta)=(1,0.8,1)$ on $[0,2\times10^5]$ (with the code of the chapter or your
+    own). Compute $\hat a$ for $w=1,10,100,1000$, and the maximum likelihood estimate of $a$ on the same path.
+  \item Explain the values you find for small and for large $w$, in terms of the time scale $1/(\beta(1-a))$ of
+    \noteref{rem:hk-exp} and of the number of windows. Why might one still prefer $\hat a$ to maximum likelihood on
+    real data?
+\end{enumerate}
+\end{exercise}

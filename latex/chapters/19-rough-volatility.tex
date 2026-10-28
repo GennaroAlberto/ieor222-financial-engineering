@@ -1,5 +1,538 @@
-\begin{planned}
-  \item volatility is rough: the scaling of log-volatility increments in realized-variance data (Gatheral, Jaisson and Rosenbaum, 2018)
-  \item fractional Brownian motion and the Riemann--Liouville process; the rough Bergomi model and the at-the-money skew (Bayer, Friz and Gatheral, 2016)
-  \item simulation by the hybrid scheme; the rough Heston model and its characteristic function (El Euch and Rosenbaum, 2019)
-\end{planned}
+% Chapter 19: Rough volatility.
+
+In the stochastic volatility models of \cref{ch:15-volatility} the variance is a diffusion, driven by a
+Brownian motion: its paths are H\"older continuous of every order below $\frac12$, and its local
+behaviour looks like that of $W$. Two observations say that volatility is much rougher. In time series,
+the increments of log-volatility estimated from high-frequency data scale like $\Delta^H$ with $H$ of
+order $0.1$ \citep{gatheral-jaisson-rosenbaum-2018}. In option prices, the at-the-money skew of the S\&P
+500 decays with the maturity $T$ roughly like $T^{-0.4}$ \citep{bayer-friz-gatheral-2016}, while in the
+Heston model it stays bounded as $T\downarrow0$. Both facts are explained by one parameter: drive
+log-volatility by a fractional Brownian motion with Hurst index $H\approx0.1$.
+
+We construct fractional Brownian motion and its Riemann--Liouville variant (\cref{sec:rv-fbm}),
+estimate $H$ as \textcite{gatheral-jaisson-rosenbaum-2018} do (\cref{sec:rv-gjr}), price in the rough
+Bergomi model and derive the power law of the skew (\cref{sec:rv-rbergomi}), simulate
+(\cref{sec:rv-simulation}), and end with the rough Heston model, whose characteristic function solves a
+fractional Riccati equation (\cref{sec:rv-rough-heston}).
+
+\paragraph{Setting.} $K_q=\E|N|^q=2^{q/2}\Gamma(\frac{q+1}2)/\sqrt\pi$ for $N\sim\mathcal N(0,1)$ and
+$q>0$. Gaussian vectors and processes are centred unless stated otherwise. For $x\in\R$ and
+$a\in\R$, $x_+^a=x^a$ if $x>0$ and $x_+^a=0$ if $x\le0$ (so $x_+^0=\1_{\{x>0\}}$).
+
+\section{Fractional Brownian motion}\label{sec:rv-fbm}
+
+\begin{definition}[Fractional Brownian motion]\label{def:rv-fbm}
+Let $H\in(0,1)$. A \emph{fractional Brownian motion} (fBM) with \emph{Hurst index} $H$ is a process
+$W^H=(W^H_t)_{t\ge0}$ with $W^H_0=0$ and continuous paths whose finite-dimensional vectors are centred
+Gaussian with
+\begin{equation}\label{eq:rv-fbm-cov}
+  \Cov(W^H_s,W^H_t)=R_H(s,t):=\tfrac12\big(s^{2H}+t^{2H}-|t-s|^{2H}\big),\qquad s,t\ge0 .
+\end{equation}
+\end{definition}
+
+For $H=\frac12$, $R_H(s,t)=\min(s,t)$ and $W^H$ is a Brownian motion (\cref{prop:bm-gaussian}). For
+other $H$ it is not obvious that $R_H$ is a covariance, that is, that
+$\sum_{i,j}c_ic_jR_H(t_i,t_j)\ge0$. We prove it by writing down a process with this covariance.
+
+\emph{Wiener integrals over the line.} Let $W$ and $W'$ be independent Brownian motions and
+$h\in L^2(\R)$. By \cref{prop:ito-deterministic}, $\int_T^{T'}h(s)\,\dd W_s\sim\mathcal N(0,\int_T^{T'}h^2)$
+for $T<T'$, so $\int_0^Th(s)\,\dd W_s$ is Cauchy in $L^2$ as $T\to\infty$; let
+$\int_\R h\,\dd B$ be the $L^2$-limit of $\int_0^Th(s)\,\dd W_s+\int_0^Th(-s)\,\dd W'_s$. The map
+$h\mapsto\int_\R h\,\dd B$ is linear, so every linear combination of such integrals is again one; as
+$L^2$-limits of centred Gaussian variables are centred Gaussian (their characteristic functions
+converge), $(\int_\R h_1\dd B,\dots,\int_\R h_m\dd B)$ is a centred Gaussian vector with
+$\E[\int h_i\dd B\int h_j\dd B]=\int_\R h_ih_j$. Here $B_t=W_t$ for $t\ge0$ and $B_t=W'_{-t}$ for $t<0$ is a
+\emph{two-sided} Brownian motion.
+
+\begin{proposition}[Mandelbrot--Van Ness representation]\label{prop:rv-mvn}
+Let $H\in(0,1)$, $\alpha=H-\frac12$, and $k_t(u)=(t-u)_+^\alpha-(-u)_+^\alpha$ for $t\ge0$, $u\in\R$. Then
+$k_t\in L^2(\R)$, $c_H^2:=\int_\R k_1(u)^2\,\dd u\in(0,\infty)$, and $X_t=c_H^{-1}\int_\R k_t\,\dd B$ is a centred
+Gaussian process with covariance $R_H$. In particular $R_H$ is a covariance function.
+\end{proposition}
+
+\begin{proof}
+On $(0,1)$, $k_1(u)^2=(1-u)^{2\alpha}$ is integrable because $2\alpha>-1$; near $u=0^-$, $k_1(u)^2\le
+2(1-u)^{2\alpha}+2(-u)^{2\alpha}$ is integrable for the same reason; as $u\to-\infty$,
+$k_1(u)=\alpha|u|^{\alpha-1}(1+o(1))$ by the mean value theorem, and $|u|^{2\alpha-2}$ is integrable at infinity
+because $2\alpha-2<-1$. So $c_H<\infty$, and $c_H>0$ since $k_1\ne0$. For $s<t$,
+$k_t(u)-k_s(u)=(t-u)_+^\alpha-(s-u)_+^\alpha=k_{t-s}(u-s)$, and $k_c(cu)=c^\alpha k_1(u)$ for $c>0$. By the
+isometry, a shift and a change of scale,
+\begin{align*}
+  \E\big[(X_t-X_s)^2\big]&=c_H^{-2}\!\int_\R k_{t-s}(u-s)^2\,\dd u=c_H^{-2}\!\int_\R k_{t-s}(u)^2\,\dd u\\
+  &=c_H^{-2}(t-s)^{2\alpha+1}\!\int_\R k_1(v)^2\,\dd v=(t-s)^{2H} .
+\end{align*}
+As $k_0=0$, $X_0=0$ and $\E[X_t^2]=t^{2H}$; polarization,
+$\Cov(X_s,X_t)=\frac12(\E X_s^2+\E X_t^2-\E(X_t-X_s)^2)$, gives $R_H$.
+\end{proof}
+
+\textcite{mandelbrot-van-ness-1968} normalize by $\Gamma(H+\frac12)$ instead of $c_H$; the constant has
+the closed form $c_H^2=\Gamma(H+\frac12)\Gamma(2-2H)/(2H\,\Gamma(\frac32-H))$ (the inverse square of the
+constant $C_H$ of \textcite{bayer-friz-gatheral-2016}, Section~2; checked against quadrature in
+\coderef{code/tests/test_roughvol.py}).
+
+\begin{proposition}[Properties of fBM]\label{prop:rv-fbm-properties}
+Let $W^H$ be a fBM, $H\in(0,1)$.
+\begin{enumerate}[label=(\roman*)]
+  \item (\emph{Self-similarity}) For $c>0$, $(c^{-H}W^H_{ct})_{t\ge0}$ is a fBM with index $H$.
+  \item (\emph{Stationary increments}) For $s\ge0$, $(W^H_{s+t}-W^H_s)_{t\ge0}$ is a fBM with index $H$.
+  \item (\emph{Characterization}) Conversely, let $X$ have continuous paths, $X_0=0$, centred Gaussian
+    finite-dimensional vectors and $\Var X_1=1$. If $(X_{ct})_t$ and $(c^HX_t)_t$ have the same
+    finite-dimensional laws for every $c>0$, and so do $(X_{s+t}-X_s)_t$ and $(X_t)_t$ for every $s\ge0$,
+    then $X$ is a fBM with index $H$.
+  \item (\emph{Correlated increments}) For $n\in\N$, the increments over $[n,n+1]$ and $[0,1]$ have
+    covariance
+    \begin{equation}\label{eq:rv-fgn}
+      \rho_H(n)=\tfrac12\big((n+1)^{2H}-2n^{2H}+|n-1|^{2H}\big).
+    \end{equation}
+    For $n\ge1$, $\rho_H(n)$ is positive if $H>\frac12$, zero if $H=\frac12$ and negative if $H<\frac12$, and
+    $\rho_H(n)\sim H(2H-1)n^{2H-2}$ as $n\to\infty$ when $H\ne\frac12$.
+  \item (\emph{Regularity}) $\E|W^H_t-W^H_s|^q=K_q|t-s|^{qH}$ for $q>0$. Every centred Gaussian process
+    with covariance $R_H$ has a modification whose paths are locally H\"older continuous of every order
+    $\gamma<H$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+The processes in (i) and (ii) have continuous paths, start at $0$ and are linear transformations of
+$W^H$, so their vectors are centred Gaussian; it suffices to compute covariances:
+$R_H(cs,ct)=c^{2H}R_H(s,t)$, and $R_H(s+u,s+t)-R_H(s+u,s)-R_H(s,s+t)+R_H(s,s)=R_H(u,t)$ after cancellation.
+(iii) By the first hypothesis $\Var X_t=t^{2H}\Var X_1=t^{2H}$, by the second
+$\Var(X_t-X_s)=\Var X_{t-s}=(t-s)^{2H}$ for $s<t$, and polarization gives \eqref{eq:rv-fbm-cov}.
+(iv) For $a,b,c,d\ge0$, expanding with \eqref{eq:rv-fbm-cov} gives
+$\Cov(W^H_d-W^H_c,W^H_b-W^H_a)=\frac12\big(|d-a|^{2H}+|c-b|^{2H}-|d-b|^{2H}-|c-a|^{2H}\big)$; take
+$(a,b,c,d)=(0,1,n,n+1)$ (for $n=0$ the formula gives $\Var W^H_1=1$). For $n\ge1$, $2\rho_H(n)$ is the
+second difference $f(n+1)-2f(n)+f(n-1)$ of $f(x)=x^{2H}$, which is strictly convex on $[0,\infty)$ for
+$H>\frac12$, linear for $H=\frac12$ and strictly concave for $H<\frac12$. As $x\to0$,
+$(1+x)^{2H}-2+(1-x)^{2H}=2H(2H-1)x^2+O(x^4)$; with $x=1/n$, $\rho_H(n)=\frac12n^{2H}(2H(2H-1)n^{-2}+O(n^{-4}))$.
+(v) $W^H_t-W^H_s\sim\mathcal N(0,|t-s|^{2H})$ by (ii). For $q>1/H$, $\E|W^H_t-W^H_s|^q=K_q|t-s|^{1+(qH-1)}$,
+and the Kolmogorov--Chentsov theorem (\textcite{karatzas-shreve}, Theorem~2.2.8) gives a continuous
+modification, locally H\"older of every order below $(qH-1)/q=H-1/q$; let $q\to\infty$ (modifications of
+one process with continuous paths are indistinguishable, so one modification serves every $q$).
+\end{proof}
+
+By (v), together with \cref{prop:rv-mvn}, a fBM exists for every $H\in(0,1)$. The index $H$ measures
+both the roughness of the paths and the sign of the correlation of increments: for $H<\frac12$ they are
+negatively correlated (a rise tends to be followed by a fall), for $H>\frac12$ positively, with
+$\sum_n\rho_H(n)=\infty$ (\emph{long memory}; \exref{ex:rv-fgn}). \textcite{comte-renault-1998} drove
+volatility by a fBM with $H>\frac12$, for long memory; the data of \cref{sec:rv-gjr} point to the other
+side.
+
+\begin{remark}[fBM is not a semimartingale]\label{rem:rv-semimartingale}
+For $H\ne\frac12$, $W^H$ is not a semimartingale \citep{rogers-1997}: it cannot be written as a local
+martingale plus a process of finite variation, and the It\^o calculus of \cref{ch:07-ito-integral,ch:08-ito-formula}
+does not apply to it as an integrator. Along $n$ equal steps of $[0,t]$ the expected sum of squared increments is
+$t^{2H}n^{1-2H}$: the quadratic variation is infinite for $H<\frac12$ and zero for $H>\frac12$ (\exref{ex:rv-qv}),
+not $t$ as in \cref{thm:bm-qv}. With continuous trading, a price $e^{\sigma W^H_t}$ admits arbitrage for every
+$H\ne\frac12$ (\textcite{rogers-1997}; \textcite{cheridito-2003} constructs explicit strategies), and the arbitrage
+disappears if a minimal time between trades is imposed \citep{cheridito-2003}. Adding an independent Brownian
+motion can restore the semimartingale property: $W+W^H$ is a semimartingale if and only if
+$H\in\{\frac12\}\cup(\frac34,1]$ \citep{cheridito-2001}. In the models below, the fBM drives the
+\emph{volatility}; prices remain It\^o integrals against a Brownian motion.
+\end{remark}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch19-fbm}
+  \caption{Paths of fBM on $[0,1]$ with $H=0.1$, $0.5$ and $0.9$, sampled exactly on $1000$ steps from the
+    same normal draws (Cholesky factorization of $R_H$, \cref{sec:rv-simulation}).}
+  \label{fig:rv-fbm}
+\end{figure}
+
+Rough volatility models under the pricing measure use a simpler process, with the same local behaviour:
+the integral over $(-\infty,0)$ in \cref{prop:rv-mvn} is dropped.
+
+\begin{proposition}[Riemann--Liouville process]\label{prop:rv-rl}
+Let $H\in(0,1)$, $\alpha=H-\frac12$, $W$ a Brownian motion, and
+$Y_t=\sqrt{2H}\int_0^t(t-u)^\alpha\,\dd W_u$, $t\ge0$.
+\begin{enumerate}[label=(\roman*)]
+  \item $(Y,W)$ is a centred Gaussian process with $\Var Y_t=t^{2H}$ and, for $0<s\le t$,
+    \begin{equation}\label{eq:rv-rl-cov}
+    \begin{gathered}
+      \E[Y_sY_t]=s^{2H}G(t/s),\qquad G(x)=2H\!\int_0^1(1-u)^\alpha(x-u)^\alpha\,\dd u,\\
+      \E[Y_tW_s]=\frac{\sqrt{2H}}{H+\frac12}\big(t^{H+\frac12}-(t-s\wedge t)^{H+\frac12}\big)\quad(s,t\ge0).
+    \end{gathered}
+    \end{equation}
+  \item (\emph{Scaling}) For $c>0$, $(c^{-H}Y_{ct},c^{-1/2}W_{ct})_{t\ge0}$ has the finite-dimensional laws
+    of $(Y_t,W_t)_{t\ge0}$.
+  \item For $0\le s<t$, $(t-s)^{2H}\le\E[(Y_t-Y_s)^2]\le2Hc_H^2(t-s)^{2H}$. Hence $Y$ has a modification
+    with continuous paths, locally H\"older of every order $\gamma<H$; we always use it.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) $\int_0^t(t-u)^{2\alpha}\dd u=t^{2H}/(2H)$, so $Y_t$ is a Wiener integral (\cref{prop:ito-deterministic}). A
+linear combination $\sum_ia_iY_{t_i}+\sum_jb_jW_{s_j}$ is the Wiener integral of
+$\sum_ia_i\sqrt{2H}(t_i-u)_+^\alpha+\sum_jb_j\1_{\{u<s_j\}}$, hence centred Gaussian, and the covariances follow
+from the isometry: $\E[Y_sY_t]=2H\int_0^s(s-u)^\alpha(t-u)^\alpha\dd u$, which is $s^{2H}G(t/s)$ after $u=sv$, and
+$\E[Y_tW_s]=\sqrt{2H}\int_0^{s\wedge t}(t-u)^\alpha\dd u$.
+(ii) By \eqref{eq:rv-rl-cov}, $\E[Y_{cs}Y_{ct}]=c^{2H}\E[Y_sY_t]$ and $\E[Y_{ct}W_{cs}]=c^{H+1/2}\E[Y_tW_s]$, and
+$\E[W_{cs}W_{ct}]=c\min(s,t)$; centred Gaussian laws are determined by covariances.
+(iii) $\E(Y_t-Y_s)^2=2H\int_0^t\big((t-u)^\alpha-(s-u)_+^\alpha\big)^2\dd u$. The integral over $[s,t]$ alone is
+$(t-s)^{2H}/(2H)$; the integral over $[0,t]$ is at most the integral of the same integrand over $\R$, which is
+$\int_\R(k_t-k_s)^2=c_H^2(t-s)^{2H}$ by the proof of \cref{prop:rv-mvn}. Conclude as in \cref{prop:rv-fbm-properties}(v),
+with $\E|Y_t-Y_s|^q\le K_q(2Hc_H^2)^{q/2}|t-s|^{qH}$.
+\end{proof}
+
+Euler's integral for the hypergeometric function gives
+$G(x)=\frac{2H}{H+1/2}\,x^{H-1/2}\,{}_2F_1\big(1,\tfrac12-H;H+\tfrac32;\tfrac1x\big)$ for $x\ge1$
+(\textcite{bayer-friz-gatheral-2016}, Section~4, in another form). If $B$ is two-sided and $W=B$ on
+$[0,\infty)$, \cref{prop:rv-mvn} reads $c_HW^H_t=Y_t/\sqrt{2H}+Z_t$ with $Z_t=\int_{-\infty}^0((t-u)^\alpha-(-u)^\alpha)\dd B_u$,
+independent of $Y$ and differentiable in mean square for $t>0$: $Y$ is a fBM with an independent smoother part
+removed. Its increments
+are not stationary: $\E(Y_{s+h}-Y_s)^2$ grows from $h^{2H}$ at $s=0$ to $2Hc_H^2h^{2H}$ as $s\to\infty$
+(\exref{ex:rv-rl-increments}).
+
+\section{Volatility is rough}\label{sec:rv-gjr}
+
+The volatility $\sigma_t$ of an index is not observed, but the integrated variance over a day is
+estimated well by the \emph{realized variance}, the sum of squared intraday log-returns
+(\cref{sec:iv-variance}). The \emph{Oxford-Man realized library} \citep{heber-oxford-man-2009}, now
+discontinued, published daily 5-minute realized variances of the main equity indices from 2000.
+\textcite{gatheral-jaisson-rosenbaum-2018} (GJR) treat $x_k=\frac12\log(\text{realized variance of day }k)$ as
+observations of $\log\sigma$ on a daily grid and compute, for $q>0$ and a lag of $\Delta$ days,
+\begin{equation}\label{eq:rv-m}
+  m(q,\Delta)=\frac1N\sum_{j=1}^N\big|x_{j\Delta}-x_{(j-1)\Delta}\big|^q ,
+\end{equation}
+averaged over the $\Delta$ possible starting points of the subsampled grid. For each $q$ they regress $\log m(q,\Delta)$
+on $\log\Delta$, $\Delta=1,\dots,30$: the points lie on a line of slope $\zeta_q$, and $\zeta_q=qH$ with one
+$H$ for all $q$ (their Section~2). For the S\&P 500 from 2000 to 2014 they report $H\approx0.14$
+(Section~2.3) and $\zeta_q/q$ between $0.124$ and $0.128$ for $q\in\{0.5,1,1.5,2,3\}$ (Appendix~B), from
+different versions of the data and the regression;
+across the indices of the library, $H$ lies between about $0.07$ and $0.15$. The increments of $x$ are close
+to Gaussian (Section~2.5). We reproduce this on the public copy of the S\&P 500 series in the notebook
+($3459$ days from January 2000 to November 2013): $\zeta_q/q=0.129,0.127,0.126,0.126,0.125$ for the same $q$, and
+$H=0.126$ by least squares through the origin. The lag range matters: with $\Delta\le50$ the same series gives
+$\zeta_q/q$ between $0.126$ and $0.134$, with $\Delta\le100$ between $0.127$ and $0.140$.
+
+Log-volatility thus behaves like a fBM, possibly with a slow mean reversion. Pathwise, the
+equation $X_t=m-\lambda\int_0^t(X_s-m)\,\dd s+\nu W^H_t$ is a linear integral equation, solved by variation of
+constants.
+
+\begin{definition}[RFSV model]\label{def:rv-rfsv}
+Let $H\in(0,\frac12)$, $\nu>0$, $\lambda\ge0$ (GJR's $\alpha$), $m\in\R$, and $W^H$ a fBM under $\Prob$. In the \emph{rough
+fractional stochastic volatility} (RFSV) model, $\sigma_t=e^{X_t}$ with
+\begin{equation}\label{eq:rv-rfsv}
+  X_t=m+\nu\Big(W^H_t-\lambda\int_0^te^{-\lambda(t-s)}W^H_s\,\dd s\Big),
+\end{equation}
+the solution of $X_t=m-\lambda\int_0^t(X_s-m)\,\dd s+\nu W^H_t$ (Fubini's theorem).
+\end{definition}
+
+GJR use the stationary solution $m+\nu\int_{-\infty}^te^{-\lambda(t-s)}\dd W^H_s$, a fractional
+Ornstein--Uhlenbeck process \citep{cheridito-kawaguchi-maejima-2003}, with $\lambda\ll1/T$ on the horizon $T$
+of the data; \eqref{eq:rv-rfsv} starts it at $X_0=m$ instead. The next proposition is the identity behind
+the regression.
+
+\begin{proposition}[Moment scaling]\label{prop:rv-scaling}
+Let $q>0$.
+\begin{enumerate}[label=(\roman*)]
+  \item If $X=m+\nu W^H$ (that is, $\lambda=0$), then $\E|X_{t+\Delta}-X_t|^q=K_q\nu^q\Delta^{qH}$ for all
+    $t\ge0$ and $\Delta>0$. Hence the statistic \eqref{eq:rv-m} computed from $x_j=X_{j\delta}$ on any grid of step
+    $\delta$ satisfies $\log\E[m(q,\Delta)]=\log(K_q\nu^q\delta^{qH})+qH\log\Delta$ exactly: $\zeta_q=qH$.
+  \item If $X$ is given by \eqref{eq:rv-rfsv} with $\lambda>0$, and $0\le t<t+\Delta\le T$, then
+    $X_{t+\Delta}-X_t$ is centred Gaussian and
+    \begin{equation}\label{eq:rv-scaling-error}
+      \E|X_{t+\Delta}-X_t|^q=K_q\nu^q\Delta^{qH}(1+\varepsilon)^q,\qquad|\varepsilon|\le2\lambda T^H\Delta^{1-H}.
+    \end{equation}
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) $X_{t+\Delta}-X_t=\nu(W^H_{t+\Delta}-W^H_t)\sim\mathcal N(0,\nu^2\Delta^{2H})$ by
+\cref{prop:rv-fbm-properties}(ii), and $\E|cN|^q=K_q|c|^q$. Each term of \eqref{eq:rv-m} then has mean
+$K_q\nu^q(\delta\Delta)^{qH}$, and so does their average.
+
+(ii) Let $Y=X-m$. The Riemann integral in \eqref{eq:rv-rfsv} is the almost sure limit of Riemann sums, which are
+centred Gaussian, jointly with $W^H$; almost sure limits of centred Gaussian vectors are centred Gaussian (characteristic
+functions and dominated convergence). So $Y$ is a centred Gaussian process, and
+$Y_{t+\Delta}-Y_t=\nu(W^H_{t+\Delta}-W^H_t)-\lambda\int_t^{t+\Delta}Y_s\,\dd s$ by the integral equation. By Minkowski's
+inequality for integrals, $\|Y_s\|_{L^2}\le\nu\big(s^H+\lambda\int_0^se^{-\lambda(s-r)}r^H\dd r\big)\le2\nu s^H$, so
+$\big\|\lambda\int_t^{t+\Delta}Y_s\,\dd s\big\|_{L^2}\le2\lambda\nu T^H\Delta$. By the triangle inequality in $L^2$,
+$\|Y_{t+\Delta}-Y_t\|_{L^2}=\nu\Delta^H(1+\varepsilon)$ with $|\varepsilon|\le2\lambda T^H\Delta^{1-H}$, and for a centred
+Gaussian variable $\E|Z|^q=K_q\|Z\|_{L^2}^q$.
+\end{proof}
+
+With GJR's simulation parameters ($\lambda=5\times10^{-4}$ per day, $H=0.14$, $2000$ days) the bound
+\eqref{eq:rv-scaling-error} is $0.054$ at $\Delta=30$ days: mean reversion does not show at these lags, and
+$\nu$ is read off the intercept. The regression uses one path; for fBM, $m(2,\Delta)$ converges in $L^2$ as the
+sample grows, for every $H<1$, at the rate $N^{-1/2}$ when $H<\frac34$ (\exref{ex:rv-consistency} treats that case). Linear $\zeta_q$ means that, unlike multifractal
+models, one exponent describes all moments.
+
+\begin{remark}[Spot volatility and its proxies]\label{rem:rv-proxy}
+Realized variance averages $\sigma^2$ over the trading day, and averaging smooths: it biases the estimate of
+$H$ upwards. GJR simulate the RFSV model with $H=0.14$ and find about $0.16$ from one-hour averages and $0.18$
+from whole-day realized variance (their Section~3.4); the rough Bergomi calibrations of
+\textcite{bayer-friz-gatheral-2016} use $H$ below $0.1$. For a moving average of fBM the bias has a closed form
+(GJR, Appendix~C; \exref{ex:rv-smoothing}). \Cref{fig:rv-gjr} repeats the experiment.
+\end{remark}
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch19-gjr}
+  \caption{The GJR regression on $3500$ simulated days of the RFSV model ($H=0.14$, $\nu=0.3$,
+    $\lambda=5\times10^{-4}$ per day, $X_0=m=-5$; $192$ steps per day, fBM by circulant embedding). Left:
+    $\log m(q,\Delta)$ for the daily spot log-volatility, with the fitted lines. Right: the slopes $\zeta_q$ for
+    the spot values and for the log of $\sigma^2$ averaged over the $8$ grid points of the first hour and the $64$ of
+    the first eight hours of each day. The spot values give $\hat\nu=0.298$ (from the intercept at $q=2$); over
+    $20$ paths the spot estimate of $H$ has standard deviation $0.010$ (\exref{ex:rv-gjr-sim}).}
+  \label{fig:rv-gjr}
+\end{figure}
+
+\demo{19-rough-volatility.ipynb}{the GJR regression on simulated paths and, when the network is available, on the
+S\&P 500 realized variance.}
+
+\section{Rough Bergomi and the at-the-money skew}\label{sec:rv-rbergomi}
+
+Under $\Prob$, the RFSV model with $\lambda\approx0$ says $\log v_u-\log v_t=2\nu(W^H_u-W^H_t)$ for the variance
+$v=\sigma^2$. Write $W^H$ through \cref{prop:rv-mvn}. Given $\F_t$, the part of $W^H_u$ driven by $\dd B$ on
+$(t,u]$ is the independent Gaussian variable $c_H^{-1}\int_t^u(u-s)^{H-1/2}\dd B_s$, and the rest is known. So $v_u$
+is its $\F_t$-conditional mean times a lognormal factor of mean one; with a deterministic change of drift to a pricing
+measure, \textcite{bayer-friz-gatheral-2016}, Sections~2--3, obtain the following model, with
+$\eta=2\nu/(c_H\sqrt{2H})$.
+
+\begin{definition}[Rough Bergomi model]\label{def:rv-rbergomi}
+Let $H\in(0,\frac12)$, $\eta>0$, $\rho\in[-1,1]$, and let $\xi_0:[0,\infty)\to(0,\infty)$ be continuous (the
+\emph{forward variance curve}). Under $\Q$, let $(W,W^\perp)$ be a two-dimensional Brownian motion with a
+filtration $(\F_t)$, $Z=\rho W+\sqrt{1-\rho^2}\,W^\perp$, and $Y$ the Riemann--Liouville process of $W$
+(\cref{prop:rv-rl}). The \emph{rough Bergomi} (rBergomi) model is
+\begin{equation}\label{eq:rv-rbergomi}
+  v_t=\xi_0(t)\exp\Big(\eta Y_t-\frac{\eta^2}2t^{2H}\Big),\qquad
+  S_t=S_0\exp\Big((r-q)t+\int_0^t\sqrt{v_s}\,\dd Z_s-\frac12\int_0^tv_s\,\dd s\Big).
+\end{equation}
+\end{definition}
+
+$Z$ is a Brownian motion for $(\F_t)$ (\exref{ex:bm-correlated}), $v$ is continuous and adapted, and
+$\EQ v_t=\xi_0(t)$ because $\EQ e^{\eta Y_t}=e^{\eta^2t^{2H}/2}$; so $\sqrt v\in\mathbb H^2[0,T]$ and the stochastic
+integral is that of \cref{thm:ito-integral}. By It\^o's formula, $\dd S_t=(r-q)S_t\dd t+\sqrt{v_t}S_t\,\dd Z_t$. The
+correlation of the shocks to price and volatility is $\rho$, the volatility of volatility is $\eta$, and the
+variance $v_u$ depends on the whole past of $W$ through $Y$. The state that summarizes the past is the forward
+variance curve $u\mapsto\xi_t(u)=\EQ[v_u\mid\F_t]$, $u\ge t$ (\textcite{bayer-friz-gatheral-2016}, Section~3;
+\exref{ex:rv-forward-variance}).
+
+\begin{proposition}[Properties of rough Bergomi]\label{prop:rv-rbergomi}
+In the setting of \cref{def:rv-rbergomi}:
+\begin{enumerate}[label=(\roman*)]
+  \item $\EQ[v_t]=\xi_0(t)$, and the expected realized variance is $\frac1T\EQ\int_0^Tv_t\,\dd t=\frac1T\int_0^T\xi_0(t)\,\dd t$.
+  \item If $\rho\le0$, $(e^{-(r-q)t}S_t)$ is a $\Q$-martingale \citep[Theorem~1]{gassiat-2019}; if $\rho>0$ it is
+    not one: $\EQ[e^{-(r-q)t}S_t]<S_0$ for every $t>0$ (same reference).
+  \item (\emph{Scaling}) Let $r=q=0$ and $\xi_0\equiv\xi$. For $c>0$, $\log(S_{cT}/S_0)$ in the model with
+    parameters $(\xi,\eta)$ has the law of $\log(S_T/S_0)$ in the model with parameters $(c\xi,c^H\eta)$, the same
+    $H$ and $\rho$. Hence the total implied variances satisfy $w(k,cT;\xi,\eta)=w(k,T;c\xi,c^H\eta)$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) was shown above; then use Tonelli's theorem. (iii) Write $v^{\xi,\eta}$ for the variance with parameters
+$(\xi,\eta)$. By \cref{prop:rv-rl}(ii), the scaling of Brownian motion (\cref{prop:bm-invariance}) and the
+independence of $W^\perp$ from $W$, the triple $(v^{\xi,\eta}_{c\,\cdot},W_{c\,\cdot},W^\perp_{c\,\cdot})$ has the
+finite-dimensional laws of $(c^{-1}v^{c\xi,c^H\eta},\sqrt cW,\sqrt cW^\perp)$, since
+$\xi e^{\eta c^HY_s-\eta^2c^{2H}s^{2H}/2}=c^{-1}\cdot c\xi e^{(c^H\eta)Y_s-(c^H\eta)^2s^{2H}/2}$. Now
+$\sqrt{v}$ is continuous in mean square with $\sup_{t\le T}\EQ v_t<\infty$ ($v_u\to v_t$ almost surely and
+$\sup_{t\le T}\EQ v_t^2<\infty$ give uniform integrability), so by \cref{lem:ito-riemann,cor:ito-riemann}
+$\int_0^{cT}\sqrt{v_u}\,\dd Z_u$ is the $L^2$-limit of the sums $\sum_j\sqrt{v_{cs_j}}(Z_{cs_{j+1}}-Z_{cs_j})$
+along partitions $\{s_j\}$ of $[0,T]$, and $\int_0^{cT}v_u\dd u=c\int_0^Tv_{cs}\dd s$ is the limit of Riemann
+sums. Jointly, these sums have the law of the same sums for the model $(c\xi,c^H\eta)$ on $[0,T]$, because the
+factors $c^{-1/2}$ and $c^{1/2}$ cancel. Limits in probability of sequences with equal laws have equal laws.
+The last claim holds because normalized call prices are expectations of functions of $\log(S_T/S_0)$.
+\end{proof}
+
+The \emph{at-the-money skew} is $\psi(T)=\partial_k\sigma_{\mathrm{imp}}(k,T)|_{k=0}$, with $k=\log(K/F_T)$ as in
+\cref{ch:15-volatility}. In the Heston model of \cref{prop:iv-heston}, with volatility of variance
+$\xi_{\mathrm{Heston}}$, the zero-maturity smile has the finite slope $\rho\xi_{\mathrm{Heston}}/(4\sqrt{v_0})$ at the
+money (\textcite{forde-jacquier-lee-2012}, Corollary~4.3), and \cref{fig:rv-skew} shows $\psi(T)$ approaching it. For the S\&P 500, $\psi$ is well fitted by $AT^{-0.407}$
+(\textcite{bayer-friz-gatheral-2016}, Figure~1.2).
+
+\begin{proposition}[At-the-money skew]\label{prop:rv-skew}
+In the rough Bergomi model with $r=q=0$, $\xi_0\equiv\xi>0$, $H\in(0,\frac12)$, $\eta>0$ and $\rho\in(-1,1)$,
+\begin{equation}\label{eq:rv-skew}
+  \lim_{T\downarrow0}T^{\frac12-H}\,\psi(T)=\frac{\rho\eta}2E_H,\qquad E_H=\frac{\sqrt{2H}}{(H+\frac12)(H+\frac32)} .
+\end{equation}
+In particular $|\psi(T)|\to\infty$ like $T^{H-1/2}$ if $\rho\ne0$
+(\textcite{el-euch-fukasawa-gatheral-rosenbaum-2019}: Theorem~2.4 for the general expansion, Theorem~5.1 for the
+rough Bergomi constant).
+\end{proposition}
+
+That a volatility driven by fractional noise produces a skew of order $T^{H-1/2}$ was shown by
+\textcite{alos-leon-vives-2007} and \textcite{fukasawa-2017}. The constant has a transparent origin: to first
+order in $\eta$, the expansion of Bergomi and Guyon gives, at every maturity (\textcite{bayer-friz-gatheral-2016},
+equation~(1.3) and Section~7.1),
+\begin{equation}\label{eq:rv-first-order}
+  \partial_k\sigma_{\mathrm{imp}}(k,T)\approx\frac{C_T}{2\xi^{3/2}T^2},\qquad
+  C_T=\int_0^T\!\!\int_t^T\frac{\dd[\log S,\xi_\cdot(u)]_t}{\dd t}\,\dd u\,\dd t ,
+\end{equation}
+where $\xi_t(u)=\EQ[v_u\mid\F_t]$ is the forward variance. In rBergomi, $\dd[\log S,\xi_\cdot(u)]_t\approx\rho\eta\sqrt{2H}\,\xi^{3/2}(u-t)^{H-1/2}\dd t$
+at first order, and the double integral is $\rho\eta\xi^{3/2}E_HT^{H+3/2}$, which gives \eqref{eq:rv-skew} at every
+maturity (\exref{ex:rv-forward-variance}). With an exponential kernel $e^{-\kappa(u-t)}$ in place of $(u-t)^{H-1/2}$
+(the Bergomi and Heston models) the same computation gives a skew with a finite limit at $T=0$. Finally,
+\cref{prop:rv-rbergomi}(iii) explains the power law: since $\psi(cT;\xi,\eta)=c^{-1/2}\psi(T;c\xi,c^H\eta)$ and the
+first-order skew is linear in $\eta$ and does not depend on $\xi$, it scales like $c^{H-1/2}$.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch19-skew}
+  \caption{Rough Bergomi with the parameters of \textcite{bayer-friz-gatheral-2016} for the S\&P 500 on 4 February
+    2010, $H=0.07$, $\eta=1.9$, $\rho=-0.9$, and a flat forward variance $\xi=0.235^2$: Monte Carlo with $2^{15}$
+    paths and $256$ steps (hybrid scheme, conditional sampling). Left: smiles. Right: the at-the-money skew with
+    $95\%$ intervals, the least-squares power law (exponent $-0.46$; $H-\frac12=-0.43$), the limit \eqref{eq:rv-skew},
+    which the Monte Carlo approaches as $T\downarrow0$ (ratio $0.90$ at $T=0.005$), and a Heston model with the
+    same $\rho$, $v_0=\theta=\xi$, $\kappa=2$, $\xi_{\mathrm{Heston}}=0.45$, whose skew tends to
+    $\rho\xi_{\mathrm{Heston}}/(4\sqrt{v_0})=-0.43$.}
+  \label{fig:rv-skew}
+\end{figure}
+
+\section{Simulation}\label{sec:rv-simulation}
+
+On a grid $0<t_1<\dots<t_n$, a centred Gaussian vector $G$ with covariance matrix $\Sigma$ is simulated
+exactly as $LN$, with $LL^\top=\Sigma$ the Cholesky factorization and $N$ a standard normal vector
+(\exref{ex:bm-correlated}). For fBM, $\Sigma_{ij}=R_H(t_i,t_j)$ (\cref{fig:rv-fbm}); for rBergomi one factors
+the $2n\times2n$ covariance of $(Y_{t_i},W_{t_i})_{i\le n}$ from \eqref{eq:rv-rl-cov}
+(\textcite{bayer-friz-gatheral-2016}, Section~4). The factorization costs $O(n^3)$ and each path $O(n^2)$:
+fine for $n$ in the hundreds. On a uniform grid the increments of fBM are stationary, their covariance matrix
+is Toeplitz, and \emph{circulant embedding} samples them exactly with the fast Fourier transform in
+$O(n\log n)$ per path \citep{davies-harte-1987}, provided the embedding has nonnegative eigenvalues, which
+holds when $H\le\frac12$ \citep{craigmile-2003} (our code checks it for every $H$). The Riemann--Liouville process has no stationary
+increments, and the \emph{hybrid scheme} of \textcite{bennedsen-lunde-pakkanen-2017} takes its place.
+
+\begin{definition}[Hybrid scheme]\label{def:rv-hybrid}
+Let $H\in(0,1)$, $H\ne\frac12$, $\alpha=H-\frac12$, $n\ge1$, $t_i=i/n$, $\Delta W_j=W_{t_{j+1}}-W_{t_j}$, $\ell\in\{0,1\}$,
+and evaluation points $b_k\in(k-1,k]$, $k\ge\ell+1$ (for $H=\frac12$ the kernel is constant and the scheme is exact
+for any $b_k$). The \emph{hybrid scheme} approximates $Y_{t_i}$ by
+\[
+  \hat Y_{t_i}=\sqrt{2H}\Big(\1_{\{\ell=1\}}\int_{t_{i-1}}^{t_i}(t_i-u)^\alpha\,\dd W_u
+  +\sum_{k=\ell+1}^i\Big(\frac{b_k}n\Big)^\alpha\Delta W_{i-k}\Big):
+\]
+the kernel is integrated exactly on the $\ell$ cells next to $t_i$, where it is singular, and frozen at
+$t_i-u=b_k/n$ on the cell $[t_{i-k},t_{i-k+1}]$ otherwise. The pairs $\big(\Delta W_j,\int_{t_j}^{t_{j+1}}(t_{j+1}-u)^\alpha\dd W_u\big)$
+are independent Gaussian vectors with covariance matrix
+$\big(\begin{smallmatrix}1/n&n^{-\alpha-1}/(\alpha+1)\\n^{-\alpha-1}/(\alpha+1)&n^{-2H}/(2H)\end{smallmatrix}\big)$
+(\cref{prop:ito-deterministic}), and the sum is a discrete convolution, computed in $O(n\log n)$ by the fast Fourier
+transform.
+\end{definition}
+
+\begin{proposition}[Error of the hybrid scheme]\label{prop:rv-hybrid}
+For $i\ge1$,
+\begin{equation}\label{eq:rv-hybrid-mse}
+  \E\big[(Y_{t_i}-\hat Y_{t_i})^2\big]=2H\,n^{-2H}\sum_{k=\ell+1}^i\int_{k-1}^k\big(y^\alpha-b_k^\alpha\big)^2\,\dd y .
+\end{equation}
+Each term is minimal for $b_k^\alpha=\int_{k-1}^ky^\alpha\dd y$, that is
+$b_k^*=\big((k^{\alpha+1}-(k-1)^{\alpha+1})/(\alpha+1)\big)^{1/\alpha}$. The series
+$J(\alpha,\ell,b)=\sum_{k>\ell}\int_{k-1}^k(y^\alpha-b_k^\alpha)^2\dd y$ converges, and at a fixed time $t>0$, along
+$n$ with $nt\in\N$, $\E[(Y_t-\hat Y_t)^2]\sim2HJ(\alpha,\ell,b)\,n^{-2H}$ as $n\to\infty$.
+\end{proposition}
+
+\begin{proof}
+$Y_{t_i}$ and $\hat Y_{t_i}$ are Wiener integrals against the same $W$ on $[0,t_i]$; their difference has the
+integrand $\sqrt{2H}\big((t_i-u)^\alpha-(b_k/n)^\alpha\big)$ on the cell $k\ge\ell+1$ and $0$ on the cells handled
+exactly. By the isometry and the substitution $t_i-u=y/n$, the cell $k$ contributes
+$2Hn^{-2\alpha-1}\int_{k-1}^k(y^\alpha-b_k^\alpha)^2\dd y$, and $2\alpha+1=2H$. For fixed $k$, $c\mapsto\int(y^\alpha-c)^2\dd y$ is
+minimal at the mean $c=\int_{k-1}^ky^\alpha\dd y$. For $k\ge2$, $y$ and $b_k$ lie in $[k-1,k]$, so by the mean
+value theorem $|y^\alpha-b_k^\alpha|\le|\alpha|(k-1)^{\alpha-1}$; the terms are $O(k^{2\alpha-2})$, summable since
+$2\alpha-2<-1$; and $J>0$. At $t=i/n$ the sum in \eqref{eq:rv-hybrid-mse} runs to $i=nt\to\infty$ and tends to $J$.
+\end{proof}
+
+The rate $n^{-H}$ of the root-mean-square error is slow for $H$ near $0.1$, but the constant is not: for $H=0.1$,
+$2HJ=0.538$ with $b_k=k$ and $\ell=0$ (left-point Riemann sums), $0.446$ with $b_k^*$, and $0.00136$ with $b_k^*$ and
+$\ell=1$, so that the relative error at $n=256$ falls from $42\%$ to $2\%$ (\cref{fig:rv-hybrid}).
+\textcite{bennedsen-lunde-pakkanen-2017} prove the asymptotics for general Brownian semistationary processes (their
+Theorems~2.5 and~2.12, optimal points in Proposition~2.8).
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch19-hybrid}
+  \caption{Left: root-mean-square error of the hybrid scheme for $Y_1$, $H=0.1$, from \eqref{eq:rv-hybrid-mse}
+    (open markers) and the asymptotics $\sqrt{2HJ}\,n^{-H}$ of \cref{prop:rv-hybrid} (lines). Right: rBergomi smiles at $T=0.5$ (parameters of
+    \cref{fig:rv-skew}), with exact Cholesky sampling and with the hybrid scheme on the same grid, and with the hybrid
+    scheme on a grid eight times finer; bars are $95\%$ intervals.}
+  \label{fig:rv-hybrid}
+\end{figure}
+
+\begin{remark}[Monte Carlo in rough Bergomi]\label{rem:rv-mc}
+Given $(Y,W)$ on the grid, $\int_0^Tv\,\dd t$ and $\int_0^T\sqrt v\,\dd W$ are replaced by left-point sums
+(\cref{cor:ito-riemann}). The variance of the estimator drops sharply by conditioning on $W$
+\citep{romano-touzi-1997,mccrickerd-pakkanen-2018}: as $W^\perp$ is independent of $W$ and $v$ is a functional of $W$,
+given $W$ the variable $\log(S_T/S_0)$ (with $r=q=0$) is normal with mean $A-\frac12(1-\rho^2)V$ and variance
+$(1-\rho^2)V$, where $V=\int_0^Tv_t\dd t$ and $A=\rho\int_0^T\sqrt{v_t}\,\dd W_t-\frac{\rho^2}2V$. So, with $b$ the normalized
+Black--Scholes price \eqref{eq:iv-b},
+\[
+  \EQ\big[(S_T/S_0-e^k)^+\big]=\EQ\Big[e^A\,b\big(k-A,\sqrt{(1-\rho^2)V}\big)\Big],
+\]
+an average of Black--Scholes prices that is smooth in $k$, so the skew can be computed by differentiating under the
+expectation. By \cref{prop:rv-rbergomi}(iii), one simulation on $[0,1]$ serves every maturity.
+\end{remark}
+
+\demo{19-rough-volatility.ipynb}{exact and hybrid simulation; rBergomi smiles and the skew power law as $H$, $\eta$ and
+$\rho$ move.}
+
+\section{The rough Heston model}\label{sec:rv-rough-heston}
+
+No closed-form prices are known for rough Bergomi. The Heston model of \cref{prop:iv-heston} has an affine structure that
+survives roughening: write its variance as $v_t=v_0+\int_0^t\kappa(\theta-v_s)\dd s+\int_0^t\xi\sqrt{v_s}\,\dd B_s$ and
+put the fractional kernel $(t-s)^{H-1/2}/\Gamma(H+\frac12)$ inside both integrals. For $f$ continuous on $[0,T]$ and
+$r>0$, let $I^rf(t)=\frac1{\Gamma(r)}\int_0^t(t-s)^{r-1}f(s)\,\dd s$ be the \emph{fractional integral}.
+
+\begin{theorem}[Rough Heston model]\label{thm:rv-rough-heston}
+Let $H\in(0,\frac12]$, $a=H+\frac12$, $\lambda,\theta,\nu,V_0>0$, $\rho\in[-1,1]$, and
+$K(t)=t^{a-1}/\Gamma(a)$.
+\begin{enumerate}[label=(\roman*)]
+  \item There are a filtered probability space with a measure $\Q$, Brownian motions $W$ and $B$ with
+    $[W,B]_t=\rho t$, and a continuous, adapted, nonnegative process $V$ such that
+    \begin{equation}\label{eq:rv-rough-heston}
+      V_t=V_0+\int_0^tK(t-s)\lambda(\theta-V_s)\,\dd s+\int_0^tK(t-s)\lambda\nu\sqrt{V_s}\,\dd B_s,\qquad t\ge0 .
+    \end{equation}
+    The paths of $V$ are H\"older continuous of every order $\gamma<H$,
+    $S_t=S_0\exp\big(\int_0^t\sqrt{V_s}\,\dd W_s-\frac12\int_0^tV_s\,\dd s\big)$ is a $\Q$-martingale, and the
+    law of $(S,V)$ is unique.
+  \item Let $z\in\mathbb C$ with $-1\le\operatorname{Im}z\le0$ and
+    $F(z,x)=-\frac12(z^2+iz)+\lambda(i\rho\nu z-1)x+\frac12(\lambda\nu)^2x^2$. The fractional Riccati equation
+    $h(z,\cdot)=I^a\big[F(z,h(z,\cdot))\big]$ has a unique continuous solution on $[0,\infty)$, and
+    \begin{equation}\label{eq:rv-rough-heston-cf}
+      \EQ\big[e^{iz\log(S_t/S_0)}\big]=\exp\Big(\theta\lambda\int_0^th(z,s)\,\dd s+V_0\int_0^tF\big(z,h(z,s)\big)\,\dd s\Big),\qquad t\ge0 .
+    \end{equation}
+  \item For $H=\frac12$, $(S,V)$ is the Heston model of \cref{prop:iv-heston} with $\kappa=\lambda$ and $\xi=\lambda\nu$,
+    $h(z,t)$ is the function $D$ of \eqref{eq:iv-heston-cf} with $u=z$ and $T=t$, and \eqref{eq:rv-rough-heston-cf} is
+    \eqref{eq:iv-heston-cf}.
+\end{enumerate}
+\end{theorem}
+
+\textcite{el-euch-rosenbaum-2019} prove (ii) for real $z$ and $\rho\in(-1/\sqrt2,1/\sqrt2]$ (their Theorem~4.1,
+written as $D^ah=F(z,h)$ with $I^{1-a}h(z,0)=0$ and the term $V_0I^{1-a}h(z,t)$; these agree with ours since
+$I^{1-a}I^a=I^1$), from the limit theorem for Hawkes processes discussed below.
+\textcite{abi-jaber-larsson-pulido-2019} prove (i) and (ii) in the stated generality (their Theorem~7.1 and
+Example~7.2). For (iii), $I^1$ is integration, so $h'=F(z,h)$, $h(0)=0$: the Riccati equation solved by $D$
+(\exref{ex:iv-heston-riccati}), and $\theta\lambda\int_0^th$ and $V_0\int_0^tF(z,h)=V_0h(z,t)$ are the terms $A$ and $Dv_0$. The strip in (ii) contains $z=u-\frac i2$, so
+\cref{lem:iv-lewis} prices calls.
+
+Through the kernel, $V_t$ depends on the whole past of $B$, as $Y_t$ does in rough Bergomi; yet the
+characteristic function costs one deterministic equation, as for Heston. No explicit solution is known for $H<\frac12$.
+The \emph{fractional Adams method} \citep{diethelm-ford-freed-2002}, a predictor--corrector scheme for
+$h=I^a[F(h)]$ with product-integration weights, solves it on $n$ steps in $O(n^2)$ operations, used by
+\textcite{el-euch-rosenbaum-2019}, Section~5. At $H=\frac12$ our implementation agrees with \eqref{eq:iv-heston-cf}
+to $10^{-4}$ with $200$ steps (\coderef{code/tests/test_roughvol.py}). \Cref{fig:rv-rough-heston} reproduces the
+experiment of their Figure~1: with $H=0.1$ the skew explodes at short maturities, with $H=\frac12$ it stays flat.
+The mean variance is a Mittag-Leffler function of $t^a$ (\exref{ex:rv-mittag-leffler}).
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=\textwidth]{ch19-rough-heston}
+  \caption{Rough Heston with the parameters of \textcite{el-euch-rosenbaum-2019}, Section~5.2: $\lambda=2$,
+    $\rho=-0.5$, $V_0=0.4$, $\nu=0.05$, $\theta=0.04$, for $H=0.1$ and $H=\frac12$ (fractional Adams method, $200$ steps,
+    and \cref{lem:iv-lewis}). Left: smiles at $T=1/52$ and $T=1$ against $k/\sqrt T$. Right: the at-the-money skew;
+    crosses are the closed form \eqref{eq:iv-heston-cf}.}
+  \label{fig:rv-rough-heston}
+\end{figure}
+
+\begin{remark}[Rough Heston from order flow]\label{rem:rv-hawkes}
+Rough Heston is not only convenient: it is the scaling limit of a microstructure model. If buy and sell market orders
+arrive as a nearly unstable Hawkes process with heavy-tailed kernels (\cref{def:hk-hawkes}), the rescaled price
+converges to the rough Heston price, with $H$ determined by the tail of the kernel
+\citep{jaisson-rosenbaum-2016,el-euch-fukasawa-rosenbaum-2018}; see \cref{thm:hk-scaling-limit}. An asymmetry in
+how buy and sell orders excite each other, measured by a parameter $\beta\ge0$, produces the leverage
+$\rho=(1-\beta)/\sqrt{2(1+\beta^2)}$, which lies in $(-1/\sqrt2,1/\sqrt2]$ and is negative for $\beta>1$; this is why
+\textcite{el-euch-rosenbaum-2019} state their theorem for that range.
+\end{remark}
+
+\furtherreading
+\textcite{gatheral-jaisson-rosenbaum-2018} is the empirical starting point and very readable;
+\textcite{bayer-friz-gatheral-2016} introduce rough Bergomi and explain why it fits the S\&P 500 surface with three
+parameters. \textcite{bennedsen-lunde-pakkanen-2017} and \textcite{mccrickerd-pakkanen-2018} are the references for
+simulation, and \textcite{el-euch-rosenbaum-2019} and \textcite{abi-jaber-larsson-pulido-2019} for rough Heston and
+affine Volterra processes. \textcite{mandelbrot-van-ness-1968} remains the classic introduction to fBM.

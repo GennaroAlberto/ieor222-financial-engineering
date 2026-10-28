@@ -1,6 +1,519 @@
-\begin{planned}
-  \item why calibrate to an arbitrage-free surface: consistent prices for exotics and hedges, and how naive interpolation of quotes fails
-  \item static arbitrage on a grid of quotes in strike and maturity, and its description by discrete pricing measures
-  \item SANOS: smooth, strictly arbitrage-free surfaces by linear programming (Buehler, Horvath, Kratsios, Limmer and Saqur, 2026)
-  \item from surfaces to dynamics: generative models of arbitrage-free surface paths, DYSANOS (Buehler, Horvath, Kratsios and Wiese, 2026)
-\end{planned}
+% Chapter 17: Arbitrage-free option surfaces (SANOS and DYSANOS).
+
+\Cref{ch:15-volatility} ended with a programme: price exotics and hedges in one model calibrated to all
+the vanillas, starting from a surface of call prices that is free of static arbitrage. Markets do not
+provide such a surface. They provide bid and ask quotes at a few maturities and strikes, and their mid
+prices need not be free of arbitrage. This chapter presents two recent papers that turn quotes into
+arbitrage-free surfaces, and surfaces into arbitrage-free scenarios. \emph{SANOS}
+\citep{buehler-sanos-2026} builds smooth surfaces that are free of static arbitrage by construction and
+calibrates them by linear programming inside the bid--ask spreads. \emph{DYSANOS}
+\citep{buehler-dysanos-2026} lets the parameters of these surfaces evolve in time, which generates a
+surface free of static arbitrage on every day, and tests what is left: dynamic arbitrage. The tools are
+those of \cref{ch:03-arbitrage} (convexity in the strike, discrete pricing measures) and
+\cref{ch:15-volatility} (implied volatility, Dupire's formula), plus one new notion: convex order. Both
+papers are preprints; results are cited with their numbering (arXiv versions~4), and we say which
+statements we prove here.
+
+\paragraph{Setting.} As in \cref{ch:15-volatility}, $r$ and $q$ are constants, $F_T=S_0e^{(r-q)T}$, and prices
+come from a pricing measure $\Q$ under which $(e^{-(r-q)t}S_t)$ is a martingale. Then $Z_T=S_T/F_T$ is a
+nonnegative martingale with $Z_0=1$, and in units of the forward, with \emph{normalized strike} $x=K/F_T$,
+\begin{equation}\label{eq:afs-normalized}
+  c(T,x)=\frac{e^{rT}C(xF_T,T)}{F_T}=\EQ\big[(Z_T-x)^+\big],\qquad x\ge0 .
+\end{equation}
+The stock is the call with strike $0$, $c(T,0)=1$, and parity reads $p(T,x)=c(T,x)-1+x$. Both papers work
+in these units (SANOS Section~2; DYSANOS Remark~2.1). From now on all prices are normalized; the results
+of \cref{ch:03-arbitrage} apply with $B=1$ and $S_0=1$, since in these units the bond and the stock both
+cost~$1$.
+
+\section{Why an arbitrage-free surface}\label{sec:afs-why}
+
+Three reasons. (a) Consistency (\cref{sec:iv-consistency}): exotics must be priced under one pricing measure
+calibrated to the vanillas, and quotes with a static arbitrage come from no pricing measure
+(\cref{thm:afs-grid} below), so no model reproduces them. (b) Dupire's formula needs a smooth surface with
+positive butterflies and calendar spreads (\cref{rem:iv-dupire-use}). (c) Quotes are finite and noisy, and
+interpolating them carelessly creates arbitrage that was not in the data.
+
+Our running example is the Heston market of \cref{fig:iv-heston} ($v_0=\theta=0.04$, $\kappa=2$, $\xi=0.5$,
+$\rho=-0.7$), quoted at the expiries $T_j=1,2,3,6,9,12$ months and the $21$ strikes
+$x=\exp(0.2z\sqrt{T_j})$, $z=-3,-2.75,\dots,2$. The half-spread is half a volatility point times the vega,
+and at least $10^{-4}$; the mid is the Heston price plus a uniform error of at most $0.8$ half-spreads, so the
+Heston price lies inside every spread (\coderef{code/src/ieor222/surfaces.py}). Already the mids are not
+free of arbitrage: at four of the six expiries some butterfly of adjacent mids has a negative price.
+
+The common practice is to interpolate implied volatilities. Linear interpolation creates kinks, and a kink of
+the wrong sign is an arbitrage.
+
+\begin{proposition}[Concave kinks are butterfly arbitrages]\label{prop:afs-kink}
+Let $w:\R\to(0,\infty)$ be continuous, and continuously differentiable on $(-\infty,k_0]$ and on
+$[k_0,\infty)$ with one-sided derivatives $w'(k_0\pm)$, and let $c(x)=b\big(\log x,\sqrt{w(\log x)}\big)$ be the
+normalized prices with total implied variance $w$ (see \eqref{eq:iv-b}). Then $c$ has one-sided derivatives at
+$x_0=e^{k_0}$, and
+\[
+  \partial_xc(x_0+)-\partial_xc(x_0-)=\frac{N'(d_+)}{2x_0\sqrt{w(k_0)}}\big(w'(k_0+)-w'(k_0-)\big),\qquad
+  d_+=-\frac{k_0}{\sqrt{w(k_0)}}+\frac{\sqrt{w(k_0)}}2 .
+\]
+If $w'(k_0+)<w'(k_0-)$, the butterfly $c(x_0-h)-2c(x_0)+c(x_0+h)$ is negative for all small $h>0$, and the
+prices come from no pricing measure.
+\end{proposition}
+
+\begin{proof}
+On each side of $x_0$, $c$ is continuously differentiable with
+$\partial_xc=\big(\partial_kb+\partial_sb\,w'/(2\sqrt w)\big)/x$, where $\partial_sb=N'(d_+)$ (proof of
+\cref{prop:iv-existence}) and $\partial_kb$ is continuous across $x_0$; subtract the two one-sided limits. By
+Taylor's formula on each side, $c(x_0\pm h)=c(x_0)\pm h\,\partial_xc(x_0\pm)+o(h)$, so the butterfly equals
+$h\big(\partial_xc(x_0+)-\partial_xc(x_0-)\big)+o(h)$. Under a pricing measure $c$ would be convex
+(\cref{prop:arb-strike}), with nonnegative butterflies.
+\end{proof}
+
+The jump of $\partial_xc$ is the mass that the implied law puts at $x_0$ (\cref{prop:arb-breeden-litzenberger}): a
+concave kink is a negative atom. Linear interpolation of the total variance of noisy mids (or of their
+implied volatility, which has the same kinks) has a kink at every quote, concave about half of the time: in
+our data at $7$ to $11$ of the $19$ inner quotes of each expiry, with negative atoms down to $-0.065$. A cubic spline
+in implied volatility has no kinks, but it oscillates: its density is negative on whole intervals
+(\cref{fig:afs-naive}), and at the one-month expiry, where it meets its flat extrapolation, it breaks the
+slope bound $\partial_xc\ge-1$ of \cref{prop:arb-strike} (a put spread with a negative price).
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.96\textwidth]{ch17-naive}
+  \caption{The 3-month quotes of the running example. Left: bid--ask intervals in implied volatility, the
+    Heston smile, linear interpolation of the mid total variance, and the SANOS fit of \cref{sec:afs-lp}. Right:
+    implied densities of $\log Z_T$; the cubic spline through the mid volatilities oscillates beyond the frame and is
+    negative on the shaded intervals; triangles mark the concave kinks of the linear interpolation, each a negative
+    atom.}
+  \label{fig:afs-naive}
+\end{figure}
+
+Interpolating the \emph{prices} linearly is safe: if quotes at the strikes $0=x^0<x^1<\dots<x^n$ satisfy the
+conditions of \cref{prop:arb-sufficient}, their linear interpolation is the call function of the discrete law
+built there (SANOS Definition~2.11 and Propositions~2.13--2.14). It is also, in a precise sense, too high.
+
+\begin{proposition}[Linear interpolation is the most expensive]\label{prop:afs-expensive}
+Let $c:[0,\infty)\to[0,\infty)$ be convex and nonincreasing, let $0=x^0<\dots<x^n$ with $c(x^n)=0$, and let $\hat c$
+be the linear interpolation of $(x^i,c(x^i))$, with $\hat c=0$ beyond $x^n$. Then $c\le\hat c$, and
+$c<\hat c$ inside every interval $(x^{i-1},x^i)$ on which $c$ is strictly convex.
+\end{proposition}
+
+\begin{proof}
+On $[x^{i-1},x^i]$ a convex function lies below its chord, strictly inside the interval if it is strictly
+convex there. Beyond $x^n$, $0\le c\le c(x^n)=0$.
+\end{proof}
+
+So every surface free of static arbitrage that matches the quotes at the strikes lies below their linear
+interpolation, strictly between strikes if its density is positive there; SANOS attributes this observation to
+\textcite{buehler-expensive-2006}. Conversely, smoothing the discrete law of the quotes raises prices
+(\cref{thm:afs-sanos}(iii) below). Smoothness must be paid for by moving prices, and the natural place to move
+them is inside the bid--ask spreads. This is the idea of SANOS.
+
+\section{Static arbitrage on a grid}\label{sec:afs-grid}
+
+\begin{definition}[Static arbitrage]\label{def:afs-static-arbitrage}
+Let $0<T_1<\dots<T_M$ and, for each $j$, let $X_j\subset[0,\infty)$ be a set of normalized strikes with call
+prices $c(T_j,x)$, $x\in X_j$. These prices are \emph{free of static arbitrage} if there are a probability space
+and a nonnegative martingale $(Z_j)_{j=0,\dots,M}$ with $Z_0=1$ such that
+$c(T_j,x)=\E\big[(Z_j-x)^+\big]$ for all $j$ and $x\in X_j$. A surface $c:[0,\infty)^2\to\R$ is free of static
+arbitrage if $c(T,x)=\E[(Z_T-x)^+]$ for all $T,x\ge0$, for a nonnegative martingale $(Z_T)_{T\ge0}$ with
+$Z_0=1$; it is \emph{strictly} free of static arbitrage if $Z$ can be chosen positive.
+\end{definition}
+
+This is SANOS Definition~2.1 (which asks for a positive $Z$) and DYSANOS Definition~2.3. The name refers to
+\emph{semi-static} portfolios: fixed positions in the calls and the bond, and a position in the stock that may be
+changed, within bounds, at the dates $T_j$. If the prices come from a martingale, the normalized cost of such a
+portfolio is the expectation of its payoff (the gains of the stock position form a martingale transform with mean zero,
+\cref{thm:mg-transform}), so, as in \cref{lem:arb-pricing-measure}, none is an arbitrage. Conversely, \textcite{davis-hobson}, Theorem~4.2, show
+that finitely many quotes at several maturities that come from no martingale admit a model-independent
+arbitrage or a weak one (like that of \exref{ex:arb-weak}). A calendar violation $c(T_2,x)<c(T_1,x)$, $T_1<T_2$,
+is exploited by buying the $T_2$ call, selling the $T_1$ call and, if the latter ends in the money, selling the stock
+forward from $T_1$ to $T_2$ (\exref{ex:afs-calendar}).
+
+Across maturities the key notion is convex order. For laws $\mu,\nu$ with finite means, $\mu\le_{\mathrm{cx}}\nu$ if
+$\int f\,\dd\mu\le\int f\,\dd\nu$ for every convex $f$. By conditional Jensen, the marginals of a martingale
+increase in convex order; the converse is a theorem.
+
+\begin{lemma}[Convex order on a grid]\label{lem:afs-convex-order}
+Let $\mu,\nu$ be probability measures on a finite set $G=\{g^0<g^1<\dots<g^m\}\subset[0,\infty)$ with the same
+mean. Then $\mu\le_{\mathrm{cx}}\nu$ if and only if $\int(z-g^i)^+\mu(\dd z)\le\int(z-g^i)^+\nu(\dd z)$ for
+$i=1,\dots,m-1$.
+\end{lemma}
+
+\begin{proof}
+The condition is necessary because $z\mapsto(z-g^i)^+$ is convex. Conversely, let $f$ be convex and let $\hat f$ be
+continuous, piecewise linear, equal to $f$ on $G$, with kinks only at $g^1,\dots,g^{m-1}$ (affine before $g^1$
+and after $g^{m-1}$). The slopes of the chords of a convex function increase, so the changes of slope $w_i$ of $\hat f$
+are nonnegative, and \cref{lem:arb-piecewise} gives $\hat f(z)=\hat f(0)+\hat f'(0+)z+\sum_{i=1}^{m-1}w_i(z-g^i)^+$. Both
+laws live on $G$, where $f=\hat f$, and have the same mass and mean, so
+$\int f\,\dd\nu-\int f\,\dd\mu=\sum_iw_i\big(\int(z-g^i)^+\dd\nu-\int(z-g^i)^+\dd\mu\big)\ge0$.
+\end{proof}
+
+\begin{lemma}[Strassen]\label{lem:afs-strassen}
+Let $\mu,\nu$ be probability measures on $\R$ with finite means. There are random variables $Z_1\sim\mu$ and
+$Z_2\sim\nu$ with $\E[Z_2\mid Z_1]=Z_1$ if and only if $\mu\le_{\mathrm{cx}}\nu$ \citep[Theorem~8]{strassen-1965}.
+\end{lemma}
+
+For laws on finite sets the coupling solves a linear feasibility problem: the code finds one with
+\texttt{linprog}. Chaining couplings gives a Markov chain, hence a discrete-time martingale.
+
+\begin{theorem}[Quotes on a common grid]\label{thm:afs-grid}
+Let $0=x^0<x^1<\dots<x^n$ be strikes common to the maturities $T_1<\dots<T_M$, and let $c_j^i$ be the call prices,
+with $c_j^0=1$ (the stock) and $c_j^n=0$ (a strike beyond which no call has value). Let
+$s_j^i=(c_j^i-c_j^{i-1})/(x^i-x^{i-1})$, $i=1,\dots,n$. The prices are free of static arbitrage if and only if
+\begin{enumerate}[label=(\alph*)]
+  \item $-1\le s_j^1\le s_j^2\le\dots\le s_j^n\le0$ for every $j$ (bounds, monotonicity, butterflies), and
+  \item $c_j^i\le c_{j+1}^i$ for every $i$ and $j<M$ (calendar spreads).
+\end{enumerate}
+In that case $Z$ can be chosen to be a Markov chain on the strikes with $\Q(Z_j=x^i)=p_j^i:=s_j^{i+1}-s_j^i$
+($s_j^0:=-1$, $s_j^{n+1}:=0$); this chain is positive if and only if $s_j^1=-1$ for every $j$.
+\end{theorem}
+
+\begin{proof}
+Necessity. If $c_j^i=\E[(Z_j-x^i)^+]$, then $x\mapsto\E[(Z_j-x)^+]$ equals $1$ at $0$ and is convex with difference
+quotients in $[-1,0]$ (proof of \cref{prop:arb-strike}), which gives (a); conditional Jensen,
+$\E[(Z_{j+1}-x)^+\mid Z_j]\ge(Z_j-x)^+$, gives (b).
+
+Sufficiency. For each $j$, the construction in the proof of \cref{prop:arb-sufficient} (with $B=S_0=1$, and the last
+atom at $x^n$ because $c_j^n=0$) gives a law $\mu_j$ with weights $p_j^i$ on the strikes, mean $1$, and call function the
+linear interpolation $\hat c_j$ of the $c_j^i$, with $\hat c_j=0$ beyond $x^n$. By (b), $\hat c_j\le\hat c_{j+1}$ at the strikes,
+hence everywhere, both being affine between strikes; so $\mu_j\le_{\mathrm{cx}}\mu_{j+1}$ by \cref{lem:afs-convex-order}, and
+$\delta_1\le_{\mathrm{cx}}\mu_1$ by Jensen's inequality. Let $\pi_j(z,\cdot)$ be the conditional laws of a coupling of
+$\mu_{j-1}$ and $\mu_j$ given by \cref{lem:afs-strassen} ($\mu_0=\delta_1$), and let $Z$ be the Markov chain with $Z_0=1$
+and transitions $\pi_j$. Then $Z_j\sim\mu_j$ and $\E[Z_j\mid Z_0,\dots,Z_{j-1}]=\E[Z_j\mid Z_{j-1}]=Z_{j-1}$. Finally
+$\Q(Z_j=0)=p_j^0=1+s_j^1$.
+\end{proof}
+
+In normalized strikes a common grid means strikes proportional to the forwards; for such strikes
+\textcite{davis-hobson}, Corollary~4.1, reduce their conditions to those of single maturities and calendar spreads, as in
+\cref{thm:afs-grid}. SANOS Theorem~2.6 treats different grids: it
+replaces (b) by the requirement that the linear interpolation of slice $j$ lie below $c_{j+1}$ at the strikes of
+$j+1$, which is sufficient but not necessary (\exref{ex:afs-grids}); exact conditions are in
+\textcite{davis-hobson}, Theorem~4.2, and \textcite{cousot-2007}. For a continuum of strikes and maturities,
+SANOS Theorem~2.2 characterizes the surfaces strictly free of static arbitrage by $c(T,0)=1$,
+$\partial_xc(T,0)=-1$, $c(T,x)\to0$ as $x\to\infty$, convexity in $x$ and monotonicity in $T$; its one-maturity part goes back to
+\textcite{buehler-expensive-2006}, and the martingale comes from Kellerer's theorem \citep{kellerer-1972}, which extends
+\cref{lem:afs-strassen} to a continuum of times. In total implied variance these conditions correspond to those of
+\cref{prop:iv-static-arbitrage}.
+
+\section{SANOS}\label{sec:afs-sanos}
+
+The linear interpolation of \cref{prop:afs-expensive} is the call function of a discrete law, a sum of
+atoms. SANOS replaces each atom by a small lognormal law. Write
+\begin{equation}\label{eq:afs-call}
+  \mathrm{Call}(s,x,v)=sN(d_+)-xN(d_-),\qquad d_\pm=\frac{\log(s/x)\pm v/2}{\sqrt v},\qquad\mathrm{Call}(s,x,0)=(s-x)^+,
+\end{equation}
+for $s>0$, $x\ge0$ and a total variance $v\ge0$ (SANOS eq.~(3)): $\mathrm{Call}(s,x,v)=\E[(sY-x)^+]$ when
+$\log Y\sim\mathcal N(-v/2,v)$, so $\E[Y]=1$ (\cref{thm:bs-formula}), and $\mathrm{Call}(s,x,v)=s\,b(\log(x/s),\sqrt v)$.
+
+\begin{definition}[SANOS surface]\label{def:afs-sanos}
+Fix \emph{model strikes} $0<K^1<\dots<K^N$ and \emph{model expiries} $0=T_0<T_1<\dots<T_M$. A \emph{martingale
+density} is a family $q_1,\dots,q_M$ of probability vectors on the model strikes with $\sum_iq_j^iK^i=1$ and
+$\sum_iq_j^i(K^i-x)^+$ nondecreasing in $j$ for every $x$; let $q_0$ be the unit mass at $1$. Let $v:[0,\infty)\to[0,\infty)$
+be continuous and nondecreasing with $v(0)=0$ (the \emph{smoothing variance}), and $\alpha_j:[T_{j-1},T_j]\to[0,1]$
+continuous and nondecreasing with $\alpha_j(T_{j-1})=0$, $\alpha_j(T_j)=1$. For $T\in(T_{j-1},T_j]$ let
+$\mu_T=\alpha_j(T)q_j+(1-\alpha_j(T))q_{j-1}$, and $\mu_T=q_M$ for $T>T_M$. The \emph{SANOS surface} is
+\[
+  c(T,x)=\sum_i\mu_T^i\,\mathrm{Call}\big(K^i,x,v(T)\big),\qquad T>0,\ x\ge0,
+\]
+where the sum runs over the atoms of $\mu_T$ ($K^1,\dots,K^N$, and $1$ for $T\le T_1$).
+\end{definition}
+
+This is SANOS eq.~(13)--(15) with the lognormal driver of their production model (Section~3.1), in which
+$v(T_j)=\eta V_j$ with $V_j$ the at-the-money total implied variance of the market and a smoothing parameter
+$\eta\in[0,1)$, $\eta=0.25$ being their recommended default. DYSANOS (Definition~2.6) interpolates the total
+volatility $\sqrt{v(T)}$ linearly in $T$.
+
+\begin{theorem}[SANOS surfaces are strictly free of static arbitrage]\label{thm:afs-sanos}
+In \cref{def:afs-sanos}:
+\begin{enumerate}[label=(\roman*)]
+  \item there is a positive martingale $(Z_T)_{T\ge0}$ with $Z_0=1$ and $c(T,x)=\E[(Z_T-x)^+]$ for all $T,x\ge0$:
+    $c$ is strictly free of static arbitrage;
+  \item if $v(T)>0$, then $c(T,\cdot)$ is infinitely differentiable on $(0,\infty)$ with
+    $\partial_{xx}c(T,x)=\sum_i\mu_T^iN'(d_-^i)/(x\sqrt{v(T)})>0$, $d_-^i=\big(\log(K^i/x)-v(T)/2\big)/\sqrt{v(T)}$: $Z_T$ has a
+    smooth positive density, every butterfly has a positive price, and every strike has an implied volatility;
+  \item $c(T_j,x)\ge\sum_iq_j^i(K^i-x)^+$, with equality for all $x$ if $v(T_j)=0$.
+\end{enumerate}
+\end{theorem}
+
+\begin{proof}
+(i) We build two independent martingales. First, let $\xi_0=1,\xi_1,\dots,\xi_M$ be a Markov chain whose transitions are
+couplings of $q_{j-1}$ and $q_j$ given by \cref{lem:afs-strassen} (the $q_j$ increase in convex order), so that $\xi_j\sim q_j$
+and $\E[\xi_j\mid\xi_0,\dots,\xi_{j-1}]=\xi_{j-1}$, and let $U_1,\dots,U_M$ be uniform on $(0,1)$, independent of each other and of
+the chain. Put $X_0=\xi_0=1$; for $T\in(T_{j-1},T_j]$ put $X_T=\xi_j$ if $U_j\le\alpha_j(T)$ and $X_T=\xi_{j-1}$ otherwise, and $X_T=\xi_M$
+for $T>T_M$; then $X_T\sim\mu_T$, and $X_{T_j}=\xi_j$. Let $\mathcal G_T=\sigma(U_1,\dots,U_M,X_t:t\le T)$ and
+$\mathcal H=\sigma(U_1,\dots,U_M,\xi_0,\dots,\xi_{j-1})$. For $T_{j-1}\le s<t\le T_j$, $X_t-X_s=(\xi_j-\xi_{j-1})\1_E$ with
+$E=\{\alpha_j(s)<U_j\le\alpha_j(t)\}$. On $E$ every $X_u$, $u\le s$, is a function of $\xi_0,\dots,\xi_{j-1}$ and the $U$'s, so each
+$A\in\mathcal G_s$ satisfies $A\cap E=A'\cap E$ for some $A'\in\mathcal H$ (the sets $A$ with this property form a $\sigma$-field
+containing the $U$'s and the events $\{X_u\in B\}$, $u\le s$), and
+$\E[(X_t-X_s)\1_A]=\E\big[\E[\xi_j-\xi_{j-1}\mid\mathcal H]\,\1_{E\cap A'}\big]=0$, because $\xi_j$ is independent of the $U$'s given
+$\xi_0,\dots,\xi_{j-1}$. With the tower property, $X$ is a $(\mathcal G_T)$-martingale. Second, let $W$ be a Brownian motion
+independent of all this, and $Y_T=\exp\big(W_{v(T)}-v(T)/2\big)$, a martingale in its own filtration because $v$ is
+nondecreasing. Then $Z=XY$ is a positive martingale in the filtration generated by both (by independence, the martingale
+identity holds on the $\pi$-system of sets $A\cap B$, $A\in\mathcal G_s$, $B\in\sigma(Y_u:u\le s)$, hence on the $\sigma$-field it
+generates by Dynkin's $\pi$--$\lambda$ theorem; $X$ is bounded). Conditioning on $X_T$,
+$\E[(Z_T-x)^+]=\sum_i\mu_T^i\E[(K^iY_T-x)^+]=c(T,x)$.
+
+(ii) Differentiate the finite sum: $\partial_x\mathrm{Call}(s,x,v)=-N(d_-)$ and $\partial_{xx}\mathrm{Call}=N'(d_-)/(x\sqrt v)$.
+Since $Z_T$ has a positive density, $\Q(Z_T>x)>0$ and $\Q(Z_T<x)>0$, and \cref{prop:iv-existence}(ii) gives implied
+volatilities.
+
+(iii) Jensen: $\E[(K^iY-x)^+]\ge(K^i\E[Y]-x)^+$.
+\end{proof}
+
+The paper's proof of its Theorem~3.1 (for any positive martingale $Y$ with full support, independent of $X$, such
+as a Heston price, SANOS Remark~3.2) checks the conditions of its Theorem~2.2: the strike conditions directly, and
+the calendar condition at the expiries by Jensen's inequality and the change of measure $\dd\Prob^Y=Y_j\,\dd\Prob$;
+the martingale then comes, through its Theorem~2.2, from Kellerer's theorem, and $Z=XY$ is its eq.~(16). The
+construction above makes the martingale explicit, and shows how SANOS moves between expiries: $X$ jumps from
+$\xi_{j-1}$ to $\xi_j$ at a random time. By (iii), smoothing the discrete law of the quotes raises prices; SANOS
+Proposition~3.8 shows that for quotes free of arbitrage and strictly inside their spreads, some positive amount of
+smoothing of the linear interpolation still prices inside them. Per-strike variances (Remark~3.3) keep (ii) but can
+break the calendar condition; the iterative model of Theorem~3.9, with per-strike variance increments, is again free
+of static arbitrage.
+
+\subsection{Calibration by linear programming}\label{sec:afs-lp}
+
+The prices of \cref{def:afs-sanos} are linear in $q$ once $v$ is fixed, and the constraints on $q$ are linear.
+
+\begin{proposition}[SANOS calibration is a linear program]\label{prop:afs-lp}
+Fix model strikes with $K^1<1<K^N$, expiries and smoothing variances $0\le v_1\le\dots\le v_M$. Let the quotes be
+$(T_{j(\ell)},x_\ell)$ with bid $b_\ell$, ask $a_\ell$, mid $m_\ell$ and weight $\omega_\ell>0$, $\ell=1,\dots,L$, and $\varepsilon\ge0$.
+Let $\mathcal Q$ be the set of $q=(q_1,\dots,q_M)$ with
+\begin{equation}\label{eq:afs-lp}
+\begin{gathered}
+  q_j\ge0,\qquad\sum_iq_j^i=1,\qquad\sum_iq_j^iK^i=1\qquad(j=1,\dots,M),\\
+  \sum_iq_j^i(K^i-K^l)^+\ge\sum_iq_{j-1}^i(K^i-K^l)^+\qquad(j=2,\dots,M,\ l=1,\dots,N),
+\end{gathered}
+\end{equation}
+and $c_\ell(q)=\sum_iq_{j(\ell)}^i\mathrm{Call}(K^i,x_\ell,v_{j(\ell)})$. Then:
+\begin{enumerate}[label=(\roman*)]
+  \item $\mathcal Q$ is a nonempty compact polytope, and every $q\in\mathcal Q$ is a martingale density, so it defines a
+    surface strictly free of static arbitrage by \cref{thm:afs-sanos};
+  \item $J(q)=\sum_\ell\omega_\ell\big[(c_\ell-a_\ell)^++(b_\ell-c_\ell)^++\varepsilon|c_\ell-m_\ell|\big]$ attains its minimum on $\mathcal Q$, and
+    the minimum equals that of the linear program: minimize $\sum_\ell\omega_\ell(u_\ell+d_\ell+\varepsilon e_\ell)$ over $q\in\mathcal Q$ and
+    $u,d,e\ge0$ subject to $c_\ell(q)-u_\ell\le a_\ell$, $c_\ell(q)+d_\ell\ge b_\ell$ and $|c_\ell(q)-m_\ell|\le e_\ell$;
+  \item with $\varepsilon=0$, the minimum is $0$ if and only if some SANOS surface with these $v_j$ prices every quote inside its
+    spread.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) $\mathcal Q$ is defined by finitely many linear constraints and lies in a product of simplices, so it is a compact polytope; it
+contains $q_1=\dots=q_M=$ the law with mean $1$ on the two model strikes around $1$. The calendar constraints at the model
+strikes give convex order by \cref{lem:afs-convex-order} (with $G$ the model strikes; $(K^i-K^1)^+$ and $(K^i-K^N)^+$ are
+fixed by the mass and the mean), and $v$ may be interpolated as in \cref{def:afs-sanos}. (ii) $J$ is continuous, hence
+attains its minimum on the compact $\mathcal Q$. For fixed $q$ the constraints force $u_\ell\ge(c_\ell-a_\ell)^+$, $d_\ell\ge(b_\ell-c_\ell)^+$,
+$e_\ell\ge|c_\ell-m_\ell|$, with equality optimal since $\omega_\ell>0$; so minimizing over the slacks gives $J(q)$. (iii) $J\ge0$, with
+$J(q)=0$ exactly when every $c_\ell(q)\in[b_\ell,a_\ell]$.
+\end{proof}
+
+This is the linear program of SANOS Section~4.2 for model expiries equal to market expiries (the paper also
+interpolates market expiries between model expiries). Their eq.~(33) has a switch: in the position used in \eqref{eq:afs-lp}, the calendar constraint is on the weights and
+gives strict absence of arbitrage; in the other it is imposed on the smoothed prices, which, the paper notes, no longer
+guarantees strict absence of arbitrage.
+Their Remark~4.1 lists three treatments of the spread and recommends the penalty of (ii) with $\varepsilon=10^{-8}$ and
+$\omega_\ell=1/(a_\ell-b_\ell)$ (eq.~(34)), which we use. On S\&P~500 options on 6~May 2025 (48 expiries, $1000$ options) the fit
+puts $91.4\%$ of the options inside their spreads, the median error of the others is $21\%$ of the half-spread, and it
+runs in under a second (Section~5).
+
+\paragraph{Replication.} On the running example, with $80$ model strikes and $\eta=0.25$, SciPy's \texttt{linprog}
+(with the HiGHS solver) solves the program in a fraction of a second. Every fitted price is inside its spread, up to the solver's
+tolerance ($10^{-7}$ half-spreads), and the fitted implied volatilities are within about $0.4$ points of Heston's except in
+the one-month wings (about $1$ point). The solver returns a vertex of the feasible polytope, and the optimal $q_j$ have only
+about ten nonzero weights out of $80$ ($8$ to $13$ in our run; the optimum need not be unique, and the value $\varepsilon=10^{-8}$
+is at the solver's tolerance, so another solver may return another vertex and slightly different numbers); the smoothing turns them into a density close to Heston's (\cref{fig:afs-sanos}). On a fine grid of strikes
+and of maturities, including maturities between expiries, butterflies, calendar spreads and bounds hold up to
+rounding ($10^{-8}$); the two naive interpolations of \cref{sec:afs-why} fail the butterfly test at every expiry.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.96\textwidth]{ch17-sanos}
+  \caption{The SANOS fit of the running example ($\eta=0.25$). Left: total implied variance at the six expiries and
+    halfway between them, with the mid quotes; the curves are ordered in $T$ (no calendar arbitrage). Right: at $T=1$,
+    the nonzero weights $q_j^i$ of the linear program (scaled by $10$), the smoothed SANOS density of $\log Z_T$, and
+    Heston's.}
+  \label{fig:afs-sanos}
+\end{figure}
+
+\demo{17-arbitrage-free-surfaces.ipynb}{naive interpolation against SANOS; the linear program, with sliders for the
+spreads, the noise and the model grid; the martingale behind a SANOS surface; a real DAX surface, downloaded at run time.}
+
+\section{Discrete local volatility}\label{sec:afs-dlv}
+
+The constraints \eqref{eq:afs-lp} can be traded for positivity constraints. Fix a grid $K^1<\dots<K^N$ containing $1$, and
+for $\Delta>0$ and \emph{discrete local volatilities} $\Sigma^2,\dots,\Sigma^{N-1}\ge0$ let (SANOS eq.~(19))
+\begin{equation}\label{eq:afs-dlv-weights}
+  w^{i+}=\frac{(\Sigma^iK^i)^2\Delta}{(K^{i+1}-K^{i-1})(K^{i+1}-K^i)},\qquad
+  w^{i-}=\frac{(\Sigma^iK^i)^2\Delta}{(K^{i+1}-K^{i-1})(K^i-K^{i-1})},
+\end{equation}
+$w^{1\pm}=w^{N\pm}=0$, and let $\mathbf M$ be the tri-band matrix with
+$(\mathbf Mp)^i=(1+w^{i-}+w^{i+})p^i-w^{(i-1)+}p^{i-1}-w^{(i+1)-}p^{i+1}$ (SANOS eq.~(20), where $\mathbf M=Q_{j|j-1}^{-1}$).
+
+\begin{proposition}[Discrete local volatility]\label{prop:afs-dlv}
+Let $\mathbf M$ be as above.
+\begin{enumerate}[label=(\roman*)]
+  \item $\mathbf M$ is invertible and $\mathbf Q=\mathbf M^{-1}$ is a martingale transition matrix: $\mathbf Q\ge0$ entrywise, its columns sum to
+    $1$, and $\sum_iK^i\mathbf Q_{il}=K^l$. Hence for any $\Sigma_1,\dots,\Sigma_M\ge0$ and expiries $T_j$, the vectors $q_j=\mathbf Q_jq_{j-1}$
+    ($\Delta=T_j-T_{j-1}$, $q_0$ the unit mass at $1$) form a martingale density.
+  \item Conversely, let $q_1,\dots,q_M$ be a martingale density on the grid with $q_j^i>0$ for $1<i<N$, let
+    $c_j^i=\sum_lq_j^l(K^l-K^i)^+$, and let
+    \begin{equation}\label{eq:afs-implied-dlv}
+      (\Sigma_j^i)^2=\frac{2\,\Theta_j^i}{(K^i)^2\Gamma_j^i},\qquad\Theta_j^i=\frac{c_j^i-c_{j-1}^i}{T_j-T_{j-1}},\qquad
+      \Gamma_j^i=\frac{q_j^i}{\frac12(K^{i+1}-K^{i-1})} .
+    \end{equation}
+    Then $\mathbf M_jq_j=q_{j-1}$: the discrete local volatilities reproduce the density.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) Column $l$ of $\mathbf M$ has $1+w^{l-}+w^{l+}$ on the diagonal and $-w^{l-}$, $-w^{l+}$ in rows $l-1$, $l+1$: it sums to $1$,
+and $\sum_iK^i\mathbf M_{il}=K^l+w^{l-}(K^l-K^{l-1})-w^{l+}(K^{l+1}-K^l)=K^l$ by \eqref{eq:afs-dlv-weights}. So $\mathbf M^\top$ has
+positive diagonal, nonpositive off-diagonal entries and rows summing to $1$. If $\mathbf M^\top y=g\ge0$ and $y_i$ is the
+smallest entry of $y$, then $g_i=y_i+\sum_{l\ne i}|\mathbf M^\top_{il}|(y_i-y_l)\le y_i$, so $y\ge0$ (a maximum principle). Applied to $\pm y$ with
+$g=0$, this shows that $\mathbf M^\top$ is invertible, and applied to $g=e_k$ that $(\mathbf M^\top)^{-1}\ge0$; so $\mathbf Q=((\mathbf M^\top)^{-1})^\top\ge0$.
+Multiplying $\mathbf 1^\top\mathbf M=\mathbf 1^\top$ and $K^\top\mathbf M=K^\top$ by $\mathbf Q$ on the right gives the column sums and the means. Column
+$l$ of $\mathbf Q_j$ is a law with mean $K^l$, so $(q_{j-1},q_j)$ is the law of a martingale pair, and conditional Jensen gives
+convex order. (ii) Let $D^i=c_j^i-c_{j-1}^i\ge0$ (convex order). Then $w^{i\pm}q_j^i=D^i/|K^{i\pm1}-K^i|$, and
+$D^1=D^N=0$ since all mass lies in $[K^1,K^N]$. For $1<i<N$,
+\[
+  (\mathbf M_jq_j)^i=q_j^i-\Big(\frac{D^{i+1}-D^i}{K^{i+1}-K^i}-\frac{D^i-D^{i-1}}{K^i-K^{i-1}}\Big)=q_j^i-(q_j^i-q_{j-1}^i),
+\]
+because the change of slope of $c_j$ at $K^i$ is $q_j^i$ (\cref{thm:afs-grid}). Rows $1$ and $N$ are the same computation with the
+slopes $-1$ before $K^1$ and $0$ after $K^N$.
+\end{proof}
+
+This is SANOS Theorem~3.4, with its Theorem~A.4 for the inverse (a fact about M-matrices that the paper takes from the
+literature), and Theorem~3.7; discrete local volatilities come from H.~Buehler and E.~Ryskin, \emph{Discrete local
+volatility for large time steps} (working paper, 2015). The paper's Theorem~3.7 uses the convention $0/0:=0$ in \eqref{eq:afs-implied-dlv}; when
+$q_j^i=0<\Theta_j^i$ no finite $\Sigma_j^i$ exists, which is why (ii) assumes $q_j^i>0$. It suffices that $\Theta_j^i=0$ whenever
+$q_j^i=0$, with $\Sigma_j^i:=0$ there: the proof only uses $w^{i\pm}q_j^i=D^i/|K^{i\pm1}-K^i|$, which then holds with both sides zero. Theorem~3.6 maps a density between two
+different grids.
+
+\paragraph{Dupire on a grid.} By \eqref{eq:afs-implied-dlv}, $c_j^i-c_{j-1}^i=\frac12(\Sigma_j^iK^i)^2(T_j-T_{j-1})\Gamma_j^i$, with $\Gamma_j^i$ the
+second difference of $c_j$ at $K^i$: one fully implicit finite-difference step of Dupire's equation
+$\partial_Tc=\frac12\sigma^2x^2\partial_{xx}c$ (\cref{eq:iv-dupire-pde} in normalized units), the scheme with which J.~Andreasen and
+B.~Huge (\emph{Risk} 24, 2011) interpolate volatility; written for the weights, $\mathbf Mq_j=q_{j-1}$ is the implicit Euler step of the
+forward equation \eqref{eq:iv-fp-price} (\exref{ex:afs-dupire-grid}). So \eqref{eq:afs-implied-dlv} is a finite-difference
+Dupire formula, and as the grid is refined the implied discrete local volatilities of Heston prices approach the local
+volatility of \cref{fig:iv-local-vol}: at $T=0.5$, the largest error on $\log x\in[-0.4,0.3]$ is $2.7$, $0.6$ and $0.13$ volatility
+points for $(\Delta,h)=(1/12,0.05)$, $(1/52,0.02)$, $(1/252,0.01)$, $h$ the spacing in $\log x$ (\cref{fig:afs-dysanos}, left).
+
+As a parametrization, \cref{prop:afs-dlv}(i) needs only $\Sigma\ge0$: every vector of discrete local volatilities gives a
+martingale density, hence (with nondecreasing $v$) a surface strictly free of static arbitrage. Prices are no longer linear in
+the parameters, so calibration is a smooth nonlinear least-squares or gradient problem. This is the parametrization that
+DYSANOS uses.
+
+\section{DYSANOS: generating arbitrage-free surfaces}\label{sec:afs-dysanos}
+
+A \emph{generative model} of option markets simulates future surfaces, for risk management and for training hedging
+strategies. If each simulated surface is a decoded SANOS surface, static arbitrage is excluded on every day by construction.
+
+\begin{definition}[DYSANOS with the AR(1) baseline]\label{def:afs-dysanos}
+Fix model expiries, a strike grid containing $1$, and bounds $0<\Sigma_{\min}<\Sigma_{\max}$. The \emph{decoder} (ML-SANOS, DYSANOS Definition~2.10 and
+eqs.~(6)--(17)) maps an unconstrained $u\in\R^p$ to discrete local volatilities with
+$(\Sigma_j^i)^2=\min\{\Sigma_{\max},\Sigma_{\min}+e^{u^{\Sigma,j,i}}\}$ (DYSANOS writes $\Sigma^{j,i}$ for the square), to increasing smoothing total volatilities $W^j$ (forward volatilities
+squashed into an interval, times smoothing factors), to the martingale density of \cref{prop:afs-dlv}(i), and to the SANOS surface
+$c_u$. A \emph{DYSANOS generator} with the AR(1) baseline consists of an affine compression $u=u_0+\Lambda h$, $h\in\R^d$ (eq.~(21)), and
+a Gaussian AR(1) for the state,
+\[
+  h_{t+\Delta}=m+A_\Delta(h_t-m)+G_\Delta^\top z_{t,\Delta},\qquad A_\Delta=e^{-\kappa\Delta},\qquad\kappa=LL^\top+S+\kappa_{\min}I,
+\]
+with $z_{t,\Delta}\sim\mathcal N(0,I)$ independent, $S$ antisymmetric and $\kappa_{\min}>0$ (eqs.~(23)--(24)), together with a driftless spot whose
+one-day return is the quantile, under the front-expiry SANOS marginal, of a Gaussian score correlated with $z_{t,\Delta}$
+(eqs.~(28)--(29)). The generated surface on day $t$ is $c_{u_0+\Lambda h_t}$.
+\end{definition}
+
+For simplicity the definition fixes the strike grid; in DYSANOS the common grid is itself decoded from $u$, as exponentials of
+normalized moneyness times total volatilities (eq.~(15)).
+
+The paper uses $M=18$ expiries from $1$ to $70$ business days, $N=200$ strikes, $p=3620$, $d=200$, and fits $u_0,\Lambda$, the states $h_t$
+and the AR(1) to $891$ days of S\&P~500 quotes (2022--2025) by gradient descent in stages, the last one joint, with penalties
+(eqs.~(20)--(27) and Appendix~A).
+
+\begin{proposition}[What the generator guarantees]\label{prop:afs-generator}
+\begin{enumerate}[label=(\roman*)]
+  \item For every state $h$, the surface $c_{u_0+\Lambda h}$ is strictly free of static arbitrage and smooth in the strike.
+  \item Every eigenvalue $\lambda$ of $\kappa$ has $\operatorname{Re}\lambda\ge\kappa_{\min}$, so every eigenvalue of $A_\Delta$ has modulus at most
+    $e^{-\kappa_{\min}\Delta}<1$: the AR(1) is stable for every $\Delta>0$.
+\end{enumerate}
+\end{proposition}
+
+\begin{proof}
+(i) The decoded $\Sigma$ are positive, so \cref{prop:afs-dlv}(i) gives a martingale density, and $W^j$ is increasing;
+apply \cref{thm:afs-sanos}. (ii) For a complex unit eigenvector $e$, $\lambda=e^*\kappa e=|L^\top e|^2+e^*Se+\kappa_{\min}$, and $e^*Se$ is purely
+imaginary because $S$ is real antisymmetric. The eigenvalues of $e^{-\kappa\Delta}$ are the $e^{-\lambda\Delta}$.
+\end{proof}
+
+Part (i) is the sense of the paper's ``free of static arbitrage by construction''; (ii) is the stability argument of its
+Section~3.2. Neither says anything about \emph{dynamic} arbitrage: on day $t$ one may buy an option at the generated price and
+sell it on day $t+1$ at the price of the next generated surface, and nothing forces these prices, together with the spot, to be
+martingales under some measure equivalent to the generating one. DYSANOS Section~4 studies this for a book of the spot and $48$ options,
+$25$ days and $100{,}000$ paths, with one-day returns $R_t$. Under the generating measure the mean returns are far from zero
+(largest $|z|$-score $53$, Table~8). Reweighting the paths by minimal relative entropy subject to $\E[DR_t]=0$ gives $\Q_1$
+(eqs.~(31)--(32)); an exponential-utility problem with transaction costs over neural-network strategies, in the spirit of the
+minimal entropy martingale measure of \textcite{frittelli-2000}, gives $\Q_2$ (Theorem~4.2, eqs.~(33)--(38)). The test of
+conditional drift is the following.
+
+\begin{proposition}[A test of conditional drift]\label{prop:afs-conditional-test}
+Let $\mathcal G$ be a sub-$\sigma$-field, $R$ a random vector in $\R^k$ with $\E[e^{\lambda|R|}]<\infty$ for all $\lambda>0$, and $\mathcal A$ the set of
+bounded $\mathcal G$-measurable vectors. If $a^*\in\mathcal A$ minimizes $J(a)=\E\big[\exp(-a^\top R+\frac12|a|^2)\big]$ over $\mathcal A$, then
+\[
+  \E[a^{*\top}R]\ge\E\big[|a^*|^2\big],\qquad\text{and}\qquad\E[a^{*\top}R]=0\iff\E[R\mid\mathcal G]=0\ \text{almost surely}.
+\]
+\end{proposition}
+
+\begin{proof}
+For bounded $\mathcal G$-measurable $b$, the function $\varepsilon\mapsto J(a^*+\varepsilon b)$ is minimal at $0$ and may be differentiated
+under $\E$ (dominated convergence, using the exponential moments), so
+\[
+  \E\big[e^{-a^{*\top}R+|a^*|^2/2}(a^*-R)^\top b\big]=0 .
+\]
+Taking $b=e_k\1_A$, $A\in\mathcal G$, gives $\E\big[e^{-a^{*\top}R}(R-a^*)\mid\mathcal G\big]=0$. Take the inner product with the $\mathcal G$-measurable $a^*$:
+with $\zeta=a^{*\top}R$ and $y_0=|a^*|^2$, $\E[e^{-\zeta}(\zeta-y_0)\mid\mathcal G]=0$. Since $(y-y_0)(e^{-y}-e^{-y_0})\le0$ for every real $y$,
+$e^{-\zeta}(\zeta-y_0)\le e^{-y_0}(\zeta-y_0)$, so $0\le e^{-y_0}\E[\zeta-y_0\mid\mathcal G]$: $a^{*\top}\E[R\mid\mathcal G]\ge|a^*|^2$, and taking expectations
+gives the inequality. If $\E[a^{*\top}R]=0$, then $a^*=0$ almost surely, and the first-order condition reads $\E[R\mid\mathcal G]=0$.
+Conversely, if $\E[R\mid\mathcal G]=0$, the first-order condition holds at $a=0$; $J$ is convex, so $0$ is a minimizer, and $J$ is strictly convex (so is its integrand in $a$), so $a^*=0$.
+\end{proof}
+
+This is DYSANOS Theorem~4.3 for one date (their objective sums over dates, and they assume finite, twice differentiable conditional
+Laplace transforms; their Appendix~C uses strong convexity). The test fits $a^*$ on half of the paths and evaluates the captured return
+$a^{*\top}R$ on the other half. Under $\Q_1$ it rejects ($T=41.4$); under $\Q_2$ it does not ($T=-0.45$, $p=0.65$; Table~9). The paper does not
+claim risk-neutrality beyond this book and strategy class (Section~4.4).
+
+\paragraph{Replication.} We simulate $250$ days of the Heston market with a stochastic initial variance $v_t$ (a square-root process
+with $\kappa=8$, $\theta=0.045$, $\xi=0.4$ and spot correlation $-0.7$) and fit each day by the decoder with discrete local volatilities
+$\Sigma_j^i=0.01+\min(3,e^{u_j(z)})$, $u_j$ a polynomial of degree $4$ in $z=\log K^i/(0.2\sqrt{T_j})$ (flat beyond the quotes), the smoothing
+variances from the mid at-the-money forward variances, and a penalty tying $u_j$ to $u_{j-1}$: $36$ parameters a day instead of
+$3620$. The daily fits put $95.4\%$ of the prices inside the spreads. An SVD compression to $d=6$ keeps $91.1\%$ (DYSANOS: $82.3\%$ and
+$80.9\%$ with $d=200$, Table~1), and least squares give an AR(1) with spectral radius $0.967$ per day, a half-life of $21$ trading days
+(the variance $v_t$ has $\ln2/8$ years, $22$ days; DYSANOS: $15.4$ weeks, Table~5). Generated surfaces pass every static check to
+rounding, as \cref{prop:afs-generator} guarantees (\cref{fig:afs-dysanos}, right), and in a long simulation from the invariant law
+their 3-month at-the-money volatility has the historical mean and spread ($19.9\%$ and $4.1$ points against $20.2\%$ and $4.0$).
+The dynamics are another matter. The synthetic history is itself not free of dynamic arbitrage: its variance has volatility of
+volatility $0.4$ while its surfaces are priced with $0.5$, and an equivalent change of measure cannot alter the quadratic
+variation $\xi^2\int v\,\dd t$ of the variance, a limit in probability of sums of squared increments (\cref{def:ito-covariation}). We also replace the front SANOS marginal of eq.~(29) by a lognormal law at the front at-the-money
+volatility, which creates drift by itself: with the surface frozen, out-of-the-money calls ($x=1.05$ at one month, $1.1$ at three) gain
+$2.7\%$ a day on average ($z=20$ and $34$), because a lognormal spot ignores the skew. On $4000$ antithetic paths of $25$ days of the
+full generator, with standard errors computed on the antithetic pairs, $38$ of the $125$ mean daily returns (of the spot, and of calls at
+$x=0.95,1$ for one month and $x=0.9,1$ for three) have $|z|>2.576$ (largest $7.7$; median $6.6$ for the three-month at-the-money call), and
+the cross-fitted test of \cref{prop:afs-conditional-test} rejects decisively ($T=30$ with constant actions, $T=32$ on the three-month
+at-the-money call alone): pooled over $25$ dates, even a modest daily drift is unmistakable.
+
+\begin{figure}[ht]
+  \centering
+  \includegraphics[width=0.96\textwidth]{ch17-dlv-dysanos}
+  \caption{Left: discrete local volatilities implied by Heston prices, \eqref{eq:afs-implied-dlv}, on two grids, against Dupire's local
+    volatility of \cref{fig:iv-local-vol} at $T=0.5$. Right: the 3-month at-the-money volatility of $250$ fitted days of the synthetic market,
+    and $120$ days generated by the AR(1) baseline from the last state (three paths, and the $5$--$95\%$ band of $400$).}
+  \label{fig:afs-dysanos}
+\end{figure}
+
+\demo{17-arbitrage-free-surfaces.ipynb}{discrete local volatility and Dupire; the AR(1) generator, static checks of generated surfaces, and the
+drift tests.}
+
+\furtherreading
+Beyond what is covered here, \textcite{buehler-sanos-2026} treat different strike grids at different expiries and the
+generalized models of their Section~3.4, and \textcite{buehler-dysanos-2026} heavy-tailed innovations (Appendix~B) and the
+data pipeline (Appendix~E). \textcite{gatheral-jacquier-2014} give the parametric alternative,
+SSVI, with explicit no-arbitrage conditions. \textcite{davis-hobson} and \textcite{cousot-2007} characterize
+quotes free of static arbitrage, \textcite{carr-madan-2005} give sufficient conditions, and \textcite{buehler-expensive-2006} studies the martingales consistent with a surface. Martingale couplings
+(\cref{lem:afs-strassen}) are also the objects of martingale optimal transport, which bounds the prices of exotics
+over all models consistent with the vanillas; \textcite{brown-hobson-rogers} give such bounds for barrier options
+(\cref{sec:iv-consistency}).

@@ -58,10 +58,10 @@ Generated from [`latex/toc.tex`](latex/toc.tex). Chapters marked *in preparation
 
 | | Chapter | Notes | Exercises | Demos |
 |---|---|---|---|---|
-| 17 | Arbitrage-free option surfaces | in preparation | – | – |
-| 18 | Hawkes processes and limit order books | in preparation | – | – |
-| 19 | Rough volatility | in preparation | – | – |
-| 20 | Signatures and signature-based models | in preparation | – | – |
+| 17 | Arbitrage-free option surfaces | ✓ | ✓ | [17-arbitrage-free-surfaces.ipynb](code/notebooks/17-arbitrage-free-surfaces.ipynb) |
+| 18 | Hawkes processes and limit order books | ✓ | ✓ | [18-hawkes.ipynb](code/notebooks/18-hawkes.ipynb) |
+| 19 | Rough volatility | ✓ | ✓ | [19-rough-volatility.ipynb](code/notebooks/19-rough-volatility.ipynb) |
+| 20 | Signatures and signature-based models | ✓ | ✓ | [20-signatures.ipynb](code/notebooks/20-signatures.ipynb) |
 
 ## Layout
 

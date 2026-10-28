@@ -1,0 +1,135 @@
+% Exercises for Chapter 17 (arbitrage-free option surfaces). Statements only: solutions are kept privately.
+% Notation as in the notes: normalized strikes x = K/F_T and normalized call prices c(T, x) = E[(Z_T - x)^+]
+% for the martingale Z_T = S_T/F_T; Call(s, x, v) is the Black--Scholes call of eq:afs-call.
+
+Unless an exercise says otherwise, prices are normalized as in \noteref{eq:afs-normalized}, so that the stock and the bond
+both cost $1$, and the market is frictionless.
+
+\begin{exercise}[A calendar spread]\label{ex:afs-calendar}
+\easy Take $r=q=0$, so that $F_T=S_0=1$ and $Z_T=S_T$. Two calls with the same strike $x=1$ and maturities $T_1<T_2$ are
+quoted at $c(T_1,1)=0.060$ and $c(T_2,1)=0.055$.
+\begin{enumerate}[label=(\alph*)]
+  \item Buy the $T_2$ call and sell the $T_1$ call. At $T_1$, if $S_{T_1}>1$, the call you sold is exercised: deliver a borrowed
+    share against the strike, and keep the short position until $T_2$. Show that this strategy collects $0.005$ at time
+    $0$ and never has a negative value at $T_2$, whatever the path of $S$.
+  \item Now let $r,q$ be arbitrary constants, $x>0$, and suppose that the normalized prices of \noteref{eq:afs-normalized} satisfy
+    $c(T_2,x)<c(T_1,x)$. Buy $e^{rT_2}/F_{T_2}$ calls with strike $xF_{T_2}$ and maturity $T_2$ and sell $e^{rT_1}/F_{T_1}$ calls with strike
+    $xF_{T_1}$ and maturity $T_1$. If the latter end in the money, borrow at $T_1$ the amount you pay, and sell $e^{rT_2}/F_{T_2}$
+    forward contracts on the stock for delivery at $T_2$, at the forward price $S_{T_1}e^{(r-q)(T_2-T_1)}$ (which costs nothing).
+    Show that this is an arbitrage. You may write every payoff in terms of $Z_t=S_t/F_t$.
+  \item Show that the trade at $T_1$ is needed: with the quotes of (a), find a probability measure for the pair $(S_{T_1},S_{T_2})$
+    under which every static portfolio of the two calls, the stock and the bond (held to $T_2$, the payoff of the $T_1$ call kept in
+    cash) costs the expectation of its payoff, so that none is an arbitrage. \emph{Hint:} take $S_{T_1}$ and $S_{T_2}$ independent,
+    each with two values. Which property of the price process does your measure lack?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Different grids at different maturities]\label{ex:afs-grids}
+\medium At maturity $T_1$ the only quotes are $c(T_1,1)=0.25$ and $c(T_1,2)=0$; at $T_2>T_1$ they are $c(T_2,0.5)=0.6$,
+$c(T_2,1.5)=0.13$ and $c(T_2,3)=0$. As always, $c(T,0)=1$.
+\begin{enumerate}[label=(\alph*)]
+  \item Compute the linear interpolation $\hat c_1$ of the $T_1$ quotes (\noteref{prop:afs-expensive}) at $x=0.5$ and $x=1.5$, and check
+    that the condition of SANOS Theorem~2.6, $\hat c_1(x)\le c(T_2,x)$ at the $T_2$ strikes, fails.
+  \item Show that the quotes are nevertheless free of static arbitrage: let $Z_1$ take the values $0.5$ and $1.5$ with probability
+    $\frac12$ each, find the law of $Z_2$ given by \noteref{thm:afs-grid} for the $T_2$ quotes, and check the convex order with
+    \noteref{lem:afs-convex-order}. Then find a martingale coupling explicitly, by splitting each value of $Z_1$ between neighbouring
+    values of $Z_2$.
+  \item Let $\ell(x)=\max(1-x,\,0.5-0.25x)$ for $0\le x\le1$, $\ell(x)=\max(1-0.75x,\,0)$ for $1\le x\le2$, and $\ell(x)=0$ for $x\ge2$.
+    Show that the call function of every law on $[0,\infty)$ with mean $1$ that reproduces the $T_1$ quotes is at least $\ell$, and that
+    for each $x$ some such law attains $\ell(x)$. Is $\ell$ itself the call function of such a law? Deduce a condition on the $T_2$ quotes
+    that is necessary for the absence of static arbitrage, and compare it with the sufficient condition of (a).
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Smoothing raises prices]\label{ex:afs-smoothing}
+\easy Let $q$ put mass $\frac12$ on each of the normalized strikes $0.9$ and $1.1$.
+\begin{enumerate}[label=(\alph*)]
+  \item Compute the linear call function $\sum_iq^i(K^i-x)^+$ at $x=0.9,1,1.1$, and the total implied volatility of the price at $x=1$
+    (use $s=2N^{-1}((1+c)/2)$ at the money, \noteref{rem:iv-solver}).
+  \item Compute the SANOS price $\sum_iq^i\,\mathrm{Call}(K^i,1,v)$ for $v=0.0025$ and $v=0.01$, and check
+    \noteref{thm:afs-sanos}(iii). Why is the inequality strict for $v>0$?
+  \item The call with $x=1$ is quoted with ask $0.052$. Find the largest $v$ for which the SANOS price at $x=1$ stays below the ask,
+    and the SANOS prices at $x=0.9$ and $x=1.1$ for that $v$. (This is the mechanism of SANOS Proposition~3.8.)
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Discrete local volatility on three strikes]\label{ex:afs-dlv-three}
+\medium Take the grid $K^1=1-a<K^2=1<K^3=1+b$ with $a\in(0,1)$, $b>0$, one discrete local volatility $\Sigma>0$ at $K^2$, a step
+$\Delta>0$, and the weights \noteref{eq:afs-dlv-weights}.
+\begin{enumerate}[label=(\alph*)]
+  \item Write the $3\times3$ matrix $\mathbf M$ and compute $\mathbf Q=\mathbf M^{-1}$. Check that $\mathbf Q$ is a martingale transition matrix and that
+    the boundary strikes are absorbing.
+  \item Starting from the unit mass at $1$, compute the law $q_1=\mathbf Qe_2$, its mean and its variance. Show that the variance is
+    $\Sigma^2\Delta/(1+w^{2-}+w^{2+})$, and discuss the limits $\Delta\to0$ and $\Delta\to\infty$.
+  \item Check that \noteref{eq:afs-implied-dlv} applied to $q_1$ returns $\Sigma$. Give the numbers for $a=b=0.1$, $\Sigma=0.2$ and $\Delta=1$.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Dupire's formula on a grid]\label{ex:afs-dupire-grid}
+\medium Let the strikes be equally spaced, $K^i=K^0+ih$, and the expiries $T_j=j\Delta$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $\mathbf M_jq_j=q_{j-1}$ (\noteref{prop:afs-dlv}) reads, at the inner strikes and with $a^i=(\Sigma_j^iK^i)^2$,
+    \[
+      \frac{q_j^i-q_{j-1}^i}\Delta=\frac1{2h^2}\Big(a^{i+1}q_j^{i+1}-2a^iq_j^i+a^{i-1}q_j^{i-1}\Big),
+    \]
+    the implicit Euler scheme for $\partial_Tp=\frac12\partial_{xx}(\sigma^2x^2p)$, the forward equation \noteref{eq:iv-fp-price} in normalized
+    units, if $q_j^i\approx p(T_j,K^i)h$.
+  \item Let $c(T,x)$ be a call-price surface that is twice continuously differentiable in $T$ and four times in $x$, with
+    $\partial_{xx}c>0$, and let $c_j^i=c(T_j,K^i)$. Show that $\Sigma_j^i$ of \noteref{eq:afs-implied-dlv} satisfies
+    $(\Sigma_j^i)^2=\sigma_D(T_j,K^i)^2+O(\Delta+h^2)$ locally uniformly, where $\sigma_D^2=2\partial_Tc/(x^2\partial_{xx}c)$ is Dupire's local
+    variance in normalized units (\noteref{eq:iv-dupire} with $r=q=0$). Use $\Gamma_j^i=(c_j^{i+1}-2c_j^i+c_j^{i-1})/h^2$ on this grid.
+  \item In the notes, the largest errors were $2.7$, $0.6$ and $0.15$ volatility points for $(\Delta,h)=(1/12,0.05)$, $(1/52,0.02)$ and
+    $(1/252,0.01)$ (with a uniform grid in $\log x$). Which of the two error terms dominates?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Linear programming duality and arbitrage with spreads]\label{ex:afs-lp-dual}
+\hard One maturity, no smoothing. Let $G=\{0=g^0<g^1<\dots<g^m\}$ be the possible values of $Z_T$, and let calls with
+strikes $x_1,\dots,x_L\in G$ be quoted with bids $b_\ell$ and asks $a_\ell\ge b_\ell$. You may use Farkas' lemma in the following
+form: for matrices $A,E$ and vectors $h,e$, exactly one of the two systems
+\[
+  \text{(P)}\ \ q\ge0,\ Aq\le h,\ Eq=e;\qquad\qquad\text{(D)}\ \ y\ge0,\ \lambda\text{ free},\ A^\top y+E^\top\lambda\ge0,\ h^\top y+e^\top\lambda<0
+\]
+has a solution.
+\begin{enumerate}[label=(\alph*)]
+  \item Write the existence of a probability vector $q$ on $G$ with mean $1$ and $b_\ell\le\sum_iq^i(g^i-x_\ell)^+\le a_\ell$ for every
+    $\ell$ as a system (P).
+  \item Interpret a solution of (D) as a portfolio: $\lambda_0$ bonds, $\lambda_1$ shares, $\alpha_\ell\ge0$ calls bought at the ask and $\beta_\ell\ge0$
+    calls sold at the bid. Deduce: either the quotes are consistent with some law on $G$, or there is a portfolio whose payoff
+    is nonnegative at every point of $G$ and whose cost is negative.
+  \item Show that a payoff of this form that is nonnegative at the points of $G$ is nonnegative on $[0,g^m]$, but give an example
+    in which it is negative for some $z>g^m$. What does this say about the choice of the boundary strike $K^N$ in SANOS
+    (Remark~2.7 of the paper chooses it well beyond the largest quoted strike)?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[The conditional test for Gaussian returns]\label{ex:afs-gaussian-test}
+\medium In the setting of \noteref{prop:afs-conditional-test}, suppose that given $\mathcal G$ the vector $R$ is Gaussian with mean $\mu$ and
+covariance $\Gamma$, where $\mu$ and $\Gamma$ are bounded $\mathcal G$-measurable and $\Gamma$ is positive definite.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $\E\big[\exp(-a^\top R+\frac12|a|^2)\mid\mathcal G\big]=\exp\big(-a^\top\mu+\frac12a^\top(I+\Gamma)a\big)$ for bounded
+    $\mathcal G$-measurable $a$, and deduce that $a^*=(I+\Gamma)^{-1}\mu$.
+  \item Compute $\E[a^{*\top}R]$ and $\E|a^*|^2$, and check the inequality of \noteref{prop:afs-conditional-test} directly.
+  \item The conditional Sharpe ratio $a^\top\mu/\sqrt{a^\top\Gamma a}$ of a portfolio $a$ is maximized by $a=\Gamma^{-1}\mu$. When are
+    $a^*$ and $\Gamma^{-1}\mu$ proportional? For daily returns $\Gamma$ is small compared with $I$ (standard deviations of a few
+    percent): what is $a^*$ then, approximately, and what does $\E[a^{*\top}R]$ measure?
+  \item The test of the notes sums the captured returns over $D$ dates. If each date has the same small drift and the
+    captured returns of different dates are uncorrelated, how does the expected test statistic grow with $D$?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Calibrating SANOS]\label{ex:afs-sanos-lp}
+\medium This is a computational exercise. Use the functions \texttt{sanos\_example} and \texttt{sanos\_calibrate} of the course code
+(\coderef{code/src/ieor222/surfaces.py}), which build the running example of the notes and solve the linear program of
+\noteref{prop:afs-lp}.
+\begin{enumerate}[label=(\alph*)]
+  \item Fit the running example with $\eta=0$, $0.1$, $0.25$, $0.5$ and $0.9$. For each, report the fraction of fitted prices inside
+    their spreads and the largest error in implied volatility against the Heston prices.
+  \item Explain the results with \noteref{thm:afs-sanos}(iii): why does a large $\eta$ make the fit fail, and at which strikes and
+    expiries do you expect the misses?
+  \item Solve the program with the spreads as hard constraints (\texttt{hard=True}) for $\eta=0.25$. Is it feasible? What would
+    infeasibility tell you, by \noteref{prop:afs-lp}(iii)?
+  \item With $\eta=0$ the fit is also inside the spreads. Plot its implied volatility at one expiry between two quotes, and explain why
+    SANOS recommends $\eta>0$ all the same.
+\end{enumerate}
+\end{exercise}

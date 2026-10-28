@@ -1,0 +1,134 @@
+% Exercises for Chapter 19 (rough volatility). Statements only: solutions are kept privately.
+% Throughout, W^H is a fractional Brownian motion with Hurst index H in (0,1), rho_H is its
+% increment covariance (eq. rv-fgn of the notes), and K_q = E|N|^q for N ~ N(0,1).
+
+\begin{exercise}[Fractional Gaussian noise]\label{ex:rv-fgn}
+\easy Let $G_n=W^H_{n+1}-W^H_n$, $n\in\N$, and extend $\rho_H$ to $\Z$ by $\rho_H(-k)=\rho_H(k)$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $\Cov(G_j,G_l)=\rho_H(l-j)$ for all $j,l\in\N$.
+  \item Show that $\sum_{k=-m}^m\rho_H(k)=(m+1)^{2H}-m^{2H}$ for every $m\in\N$. Deduce that
+    $\sum_{k\in\Z}\rho_H(k)=0$ if $H<\frac12$ (the series converges absolutely), and that the partial sums tend to
+    $+\infty$ if $H>\frac12$.
+  \item Compute $\Var(G_0+\dots+G_{n-1})$ in two ways, and compare its growth in $n$ with that of a sum of
+    $n$ independent standard normal variables.
+  \item With $H\approx0.1$, are the daily increments of log-volatility in the RFSV model long memory in the sense
+    $\sum_n|\rho_H(n)|=\infty$?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Quadratic variation of fBM]\label{ex:rv-qv}
+\medium Let $t>0$, $t_j=jt/n$ and $V_n=\sum_{j=0}^{n-1}\big(W^H_{t_{j+1}}-W^H_{t_j}\big)^2$. You may use that
+$\Cov(X^2,Y^2)=2\Cov(X,Y)^2$ for a centred Gaussian vector $(X,Y)$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $\E[V_n]=t^{2H}n^{1-2H}$.
+  \item Show that $\Var V_n=2(t/n)^{4H}\sum_{j,l=0}^{n-1}\rho_H(j-l)^2\le2(t/n)^{4H}\,n\sum_{k\in\Z}\rho_H(k)^2$, and that
+    the last series converges when $H<\frac34$.
+  \item Deduce that $V_n\to\infty$ in probability if $H<\frac12$, and $V_n\to0$ in $L^1$ if $H>\frac12$.
+  \item You may use that for a continuous semimartingale $X$ the sums $\sum_j(X_{t_{j+1}}-X_{t_j})^2$ along
+    partitions of $[0,t]$ with mesh tending to $0$ converge in probability to a finite limit (Revuz and Yor,
+    \emph{Continuous Martingales and Brownian Motion}, Chapter~IV, Section~1). Show that $W^H$ is not a
+    semimartingale when $H<\frac12$. Why does the argument say nothing when $H>\frac12$?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Consistency of the GJR statistic]\label{ex:rv-consistency}
+\easy Let $X=\nu W^H$ with $\nu>0$ and $H<\frac34$, let $\Delta>0$, and
+$m_N(\Delta)=\frac1N\sum_{j=1}^N\big(X_{j\Delta}-X_{(j-1)\Delta}\big)^2$ (the statistic of \noteref{eq:rv-m} with
+$q=2$ and one starting point).
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $\E[m_N(\Delta)]=\nu^2\Delta^{2H}$ and, using the computation of \exref{ex:rv-qv}(b), that
+    $\Var m_N(\Delta)\le\frac{2\nu^4\Delta^{4H}}N\sum_{k\in\Z}\rho_H(k)^2$.
+  \item For $0<\Delta_1<\Delta_2$, show that
+    $\hat H_N=\log\big(m_N(\Delta_2)/m_N(\Delta_1)\big)/\big(2\log(\Delta_2/\Delta_1)\big)\to H$ in probability as
+    $N\to\infty$.
+  \item For $H=0.14$ and $N=3500$ (fourteen years of daily data), bound the standard deviation of
+    $m_N(1)/\nu^2$; you may evaluate $\sum_k\rho_H(k)^2$ numerically.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Why realized variance looks smoother]\label{ex:rv-smoothing}
+\medium This exercise follows Appendix~C of Gatheral, Jaisson and Rosenbaum (2018). Let $\delta>0$,
+$A_t=\frac1\delta\int_t^{t+\delta}W^H_s\,\dd s$ (an average over a window of length $\delta$), and $D=A_{t+\Delta}-A_t$ for
+$\Delta>0$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $\E[D^2]=\frac1{2\delta^2}\int_0^\delta\!\int_0^\delta g(u-v)\,\dd u\,\dd v$ with
+    $g(x)=|x+\Delta|^{2H}+|x-\Delta|^{2H}-2|x|^{2H}$.
+  \item Let $p=2H+2$ and $F(x)=|x|^p/(p(p-1))$, so that $F''(x)=|x|^{2H}$. Using
+    $\int_0^\delta\!\int_0^\delta\varphi(u-v)\,\dd u\,\dd v=\int_{-\delta}^\delta(\delta-|x|)\varphi(x)\,\dd x$ and
+    $\int_{-\delta}^\delta(\delta-|x|)F''(c+x)\,\dd x=F(c+\delta)-2F(c)+F(c-\delta)$, show that $\E[D^2]=\Delta^{2H}f(\delta/\Delta)$
+    with
+    \[
+      f(\vartheta)=\frac{(1+\vartheta)^p+|1-\vartheta|^p-2-2\vartheta^p}{p(p-1)\vartheta^2}.
+    \]
+  \item Show that $f(\vartheta)=1-\frac{2\vartheta^{2H}}{p(p-1)}+O(\vartheta^2)$ as $\vartheta\downarrow0$, and deduce that for
+    $\delta/\Delta$ small the slope $\frac{\dd\log\E[D^2]}{\dd\log\Delta}$ exceeds $2H$.
+  \item (\emph{Computational.}) For $H=0.14$, fit $\log\E[D^2]=c+2H_{\mathrm{eff}}\log\Delta$ by least squares on
+    $\Delta=1,\dots,30$ (days) for $\delta=\frac1{24}$ and $\delta=\frac13$, then on $\Delta=1,\dots,100$. Compare with
+    \noteref{rem:rv-proxy}, \noteref{fig:rv-gjr} and Table~C.1 of Gatheral, Jaisson and Rosenbaum ($0.161$ and $0.184$).
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Forward variance and the first-order skew]\label{ex:rv-forward-variance}
+\medium Consider the rough Bergomi model of \noteref{def:rv-rbergomi}, with $\alpha=H-\frac12$, and fix $u>0$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that for $0\le t\le u$,
+    \[
+      \xi_t(u):=\EQ[v_u\mid\F_t]=\xi_0(u)\exp\Big(\eta\sqrt{2H}\int_0^t(u-s)^\alpha\,\dd W_s
+      -\frac{\eta^2}2\big(u^{2H}-(u-t)^{2H}\big)\Big).
+    \]
+  \item Show that $\dd\xi_t(u)=\xi_t(u)\,\eta\sqrt{2H}(u-t)^\alpha\,\dd W_t$ on $[0,u)$, so that $(\xi_t(u))_{t<u}$ is a
+    martingale, and compute $\dd[\log S,\xi_\cdot(u)]_t$.
+  \item Let $\xi_0\equiv\xi$. Replace $v_t$ and $\xi_t(u)$ by $\xi$ in the result of (b) (this is the first-order
+    approximation in $\eta$), compute $C_T$ in \noteref{eq:rv-first-order}, and show that the first-order skew is
+    $\frac{\rho\eta}2E_HT^{H-1/2}$ for every $T>0$.
+  \item In Bergomi's one-factor model, $\dd\xi_t(u)=\xi_t(u)\,\eta e^{-\kappa(u-t)}\dd W_t$ with $\kappa>0$, the rest being
+    as in rough Bergomi. Compute the first-order skew, its limit as $T\downarrow0$ and its behaviour as
+    $T\to\infty$. Compare with \noteref{prop:rv-skew}.
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[Increments of the Riemann--Liouville process]\label{ex:rv-rl-increments}
+\hard Let $Y$ be the Riemann--Liouville process of \noteref{prop:rv-rl}, $\alpha=H-\frac12$ with $H\ne\frac12$, and
+$c_H$ as in \noteref{prop:rv-mvn}.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that for $s\ge0$ and $h>0$,
+    $\E\big[(Y_{s+h}-Y_s)^2\big]=h^{2H}\Big(1+2H\int_0^{s/h}\big((1+x)^\alpha-x^\alpha\big)^2\dd x\Big)$.
+  \item Deduce that this is strictly increasing in $s$, equals $h^{2H}$ at $s=0$ and tends to $2Hc_H^2h^{2H}$ as
+    $s\to\infty$. Does $Y$ have stationary increments?
+  \item Let $B$ be a two-sided Brownian motion and $Z_t=\int_{-\infty}^0\big((t-u)^\alpha-(-u)^\alpha\big)\dd B_u$, $t\ge0$.
+    Show that for $0<s<t$, $\E[(Z_t-Z_s)^2]\le\frac{\alpha^2}{2-2H}\,s^{2H-2}(t-s)^2$, and that
+    $(Z_{t+\varepsilon}-Z_t)/\varepsilon$ converges in $L^2$ as $\varepsilon\to0$ for every $t>0$.
+  \item With $W=B$ on $[0,\infty)$, $c_HW^H_t=Y_t/\sqrt{2H}+Z_t$ defines a fBM (\noteref{prop:rv-mvn}). Show that
+    for fixed $s>0$, $\big\|c_H(W^H_{s+h}-W^H_s)-(Y_{s+h}-Y_s)/\sqrt{2H}\big\|_{L^2}=O(h)$ as $h\downarrow0$, while both
+    increments have $L^2$ norm of order $h^H$. What does this say about the roughness of $Y$?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[The mean variance in rough Heston]\label{ex:rv-mittag-leffler}
+\hard In the rough Heston model of \noteref{thm:rv-rough-heston}, with $a=H+\frac12\in(\frac12,1]$, let
+$m(t)=\EQ[V_t]$. You may assume that $\sup_{t\le T}\EQ[V_t]<\infty$ for every $T$, that the stochastic integral in
+\noteref{eq:rv-rough-heston} has mean zero, and that $I^bI^c=I^{b+c}$ for $b,c>0$.
+\begin{enumerate}[label=(\alph*)]
+  \item Show that $m(t)=V_0+\lambda\,I^a[\theta-m](t)$ for $t\ge0$.
+  \item Let $E_a(x)=\sum_{n\ge0}x^n/\Gamma(an+1)$ (the Mittag-Leffler function). Show that
+    $I^a[s^{an}](t)=\frac{\Gamma(an+1)}{\Gamma(an+a+1)}t^{a(n+1)}$, and deduce that $\varphi(t)=E_a(-\lambda t^a)$ satisfies
+    $\varphi=1-\lambda I^a\varphi$.
+  \item Show that $m(t)=\theta+(V_0-\theta)E_a(-\lambda t^a)$, by checking that it solves the equation of (a) and that
+    this equation has at most one solution that is bounded and measurable on each $[0,T]$.
+  \item Show that $m(t)=V_0+(\theta-V_0)\lambda t^a/\Gamma(a+1)+O(t^{2a})$ as $t\downarrow0$, and recover
+    \noteref{prop:iv-heston}(i) when $a=1$. How fast does the mean variance move away from $V_0$ when $H=0.1$?
+\end{enumerate}
+\end{exercise}
+
+\begin{exercise}[The GJR regression under mean reversion]\label{ex:rv-gjr-sim}
+\medium This is a computational exercise; you may use \texttt{rfsv\_logvol} and \texttt{gjr\_estimate} from
+\texttt{ieor222.roughvol}, or your own code.
+\begin{enumerate}[label=(\alph*)]
+  \item Simulate daily values of the RFSV log-volatility \noteref{eq:rv-rfsv} with $H=0.14$, $\nu=0.3$, $m=-5$ for
+    $3500$ days, for $\lambda=5\times10^{-4}$, $0.01$ and $0.05$ per day. Estimate $H$ by the GJR procedure with
+    $\Delta=1,\dots,30$ and with $\Delta=1,\dots,250$.
+  \item Explain the pattern with \noteref{prop:rv-scaling}(ii). Is the bound \noteref{eq:rv-scaling-error} sharp?
+  \item For $\lambda=5\times10^{-4}$ and $\Delta=1,\dots,30$, repeat with $20$ independent paths and report the mean and
+    standard deviation of $\hat H$. How precisely does one path of fourteen years determine $H$?
+\end{enumerate}
+\end{exercise}
