@@ -176,7 +176,8 @@ def test_lp_calibration(example):
     assert np.all(q >= 0)
     assert np.allclose(q.sum(1), 1, atol=1e-9) and np.allclose(q @ K, 1, atol=1e-9)
     calls = np.array([S.call_function(K, qj, K) for qj in q])
-    assert np.all(np.diff(calls, axis=0) >= -1e-9)           # the calendar constraints of eq:afs-lp
+    # the calendar constraints of eq:afs-lp, up to the LP solver's feasibility tolerance (HiGHS: 1e-7)
+    assert np.all(np.diff(calls, axis=0) >= -1e-7)
     assert example["inside"] == 1.0                           # every fitted price inside its spread
     hard = S.sanos_calibrate(K, quotes, example["v"], hard=True)
     assert hard["status"] == 0
